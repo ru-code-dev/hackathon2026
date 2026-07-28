@@ -221,6 +221,7 @@ describe('prop.invalid suggestions', () => {
     propExpressions: {},
     eventHandlers: [],
     keysHandled: [],
+    hasTextChild: false,
     styleRefs: [],
     hasInlineStyle: false,
     file: 'src/a.tsx',

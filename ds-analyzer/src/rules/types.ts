@@ -1,6 +1,6 @@
 import type { A11yFacet, Expected, FindingCategory, Severity } from '../domain/findings.js'
 import type { Declaration, ImportRecord, JsxElement, Observations, StyleValue } from '../domain/observations.js'
-import type { ProjectProfile } from '../domain/profile.js'
+import type { Limitation, ProjectProfile } from '../domain/profile.js'
 import type { A11ySpec } from '../kit/a11y-spec.js'
 import type { KitSpec } from '../kit/spec.js'
 
@@ -101,6 +101,15 @@ export interface Rule {
   /** One line, shown in the dashboard's rule list. */
   readonly description: string
   readonly run: (context: RuleContext) => RawFinding[]
+  /**
+   * What this rule could not check, and why.
+   *
+   * A rule that returns no findings is saying "this code is clean". A rule that could not
+   * run says nothing at all, and the two are indistinguishable in the output unless the
+   * second one declares itself. This is how a rule declares itself — still a pure function,
+   * still no side channel.
+   */
+  readonly limitations?: (context: RuleContext) => Limitation[]
 }
 
 /** A rule that walks style declarations. */

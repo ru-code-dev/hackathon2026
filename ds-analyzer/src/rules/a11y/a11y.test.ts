@@ -67,6 +67,7 @@ const jsxElement = (overrides: Partial<JsxElement> & Pick<JsxElement, 'name'>): 
   propExpressions: {},
   eventHandlers: [],
   keysHandled: [],
+  hasTextChild: false,
   propLines: {},
   styleRefs: [],
   hasInlineStyle: false,
@@ -194,11 +195,20 @@ describe('a11y.pattern.keyboard', () => {
   })
 
   it('offers the canonical component, not the specialised one', () => {
-    // Both render `tablist`; alphabetical order would hand the reader `BrowserTabs`.
+    // Both render `tablist`; alphabetical order would hand the reader `BrowserTabs`. The
+    // same trap catches `Modal` vs `DatePicker` for `dialog`, which is why the choice lives
+    // in `A11ySpec` and not in either rule.
     const findings = run([tablist()], A11ySpec.from(a11yArtifact([browserTabsPattern, tabsPattern])))
 
     expect(findings[0]?.expected?.component).toBe('Tabs')
     expect(findings[0]?.candidates.map((candidate) => candidate.component)).toStrictEqual(['BrowserTabs', 'Tabs'])
+  })
+
+  it('agrees with A11ySpec about which component is canonical', () => {
+    const spec = A11ySpec.from(a11yArtifact([browserTabsPattern, tabsPattern]))
+
+    expect(spec.canonicalComponentFor('tablist')?.component).toBe('Tabs')
+    expect(spec.canonicalComponentFor('nothing-renders-this')).toBeNull()
   })
 
   it('leaves the kit’s own components alone', () => {
@@ -209,6 +219,34 @@ describe('a11y.pattern.keyboard', () => {
     // A dialog needs Escape and a focus trap, but not key handling on the container — a
     // dialog whose buttons are real buttons is navigable already.
     expect(run([jsxElement({ name: 'div', props: { role: 'dialog' } })])).toHaveLength(0)
+  })
+
+  it('declares what it could not check when the upstream was never read', () => {
+    // The rule going quiet is correct; going quiet *invisibly* is not. Without this the
+    // reader sees an empty accessibility section and concludes the widgets are fine.
+    const observations: Observations = {
+      $schema: OBSERVATIONS_SCHEMA_ID,
+      styleValues: [],
+      jsxElements: [tablist()],
+      imports: [],
+      reExports: [],
+      declarations: [],
+      files: ['src/Widget.tsx'],
+      limitations: [],
+    }
+
+    const limitations = patternKeyboardRule.limitations?.({
+      kit,
+      a11y: A11ySpec.unavailable(),
+      profile,
+      observations,
+      sources: new Map(),
+      spacing: buildSpacingIndex([]),
+      elementsByFile: new Map(),
+    })
+
+    expect(limitations).toHaveLength(1)
+    expect(limitations?.[0]?.reason).toBe('spec-unavailable')
   })
 
   it('reports nothing at all when the upstream was never read', () => {

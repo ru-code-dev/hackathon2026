@@ -112,6 +112,14 @@ export const jsxElementSchema = z.object({
    * and it belongs in `limitations[]` rather than in a finding.
    */
   keysHandled: z.array(z.string()),
+  /**
+   * `true` when the element has non-whitespace text among its children.
+   *
+   * The cheapest possible proxy for "this control has a visible label". Without it, a rule
+   * about missing accessible names cannot tell `<button><Icon/></button>` from
+   * `<button>Save</button>` and would report every button in the project.
+   */
+  hasTextChild: z.boolean(),
   /** Source line of each prop, for precise finding coordinates. */
   propLines: z.record(z.string(), z.number().int().positive()),
   styleRefs: z.array(styleRefSchema),
@@ -184,6 +192,16 @@ export const declarationSchema = z.object({
    * re-parse: the collectors are the only stage allowed to touch syntax.
    */
   astSignature: z.array(z.string()),
+  /**
+   * Event handler props and key names gathered across everything this declaration renders.
+   *
+   * Aggregated at the declaration because that is the scope a widget's keyboard contract
+   * lives at: a dialog closes on `Escape` from a handler on its root, on its overlay, or in
+   * an effect, and a rule asking "does this component handle Escape at all" must not depend
+   * on which of those the author chose.
+   */
+  eventHandlers: z.array(z.string()),
+  keysHandled: z.array(z.string()),
   /** Number of JSX elements rendered — a crude size proxy used to rank candidates. */
   elementCount: z.number().int().nonnegative(),
   file: z.string(),
@@ -193,6 +211,7 @@ export const declarationSchema = z.object({
 
 /**
  * `@2` adds `propExpressions`, `eventHandlers` and `keysHandled` to JSX elements.
+ * `@3` adds `hasTextChild` to elements and lifts the handler aggregation to declarations.
  *
  * The version is bumped rather than the fields made optional, and that choice is the whole
  * point: an absent optional field and an empty array are indistinguishable at the rule, so
@@ -200,7 +219,7 @@ export const declarationSchema = z.object({
  * "clean" about code nobody looked at. Silence that reads as a pass is the one failure mode
  * this project refuses to ship. A version mismatch is loud; a missing field is not.
  */
-export const OBSERVATIONS_SCHEMA_ID = 'ds-analyzer/observations@2'
+export const OBSERVATIONS_SCHEMA_ID = 'ds-analyzer/observations@3'
 
 export const observationsSchema = z.object({
   $schema: z.literal(OBSERVATIONS_SCHEMA_ID),

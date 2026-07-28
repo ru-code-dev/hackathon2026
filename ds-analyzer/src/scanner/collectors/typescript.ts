@@ -547,6 +547,15 @@ export const collectTypeScript = (input: TypeScriptCollectionInput): TypeScriptC
       const styleRefs: StyleRef[] = []
       let hasInlineStyle = false
 
+      // `<button>Save</button>` has a visible label; `<button><Icon/></button>` does not.
+      // Only JSX text counts — an expression child may render to anything, including "".
+      const parent = element.getParent()
+      const hasTextChild =
+        parent !== undefined &&
+        Node.isJsxElement(parent) &&
+        parent.getOpeningElement() === element &&
+        parent.getJsxChildren().some((child) => Node.isJsxText(child) && child.getText().trim().length > 0)
+
       for (const attribute of element.getAttributes()) {
         if (!Node.isJsxAttribute(attribute)) {
           continue
@@ -646,6 +655,7 @@ export const collectTypeScript = (input: TypeScriptCollectionInput): TypeScriptC
         propExpressions,
         eventHandlers: sortStrings(new Set(eventHandlers)),
         keysHandled: sortStrings(keysHandled),
+        hasTextChild,
         propLines,
         styleRefs: styleRefs.map((ref) => ({ ...ref, module: styleModules.get(ref.module) ?? ref.module })),
         hasInlineStyle,
@@ -746,6 +756,8 @@ export const collectTypeScript = (input: TypeScriptCollectionInput): TypeScriptC
       const ariaAttributes = new Set<string>()
       const nativeTags = new Set<string>()
       const jsxShape = new Set<string>()
+      const declarationHandlers = new Set<string>()
+      const declarationKeys = new Set<string>()
       const cssProperties = new Set<string>()
       let elementCount = 0
       let hasInlineSvg = false
@@ -778,6 +790,9 @@ export const collectTypeScript = (input: TypeScriptCollectionInput): TypeScriptC
 
           if (attributeName.startsWith('aria-')) {
             ariaAttributes.add(attributeName)
+          }
+          if (isEventHandlerProp(attributeName)) {
+            declarationHandlers.add(attributeName)
           }
           if (attributeName === 'role') {
             const initializer = attribute.getInitializer()
@@ -813,6 +828,13 @@ export const collectTypeScript = (input: TypeScriptCollectionInput): TypeScriptC
       const destructured = propNamesOf(candidate.node)
       const declared = declaredPropNamesOf(sourceFile, candidate.name)
 
+      // Keys are gathered from the whole declaration, not just its JSX attributes: a
+      // dialog frequently closes on `Escape` from a `useEffect` listener that never appears
+      // as a prop, and a rule that only looked at attributes would call it unhandled.
+      for (const key of keysNamedIn(candidate.node)) {
+        declarationKeys.add(key)
+      }
+
       declarations.push({
         name: candidate.name,
         kind: candidate.kind,
@@ -824,6 +846,8 @@ export const collectTypeScript = (input: TypeScriptCollectionInput): TypeScriptC
         kitComponentsUsed: [],
         cssProperties: sortStrings(cssProperties),
         hasInlineSvg,
+        eventHandlers: sortStrings(declarationHandlers),
+        keysHandled: sortStrings(declarationKeys),
         astSignature: astSignatureOf(candidate.node),
         elementCount,
         file,

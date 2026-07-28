@@ -24,6 +24,21 @@ export const dsConfigSchema = z.object({
   rules: z.record(z.string(), z.enum(['off'])).optional(),
   /** Finding ids to suppress, e.g. after a deliberate exception. */
   ignoreFindings: z.array(z.string()).optional(),
+  /**
+   * CI hand-off for the dashboard's "create PR" flow. Only non-secret coordinates belong
+   * here — the report is committed and shared, so the webhook token must stay out of it
+   * and be pasted in the browser (it is kept in `localStorage`, never in the HTML).
+   */
+  ci: z
+    .object({
+      /** Jenkins generic-webhook-trigger invoke URL, without the token query parameter. */
+      webhookUrl: z.string().optional(),
+      /** Repository the fix PR is created in. */
+      repositoryUrl: z.string().optional(),
+      /** Branch the PR targets. */
+      targetBranch: z.string().optional(),
+    })
+    .optional(),
 })
 
 export type DsConfig = z.infer<typeof dsConfigSchema>

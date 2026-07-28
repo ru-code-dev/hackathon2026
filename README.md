@@ -154,9 +154,24 @@ export { Button, Modal } from '@sds-eng/base'
   "exclude": ["**/*.generated.tsx"],
   "aliases": { "@ui/*": ["src/shared/ui/*"] },
   "rules": { "token.literal.dimension": "off" },
-  "ignoreFindings": ["f_0041"]
+  "ignoreFindings": ["f_0041"],
+  "ci": {
+    // координаты для кнопки «Создать PR» в дашборде; токен сюда НЕ пишется —
+    // он вводится в браузере один раз и хранится в localStorage
+    "webhookUrl": "https://jenkins…/generic-webhook-trigger/invoke",
+    "repositoryUrl": "https://…/project.git",
+    "targetBranch": "master"
+  }
 }
 ```
+
+---
+
+## Из отчёта — сразу в pull request
+
+У авто-фиксимых решений в «Плане работ» (и у отдельных вхождений в «По файлам» / «Подряд») есть чекбоксы. Выбор поднимает нижнюю панель: сколько решений, правок и файлов уйдёт в PR. Кнопка **«Создать PR»** открывает форму — ветка, заголовок и описание сгенерированы из выбора, дифф в предпросмотре — и отправляет в Jenkins generic-webhook-trigger тело `{repository_url, branch_name, target_branch, pr_title, pr_body, diff_content}`.
+
+Дифф собирается из тех же `before`/`after`, что показаны на экране, и проходит `git apply`. Пересекающиеся правки и находки без точной замены не выбрасываются молча — они перечислены с причиной. Если браузер блокирует запрос (CORS), рядом кнопка **«Скопировать curl»** — та же команда для терминала.
 
 ---
 

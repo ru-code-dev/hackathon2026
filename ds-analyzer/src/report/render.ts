@@ -55,6 +55,18 @@ export interface RenderInput {
   readonly analysis: AnalysisArtifact
   /** Stamped into the header. Passed in so the renderer stays deterministic. */
   readonly generatedAt: string
+  /** CI coordinates from `ds.config.json`, for the dashboard's "create PR" flow. */
+  /**
+   * Optional properties are spelled `| undefined` because `exactOptionalPropertyTypes` is
+   * on: zod's `.optional()` produces `string | undefined`, and a bare `?:` will not accept
+   * it. Widening here rather than at the call site keeps `ds.config.json` the single source
+   * of the shape.
+   */
+  readonly ci?: {
+    webhookUrl?: string | undefined
+    repositoryUrl?: string | undefined
+    targetBranch?: string | undefined
+  } | null
 }
 
 /**
@@ -125,6 +137,7 @@ export const renderDashboard = async (input: RenderInput): Promise<string> => {
       usesKit: input.profile.usesKit,
     },
     generatedAt: input.generatedAt,
+    ci: input.ci ?? null,
     summary: input.analysis.summary,
     usage: highlighted.usage,
     findings: highlighted.findings,

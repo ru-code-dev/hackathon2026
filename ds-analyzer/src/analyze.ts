@@ -6,7 +6,7 @@ import type { KitSpec } from './kit/spec.js'
 import { buildSummary } from './metrics/health.js'
 import { buildUsage } from './metrics/usage.js'
 import { buildRuleContext } from './rules/context.js'
-import { runRules } from './rules/index.js'
+import { collectRuleLimitations, runRules } from './rules/index.js'
 
 /**
  * Stage C: facts × specification → deviations.
@@ -34,8 +34,19 @@ export const analyze = (input: AnalyzeInput): AnalysisArtifact => {
     (finding) => !(input.ignoredFindings?.has(finding.id) ?? false),
   )
 
+  // Rule limitations join the scanner's, because to the reader they are the same fact:
+  // something was not checked. Where the gap came from is an implementation detail.
+  const ruleLimitations = collectRuleLimitations(context, {
+    ...(input.disabledRules ? { disabledRules: input.disabledRules } : {}),
+  })
+
+  const profile =
+    ruleLimitations.length === 0
+      ? input.profile
+      : { ...input.profile, limitations: [...input.profile.limitations, ...ruleLimitations] }
+
   const usage = buildUsage(input.observations, findings, input.kit, context.sources)
-  const summary = buildSummary({ profile: input.profile, observations: input.observations, findings, usage })
+  const summary = buildSummary({ profile, observations: input.observations, findings, usage })
 
   return { $schema: 'ds-analyzer/analysis@1', findings, usage, summary }
 }

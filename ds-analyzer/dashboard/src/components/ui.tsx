@@ -268,6 +268,41 @@ export const HealthRing = ({ score, size = 132 }: { score: number; size?: number
   )
 }
 
+/**
+ * Selection checkbox for the PR flow. Only rendered next to auto-fixable items, so the
+ * presence of the control is itself the "this can go into a PR" signal.
+ */
+export const Checkbox = ({
+  checked,
+  onToggle,
+  title = 'Выбрать для PR',
+}: {
+  checked: boolean
+  onToggle: () => void
+  title?: string
+}): React.ReactElement => (
+  <button
+    type="button"
+    role="checkbox"
+    aria-checked={checked}
+    title={title}
+    onClick={(event) => {
+      event.stopPropagation()
+      onToggle()
+    }}
+    className={cx(
+      'flex size-[18px] shrink-0 items-center justify-center rounded border transition-colors',
+      checked
+        ? 'border-accent bg-accent text-bg'
+        : 'border-border-strong bg-transparent text-transparent hover:border-accent/70',
+    )}
+  >
+    <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden>
+      <path d="M2 6.5 4.7 9 10 3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  </button>
+)
+
 /** An empty list must explain itself and offer the way out — a silent void reads as a bug. */
 export const EmptyState = ({
   children,

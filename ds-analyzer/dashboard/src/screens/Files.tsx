@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 
 import { FindingCard } from '../components/FindingCard.js'
-import { Badge, CopyButton, Dot, EmptyState, cx } from '../components/ui.js'
+import { Badge, Button, CopyButton, Dot, EmptyState, cx } from '../components/ui.js'
 import type { Payload } from '../data.js'
 import { buildFileGroups } from '../lib/model.js'
 import type { ViewState } from '../lib/url-state.js'
@@ -18,10 +18,15 @@ export const FilesScreen = ({
   payload,
   state,
   go,
+  selection,
+  onSelectToggle,
 }: {
   payload: Payload
   state: ViewState
   go: (patch: Partial<ViewState>) => void
+  /** Finding ids picked for the PR flow. */
+  selection: ReadonlySet<string>
+  onSelectToggle: (ids: readonly string[]) => void
 }): React.ReactElement => {
   const [fileQuery, setFileQuery] = useState('')
   const [expandedFinding, setExpandedFinding] = useState<string | null>(state.finding)
@@ -114,6 +119,17 @@ export const FilesScreen = ({
           <div className="ds-enter mx-auto max-w-5xl space-y-3 p-5">
             <header className="flex flex-wrap items-center gap-2.5">
               <h2 className="min-w-0 flex-1 truncate font-mono text-[14px] font-medium">{selected.file}</h2>
+              {selected.autoFixable > 0 && (
+                <Button
+                  onClick={() => {
+                    onSelectToggle(
+                      selected.findings.filter((finding) => finding.autoFixable).map((finding) => finding.id),
+                    )
+                  }}
+                >
+                  Все авто-фиксы файла в PR ({selected.autoFixable})
+                </Button>
+              )}
               <CopyButton value={selected.file} label="Путь" />
             </header>
 
@@ -139,6 +155,10 @@ export const FilesScreen = ({
                   onOpenFile={(file) => {
                     go({ file, finding: null })
                     setExpandedFinding(null)
+                  }}
+                  selected={selection.has(finding.id)}
+                  onSelectToggle={() => {
+                    onSelectToggle([finding.id])
                   }}
                 />
               ))}

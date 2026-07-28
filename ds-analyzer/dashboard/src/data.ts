@@ -96,6 +96,13 @@ export const RULE_LABEL: Record<string, string> = {
   'style.override.important': '!important поверх стилей кита',
   'a11y.focus.suppressed': 'Кольцо фокуса убрано без замены',
   'a11y.pattern.keyboard': 'Виджет недоступен с клавиатуры',
+  'a11y.pattern.focus': 'Диалог не отпускает и не удерживает фокус',
+  'a11y.pattern.relations': 'ARIA-связь ведёт в никуда',
+  'a11y.aria.invalid': 'Несуществующая роль или ARIA-атрибут',
+  'a11y.aria.required': 'Роль без обязательного состояния',
+  'a11y.aria.redundant': 'Роль дублирует семантику тега',
+  'a11y.name.missing': 'Контрол без доступного имени',
+  'a11y.contrast.text': 'Текст не набирает контраст',
 }
 
 export const ruleLabel = (rule: string): string => RULE_LABEL[rule] ?? rule
@@ -112,6 +119,20 @@ export const SUBKIND_LABEL: Record<string, string> = {
   onFocus: 'убрано прямо на :focus',
   noHandler: 'обработчика клавиш нет',
   handlerUnreadable: 'обработчик объявлен отдельно',
+  noEscape: 'не закрывается по Escape',
+  noFocusTrap: 'не удерживает фокус',
+  danglingId: 'ссылка на несуществующий id',
+  unmatchedExpression: 'выражения не совпали',
+  unknownRole: 'роли нет в спецификации',
+  abstractRole: 'абстрактная роль',
+  unknownAttribute: 'атрибута нет в спецификации',
+  unsupportedAttribute: 'роль не поддерживает атрибут',
+  prohibitedAttribute: 'атрибут запрещён для роли',
+  iconOnly: 'только иконка, без имени',
+  unlabelled: 'имя должно приходить из aria-labelledby',
+  empty: 'ни текста, ни метки',
+  normalText: 'обычный текст, порог 4.5:1',
+  largeText: 'крупный текст, порог 3:1',
 }
 
 export const subkindLabel = (subkind: string): string => SUBKIND_LABEL[subkind] ?? subkind
@@ -120,6 +141,7 @@ export const LIMITATION_LABEL: Record<string, string> = {
   'dynamic-styles': 'динамические стили',
   'parse-error': 'ошибка разбора',
   'unreadable-config': 'нечитаемый конфиг',
+  'spec-unavailable': 'спецификация кита не собрана',
   'unresolved-import': 'неразрешённый импорт',
 }
 

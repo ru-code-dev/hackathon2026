@@ -96,6 +96,27 @@ export class A11ySpec {
     return this.byRole.get(role) ?? []
   }
 
+  /**
+   * The component to actually offer for a role.
+   *
+   * Shortest name first, then alphabetical. Several components legitimately render the same
+   * role — `Tabs` and `BrowserTabs` both render `tablist`, `Modal` and `DatePicker` both
+   * render `dialog` — and picking alphabetically hands the reader the specialised one. A
+   * qualifier in the name is exactly what marks a component as the narrower case, so the
+   * unqualified name is the canonical answer.
+   *
+   * Lives here rather than in the rules so that two rules answering the same question
+   * cannot answer it differently.
+   */
+  canonicalComponentFor(role: string): KitPattern | null {
+    return (
+      [...this.componentsRendering(role)].sort(
+        (left, right) =>
+          left.component.length - right.component.length || compareStrings(left.component, right.component),
+      )[0] ?? null
+    )
+  }
+
   /** `true` when `px` sits on the grid the upstream's own spacing follows. */
   isOnSpacingGrid(px: number): boolean {
     return px % this.artifact.spacing.gridBase === 0

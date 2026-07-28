@@ -128,6 +128,8 @@ export interface Summary {
 export interface Payload {
   project: { name: string | null; root: string; kitVersion: string | null; usesKit: boolean }
   generatedAt: string
+  /** CI coordinates from `ds.config.json`; `null` when the project declares none. */
+  ci: { webhookUrl?: string; repositoryUrl?: string; targetBranch?: string } | null
   summary: Summary
   usage: Usage
   findings: Finding[]

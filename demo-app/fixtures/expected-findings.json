@@ -1133,6 +1133,34 @@
       "subkind": "noHandler",
       "actual": "role=\"tablist\"",
       "expect": "Tabs"
+    },
+    {
+      "id": "e302",
+      "stage": "M3",
+      "file": "src/features/orders/OrderDialog.tsx",
+      "line": 32,
+      "rule": "a11y.pattern.focus",
+      "subkind": "noEscape",
+      "actual": "<div role=\"dialog\">",
+      "expect": "Modal"
+    },
+    {
+      "id": "e303",
+      "stage": "M3",
+      "file": "src/features/settings/SettingsTabs.tsx",
+      "line": 48,
+      "rule": "a11y.name.missing",
+      "subkind": "unlabelled",
+      "actual": "<div role=\"tabpanel\">"
+    },
+    {
+      "id": "e304",
+      "stage": "M3",
+      "file": "src/shared/styles/theme.scss",
+      "line": 15,
+      "rule": "a11y.contrast.text",
+      "subkind": "normalText",
+      "actual": "#ffffff на #00d4aa"
     }
   ]
 }

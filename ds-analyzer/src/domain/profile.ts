@@ -60,6 +60,14 @@ export const limitationReasonSchema = z.enum([
   'unresolved-import',
   /** A configuration file was found but could not be read statically. */
   'unreadable-config',
+  /**
+   * A rule could not run because a specification it depends on was not built.
+   *
+   * Distinct from every other reason here: the file was read fine, but the *checker* was
+   * missing. Without it a silent rule is indistinguishable from a clean codebase, which is
+   * the one conclusion this report must never invite by accident.
+   */
+  'spec-unavailable',
 ])
 
 export const limitationSchema = z.object({

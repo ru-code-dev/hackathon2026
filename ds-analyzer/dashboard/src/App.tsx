@@ -1,5 +1,6 @@
-import { useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { PrFlow } from './components/PrFlow.js'
 import { Badge, cx } from './components/ui.js'
 import { readPayload, type Payload } from './data.js'
 import { buildFileGroups, buildProblems } from './lib/model.js'
@@ -29,6 +30,26 @@ try {
 
 export const App = (): React.ReactElement => {
   const { state, go, navigate, reset } = useViewState()
+
+  // Finding ids picked for the PR flow. Deliberately not in the URL: a link that carries
+  // somebody else's half-made selection would be surprising in exactly the wrong moment.
+  const [selection, setSelection] = useState<ReadonlySet<string>>(new Set())
+
+  /** Toggle as a group: if every id is already selected, the whole group comes off. */
+  const toggleSelection = useCallback((ids: readonly string[]): void => {
+    setSelection((previous) => {
+      const next = new Set(previous)
+      const allSelected = ids.every((id) => next.has(id))
+      for (const id of ids) {
+        if (allSelected) {
+          next.delete(id)
+        } else {
+          next.add(id)
+        }
+      }
+      return next
+    })
+  }, [])
 
   const counts = useMemo(() => {
     if (payload === null) {
@@ -82,6 +103,7 @@ export const App = (): React.ReactElement => {
 
   const data = payload
   const crumbs = activeFilters(state)
+  const selectedFindings = data.findings.filter((finding) => selection.has(finding.id))
 
   const NAV: { key: Screen; label: string; count?: number; hint: string }[] = [
     { key: 'overview', label: 'Сводка', hint: 'вердикт и с чего начать' },
@@ -166,11 +188,30 @@ export const App = (): React.ReactElement => {
           </div>
         )}
 
-        <main className="min-h-0 flex-1 overflow-hidden">
+        <main className="relative min-h-0 flex-1 overflow-hidden">
           {state.screen === 'overview' && <OverviewScreen payload={data} navigate={navigate} />}
-          {state.screen === 'problems' && <ProblemsScreen payload={data} state={state} go={go} reset={reset} />}
-          {state.screen === 'files' && <FilesScreen payload={data} state={state} go={go} />}
+          {state.screen === 'problems' && (
+            <ProblemsScreen
+              payload={data}
+              state={state}
+              go={go}
+              reset={reset}
+              selection={selection}
+              onSelectToggle={toggleSelection}
+            />
+          )}
+          {state.screen === 'files' && (
+            <FilesScreen payload={data} state={state} go={go} selection={selection} onSelectToggle={toggleSelection} />
+          )}
           {state.screen === 'design' && <DesignScreen payload={data} state={state} go={go} navigate={navigate} />}
+
+          <PrFlow
+            payload={data}
+            selected={selectedFindings}
+            onClear={() => {
+              setSelection(new Set())
+            }}
+          />
         </main>
       </div>
     </div>

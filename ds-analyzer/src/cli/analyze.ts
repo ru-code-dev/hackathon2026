@@ -124,7 +124,12 @@ const main = async (): Promise<void> => {
   let dashboardPath: string | null = null
   if (!args.skipDashboard) {
     try {
-      const html = await renderDashboard({ profile, analysis, generatedAt: new Date().toISOString().slice(0, 10) })
+      const html = await renderDashboard({
+        profile,
+        analysis,
+        generatedAt: new Date().toISOString().slice(0, 10),
+        ci: dsConfig.ci ?? null,
+      })
       dashboardPath = join(outputDirectory, 'dashboard.html')
       await mkdir(outputDirectory, { recursive: true })
       await writeFile(dashboardPath, html, 'utf8')

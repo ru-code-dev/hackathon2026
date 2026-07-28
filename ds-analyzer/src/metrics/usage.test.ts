@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { resolvePaths } from '../config.js'
 import type { Declaration, JsxElement, Observations } from '../domain/observations.js'
+import { OBSERVATIONS_SCHEMA_ID } from '../domain/observations.js'
 import { KitSpec } from '../kit/spec.js'
 import { buildUsage } from './usage.js'
 
@@ -21,6 +22,7 @@ const element = (overrides: Partial<JsxElement>): JsxElement => ({
   propExpressions: {},
   eventHandlers: [],
   keysHandled: [],
+  hasTextChild: false,
   propLines: {},
   styleRefs: [],
   hasInlineStyle: false,
@@ -41,6 +43,8 @@ const declaration = (overrides: Partial<Declaration>): Declaration => ({
   kitComponentsUsed: [],
   cssProperties: [],
   hasInlineSvg: false,
+  eventHandlers: [],
+  keysHandled: [],
   astSignature: [],
   elementCount: 1,
   file: 'src/Widget.tsx',
@@ -50,7 +54,7 @@ const declaration = (overrides: Partial<Declaration>): Declaration => ({
 })
 
 const observations = (partial: Partial<Observations>): Observations => ({
-  $schema: 'ds-analyzer/observations@2',
+  $schema: OBSERVATIONS_SCHEMA_ID,
   styleValues: [],
   jsxElements: [],
   imports: [],

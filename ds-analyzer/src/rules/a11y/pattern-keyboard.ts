@@ -1,4 +1,4 @@
-import { compareStrings } from '../../shared/sort.js'
+import type { Limitation } from '../../domain/profile.js'
 import type { Rule, RuleContext, RawFinding } from '../types.js'
 
 /**
@@ -40,6 +40,28 @@ export const patternKeyboardRule: Rule = {
   id: 'a11y.pattern.keyboard',
   category: 'a11y',
   description: 'Виджет объявил интерактивную ARIA-роль, но не обрабатывает клавиатуру',
+  limitations: (context: RuleContext): Limitation[] => {
+    if (context.a11y.available) {
+      return []
+    }
+
+    // Every widget in the project went unchecked. Saying so is the whole point: the reader
+    // would otherwise take an empty accessibility section as a pass.
+    const widgets = context.observations.jsxElements.filter((element) => {
+      const role = element.props['role']
+
+      return typeof role === 'string' && ROLES_REQUIRING_KEYBOARD.has(role) && element.kitComponent === null
+    })
+
+    return widgets.map((element) => ({
+      file: element.file,
+      line: element.propLines['role'] ?? element.line,
+      reason: 'spec-unavailable' as const,
+      detail:
+        'Клавиатурная доступность виджета не проверена: артефакт kit-a11y.json не собран ' +
+        '(нужен установленный @v-uik). Запустите npm run extract:kit-a11y.',
+    }))
+  },
   run: (context: RuleContext): RawFinding[] => {
     // Without the upstream there is no evidence of what the kit handles, and a finding
     // phrased as "the kit does this and you do not" would be unfounded. The scanner records
@@ -66,22 +88,15 @@ export const patternKeyboardRule: Rule = {
         continue
       }
 
+      // A handler whose body lives elsewhere is unreadable, not absent. Reporting it as a
+      // keyboard failure would be a guess dressed as a fact, so it is downgraded and sent to
+      // the agent stage — the distinction the `observations@2` schema exists to preserve.
       const hasHandler = element.eventHandlers.some((name) => name.startsWith('onKey'))
 
-      // A handler whose body lives elsewhere is unreadable, not absent. Reporting it as a
-      // keyboard failure would be a guess dressed as a fact, so it goes to the agent stage
-      // instead — the distinction the `observations@2` schema exists to preserve.
-      // Shortest name first, then alphabetical. Both `Tabs` and `BrowserTabs` render
-      // `tablist`, and a plain alphabetical pick offers the specialised variant — a
-      // qualifier in a component's name is what marks it as the narrower one, so the
-      // unqualified name is the canonical answer.
       const equivalents = context.a11y.componentsRendering(role)
-      const best = [...equivalents].sort(
-        (left, right) =>
-          left.component.length - right.component.length || compareStrings(left.component, right.component),
-      )[0]
+      const best = context.a11y.canonicalComponentFor(role)
 
-      if (best === undefined || best.keysHandled.length === 0) {
+      if (best === null || best.keysHandled.length === 0) {
         continue
       }
 

@@ -3,7 +3,7 @@ import { useState } from 'react'
 import type { Problem } from '../lib/model.js'
 import { ruleLabel, SEVERITY_LABEL, subkindLabel, type Finding } from '../data.js'
 import { FindingDetail } from './FindingCard.js'
-import { Badge, CopyButton, cx, Dot } from './ui.js'
+import { Badge, Checkbox, CopyButton, cx, Dot } from './ui.js'
 
 /**
  * One decision, however many times it repeats.
@@ -69,6 +69,8 @@ export const ProblemCard = ({
   expanded,
   onToggle,
   onOpenFile,
+  selected = false,
+  onSelectToggle,
 }: {
   problem: Problem
   /** 1-based position in the current ordering — the "start here" number. */
@@ -76,6 +78,9 @@ export const ProblemCard = ({
   expanded: boolean
   onToggle: () => void
   onOpenFile?: (file: string) => void
+  /** Whole-problem selection for the PR flow; offered only when every occurrence is auto-fixable. */
+  selected?: boolean
+  onSelectToggle?: () => void
 }): React.ReactElement => {
   const byFile = new Map<string, Finding[]>()
   for (const finding of problem.findings) {
@@ -95,6 +100,9 @@ export const ProblemCard = ({
       )}
     >
       <header className="flex cursor-pointer items-center gap-3 px-4 py-3" onClick={onToggle}>
+        {problem.autoFixable && onSelectToggle !== undefined && (
+          <Checkbox checked={selected} onToggle={onSelectToggle} title="Все вхождения — в PR" />
+        )}
         <span className="w-6 shrink-0 text-right text-[13px] font-semibold tabular-nums text-faint">{rank}</span>
         <Dot severity={problem.severity} />
 

@@ -1,10 +1,16 @@
 import type { Finding } from '../domain/findings.js'
+import type { Limitation } from '../domain/profile.js'
 import { compareStrings } from '../shared/sort.js'
 import { deprecatedApiRule, invalidPropRule } from './api/props.js'
 import { bypassImportRule, doNotUseImportRule, internalImportRule } from './api/imports.js'
 import { styleOverrideRule } from './api/overrides.js'
 import { suppressedFocusRule } from './a11y/focus.js'
 import { patternKeyboardRule } from './a11y/pattern-keyboard.js'
+import { invalidAriaRule, redundantRoleRule, requiredAriaRule } from './a11y/aria.js'
+import { ariaRelationsRule } from './a11y/relations.js'
+import { dialogFocusRule } from './a11y/dialog.js'
+import { missingAccessibleNameRule } from './a11y/name.js'
+import { textContrastRule } from './a11y/contrast.js'
 import { buildSnippet } from './snippet.js'
 import { colorLiteralRule } from './tokens/color.js'
 import { dimensionLiteralRule } from './tokens/dimension.js'
@@ -39,6 +45,13 @@ export const RULES: readonly Rule[] = [
   styleOverrideRule,
   suppressedFocusRule,
   patternKeyboardRule,
+  invalidAriaRule,
+  requiredAriaRule,
+  redundantRoleRule,
+  ariaRelationsRule,
+  dialogFocusRule,
+  missingAccessibleNameRule,
+  textContrastRule,
 ]
 
 /** Stable, zero-padded so that lexical order matches numeric order in the dashboard. */
@@ -54,6 +67,13 @@ const compareFindings = (left: RawFinding, right: RawFinding): number =>
 export interface RunOptions {
   /** Rule ids switched off in `ds.config.json`. */
   readonly disabledRules?: ReadonlySet<string>
+}
+
+/** Everything the enabled rules declare they could not check. */
+export const collectRuleLimitations = (context: RuleContext, options: RunOptions = {}): Limitation[] => {
+  const disabled = options.disabledRules ?? new Set<string>()
+
+  return RULES.filter((rule) => !disabled.has(rule.id)).flatMap((rule) => rule.limitations?.(context) ?? [])
 }
 
 /** Runs every enabled rule and materialises the results. */

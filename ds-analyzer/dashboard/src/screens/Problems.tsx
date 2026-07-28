@@ -60,11 +60,16 @@ export const ProblemsScreen = ({
   state,
   go,
   reset,
+  selection,
+  onSelectToggle,
 }: {
   payload: Payload
   state: ViewState
   go: (patch: Partial<ViewState>) => void
   reset: (screen: 'problems') => void
+  /** Finding ids picked for the PR flow. */
+  selection: ReadonlySet<string>
+  onSelectToggle: (ids: readonly string[]) => void
 }): React.ReactElement => {
   const visibleFindings = useMemo(
     () => payload.findings.filter((finding) => matchesFilters(finding, state)),
@@ -247,6 +252,10 @@ export const ProblemsScreen = ({
                     onOpenFile={(file) => {
                       go({ screen: 'files', file, finding: null })
                     }}
+                    selected={selection.has(finding.id)}
+                    onSelectToggle={() => {
+                      onSelectToggle([finding.id])
+                    }}
                   />
                 </div>
               )
@@ -265,6 +274,10 @@ export const ProblemsScreen = ({
                   }}
                   onOpenFile={(file) => {
                     go({ screen: 'files', file, group: null })
+                  }}
+                  selected={problem.findings.every((finding) => selection.has(finding.id))}
+                  onSelectToggle={() => {
+                    onSelectToggle(problem.findings.map((finding) => finding.id))
                   }}
                 />
               </div>

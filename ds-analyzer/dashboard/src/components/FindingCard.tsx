@@ -2,7 +2,7 @@ import { useState } from 'react'
 import ReactDiffViewer, { DiffMethod } from 'react-diff-viewer-continued'
 
 import { ruleLabel, SEVERITY_LABEL, subkindLabel, type Finding } from '../data.js'
-import { Badge, Button, CopyButton, cx, Dot } from './ui.js'
+import { Badge, Button, Checkbox, CopyButton, cx, Dot } from './ui.js'
 
 /**
  * One occurrence, in the two states a reader needs.
@@ -147,12 +147,17 @@ export const FindingCard = ({
   expanded,
   onToggle,
   onOpenFile,
+  selected = false,
+  onSelectToggle,
 }: {
   finding: Finding
   context: 'file' | 'flat'
   expanded: boolean
   onToggle: () => void
   onOpenFile?: (file: string) => void
+  /** Per-occurrence selection for the PR flow; offered only on auto-fixable findings. */
+  selected?: boolean
+  onSelectToggle?: () => void
 }): React.ReactElement => (
   <article
     className={cx(
@@ -161,6 +166,7 @@ export const FindingCard = ({
     )}
   >
     <header className="flex cursor-pointer items-center gap-2.5 px-3.5 py-2.5" onClick={onToggle}>
+      {finding.autoFixable && onSelectToggle !== undefined && <Checkbox checked={selected} onToggle={onSelectToggle} />}
       <Dot severity={finding.severity} />
 
       {context === 'file' ? (
