@@ -76,92 +76,97 @@ export const OverviewScreen = ({
   return (
     <div className="ds-enter h-full overflow-y-auto">
       <div className="mx-auto max-w-6xl space-y-4 p-5">
-        {/* Verdict strip: health plus eight cards — a 3×3 grid with no holes (on mobile the
-            health card spans the full row). All component shares use one denominator —
-            every rendered component element — so the numbers agree. */}
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+        {/* Verdict strip, exactly as agreed: the health card standing alone on the left,
+            and a full 4×2 grid of eight metric cards beside it — 4 original + 3 conformance
+            + accessibility. No holes at any width; component shares use one denominator. */}
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-[auto_1fr]">
           <div
-            className="col-span-2 flex min-w-0 items-center gap-4 rounded-[var(--radius-card)] border border-border bg-surface/80 px-4 py-3 lg:col-span-1"
+            className="flex min-w-0 flex-col items-center justify-center gap-2 rounded-[var(--radius-card)] border border-border bg-surface/80 px-6 py-4"
             title={summary.healthFormula}
           >
-            <HealthRing score={summary.healthScore} size={76} />
-            <div className="min-w-0">
-              <div className="text-[12px] font-medium tracking-wide text-muted">Здоровье</div>
-              <p className="mt-0.5 text-[12px] leading-snug text-faint">50% чистота, 30% внедрение, 20% токены</p>
+            <HealthRing score={summary.healthScore} size={104} />
+            <div className="text-center">
+              <div className="text-[13px] font-semibold tracking-tight">Здоровье</div>
+              <p className="mt-0.5 max-w-[160px] text-[11.5px] leading-snug text-faint">
+                50% чистота · 30% внедрение · 20% токены
+              </p>
             </div>
           </div>
-          <MetricCard
-            label="Отклонения"
-            value={summary.findings.total}
-            detail={`${String(summary.findings.bySeverity.error)} ошибок · ${String(summary.findings.bySeverity.warning)} предупреждений`}
-            onClick={() => {
-              navigate({ screen: 'problems' })
-            }}
-          />
-          <MetricCard
-            label="Решений"
-            value={problems.length}
-            detail="уникальных проблем после группировки повторов"
-            onClick={() => {
-              navigate({ screen: 'problems' })
-            }}
-          />
-          <MetricCard
-            label="Авто-фикс"
-            value={summary.findings.autoFixable}
-            detail={`${String(Math.round((summary.findings.autoFixable / Math.max(1, summary.findings.total)) * 100))}% вхождений правятся заменой строки`}
-            onClick={() => {
-              navigate({ screen: 'problems', autoFixableOnly: true })
-            }}
-          />
-          <MetricCard
-            label="Компоненты из ДС"
-            value={`${String(Math.round((breakdown.kit / totalElements) * 100))}%`}
-            meter={breakdown.kit / totalElements}
-            tone="ok"
-            detail={`${String(breakdown.kit)} из ${String(breakdown.total)} · из них без нарушений ${String(Math.round((breakdown.kitClean / Math.max(1, breakdown.kit)) * 100))}%`}
-            onClick={() => {
-              navigate({ screen: 'design' })
-            }}
-          />
-          <MetricCard
-            label="Кастомные на токенах ДС"
-            value={`${String(Math.round((breakdown.customTokens / totalElements) * 100))}%`}
-            meter={breakdown.customTokens / totalElements}
-            tone="info"
-            detail={`${String(breakdown.customTokens)} из ${String(breakdown.total)} компонентов — кастомные, стилизованные только токенами`}
-            onClick={() => {
-              navigate({ screen: 'design' })
-            }}
-          />
-          <MetricCard
-            label="Кастомные без токенов ДС"
-            value={breakdown.customHardcode}
-            meter={breakdown.customHardcode / totalElements}
-            tone="error"
-            detail={`${String(Math.round((breakdown.customHardcode / totalElements) * 100))}% компонентов на хардкоде${breakdown.customMixed > 0 ? ` · ещё ${String(breakdown.customMixed)} смешанных` : ''}`}
-            onClick={() => {
-              navigate({ screen: 'design' })
-            }}
-          />
-          <MetricCard
-            label="Покрытие токенами"
-            value={`${String(Math.round(summary.tokenCoverage * 100))}%`}
-            meter={summary.tokenCoverage}
-            tone="info"
-            detail="доля стилевых значений через var(--токен), остальное — сырые литералы"
-            onClick={() => {
-              navigate({ screen: 'design' })
-            }}
-          />
-          <MetricCard
-            label="Доступность"
-            value={summary.findings.byCategory.a11y}
-            detail="нарушений a11y: фокус, клавиатура, ARIA, имена, контраст · клик — план с фильтром"
-            onClick={() => {
-              navigate({ screen: 'problems', category: 'a11y' })
-            }}
-          />
+
+          <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+            <MetricCard
+              label="Отклонения"
+              value={summary.findings.total}
+              detail={`${String(summary.findings.bySeverity.error)} ошибок · ${String(summary.findings.bySeverity.warning)} предупреждений`}
+              onClick={() => {
+                navigate({ screen: 'problems' })
+              }}
+            />
+            <MetricCard
+              label="Решений"
+              value={problems.length}
+              detail="уникальных проблем после группировки повторов"
+              onClick={() => {
+                navigate({ screen: 'problems' })
+              }}
+            />
+            <MetricCard
+              label="Авто-фикс"
+              value={summary.findings.autoFixable}
+              detail={`${String(Math.round((summary.findings.autoFixable / Math.max(1, summary.findings.total)) * 100))}% вхождений правятся заменой строки`}
+              onClick={() => {
+                navigate({ screen: 'problems', autoFixableOnly: true })
+              }}
+            />
+            <MetricCard
+              label="Компоненты из ДС"
+              value={`${String(Math.round((breakdown.kit / totalElements) * 100))}%`}
+              meter={breakdown.kit / totalElements}
+              tone="ok"
+              detail={`${String(breakdown.kit)} из ${String(breakdown.total)} · из них без нарушений ${String(Math.round((breakdown.kitClean / Math.max(1, breakdown.kit)) * 100))}%`}
+              onClick={() => {
+                navigate({ screen: 'design' })
+              }}
+            />
+            <MetricCard
+              label="Кастомные на токенах ДС"
+              value={`${String(Math.round((breakdown.customTokens / totalElements) * 100))}%`}
+              meter={breakdown.customTokens / totalElements}
+              tone="info"
+              detail={`${String(breakdown.customTokens)} из ${String(breakdown.total)} компонентов — кастомные, стилизованные только токенами`}
+              onClick={() => {
+                navigate({ screen: 'design' })
+              }}
+            />
+            <MetricCard
+              label="Кастомные без токенов ДС"
+              value={breakdown.customHardcode}
+              meter={breakdown.customHardcode / totalElements}
+              tone="error"
+              detail={`${String(Math.round((breakdown.customHardcode / totalElements) * 100))}% компонентов на хардкоде${breakdown.customMixed > 0 ? ` · ещё ${String(breakdown.customMixed)} смешанных` : ''}`}
+              onClick={() => {
+                navigate({ screen: 'design' })
+              }}
+            />
+            <MetricCard
+              label="Покрытие токенами"
+              value={`${String(Math.round(summary.tokenCoverage * 100))}%`}
+              meter={summary.tokenCoverage}
+              tone="info"
+              detail="доля стилевых значений через var(--токен), остальное — сырые литералы"
+              onClick={() => {
+                navigate({ screen: 'design' })
+              }}
+            />
+            <MetricCard
+              label="Доступность"
+              value={summary.findings.byCategory.a11y}
+              detail="нарушений a11y: фокус, клавиатура, ARIA, имена, контраст · клик — план с фильтром"
+              onClick={() => {
+                navigate({ screen: 'problems', category: 'a11y' })
+              }}
+            />
+          </div>
         </div>
 
         {/* The action plan preview — the reason the report exists. */}
