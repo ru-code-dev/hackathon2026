@@ -180,8 +180,29 @@ export const usageSchema = z.object({
       /** `kit-like`: resembles a kit component · `kit-candidate`: reused, kit has nothing like it · `local`: neither. */
       verdict: z.enum(['kit-like', 'kit-candidate', 'local']),
       nameMatch: z.object({ component: z.string(), kind: z.enum(['exact', 'contains', 'similar']) }).nullable(),
+      /** Kit-token references attributable to this component (own file + imported stylesheets). */
+      tokenRefs: z.number().int().nonnegative(),
+      /** Hardcoded design values in the same scope, counted off the findings. */
+      hardcodedValues: z.number().int().nonnegative(),
+      /** `tokens`: только токены · `mixed`: и то и то · `hardcode`: только литералы · `no-styles`: нет решений. */
+      tokenVerdict: z.enum(['tokens', 'mixed', 'hardcode', 'no-styles']),
     }),
   ),
+  /**
+   * Every rendered component element in exactly one bucket — the sum is `total`, so the
+   * dashboard's "composition of the interface" always closes to 100%.
+   */
+  elementBreakdown: z.object({
+    total: z.number().int().nonnegative(),
+    kit: z.number().int().nonnegative(),
+    /** Kit elements whose component has zero findings — the "из них без нарушений" half. */
+    kitClean: z.number().int().nonnegative(),
+    customTokens: z.number().int().nonnegative(),
+    customMixed: z.number().int().nonnegative(),
+    customHardcode: z.number().int().nonnegative(),
+    customUnstyled: z.number().int().nonnegative(),
+    foreign: z.number().int().nonnegative(),
+  }),
   /** Token id → how often it is referenced correctly through `var()`. */
   tokenUsage: z.record(z.string(), z.number().int().nonnegative()),
 })

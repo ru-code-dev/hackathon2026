@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
 import { resolvePaths } from '../config.js'
-import type { Declaration, JsxElement, Observations } from '../domain/observations.js'
+import type { Declaration, ImportRecord, JsxElement, Observations, StyleValue } from '../domain/observations.js'
 import { OBSERVATIONS_SCHEMA_ID } from '../domain/observations.js'
+import type { Finding } from '../domain/findings.js'
 import { KitSpec } from '../kit/spec.js'
 import { buildUsage } from './usage.js'
 
@@ -152,5 +153,148 @@ describe('foreignComponents origin', () => {
       { name: 'DatePicker', usages: 2, local: false, source: 'antd' },
       { name: 'Spinner', usages: 1, local: true, source: null },
     ])
+  })
+})
+
+describe('token verdicts and the element breakdown', () => {
+  const styleValue = (
+    overrides: Partial<StyleValue> & Pick<StyleValue, 'file' | 'property' | 'value'>,
+  ): StyleValue => ({
+    authored: null,
+    line: 3,
+    column: 1,
+    source: 'scss',
+    selector: '.a',
+    classNames: ['a'],
+    important: false,
+    dynamic: false,
+    rootCause: null,
+    appliedTo: null,
+    ...overrides,
+  })
+
+  const hardcodeFinding = (file: string): Finding => ({
+    id: 'f_0001',
+    rule: 'token.literal.color',
+    subkind: 'exact',
+    category: 'token',
+    severity: 'error',
+    confidence: 1,
+    file,
+    line: 4,
+    column: 3,
+    snippet: { before: 'x', after: null, highlightLine: 1, startLine: 4 },
+    actual: '#2969e3',
+    expected: null,
+    why: 'причина',
+    note: null,
+    rootCause: null,
+    appliedTo: null,
+    a11y: null,
+    autoFixable: false,
+    needsAgent: false,
+    candidates: [],
+    impact: { occurrences: 1, files: 1 },
+    impactKey: 'k',
+  })
+
+  const styleImport = (from: string, to: string): ImportRecord => ({
+    specifier: `./${to.split('/').pop() ?? ''}`,
+    names: [],
+    defaultImport: null,
+    namespaceImport: null,
+    typeOnly: false,
+    resolution: { kind: 'relative', file: to },
+    file: from,
+    line: 1,
+    column: 1,
+  })
+
+  it('classifies a component styled purely through kit tokens', () => {
+    const usage = buildUsage(
+      observations({
+        declarations: [declaration({ name: 'Spinner', file: 'src/Spinner.tsx' })],
+        styleValues: [
+          styleValue({ file: 'src/Spinner.tsx', property: 'color', value: 'var(--sds-eng-Switch-shadow-disable)' }),
+        ],
+      }),
+      [],
+      kit,
+      new Map(),
+    )
+
+    expect(usage.customComponents[0]?.tokenVerdict).toBe('tokens')
+    expect(usage.customComponents[0]?.tokenRefs).toBe(1)
+  })
+
+  it('attributes hardcode living in an imported stylesheet to the component', () => {
+    const usage = buildUsage(
+      observations({
+        declarations: [declaration({ name: 'Spinner', file: 'src/Spinner.tsx' })],
+        imports: [styleImport('src/Spinner.tsx', 'src/spinner.module.scss')],
+      }),
+      [hardcodeFinding('src/spinner.module.scss')],
+      kit,
+      new Map(),
+    )
+
+    expect(usage.customComponents[0]?.tokenVerdict).toBe('hardcode')
+    expect(usage.customComponents[0]?.hardcodedValues).toBe(1)
+  })
+
+  it('marks tokens and hardcode side by side as mixed', () => {
+    const usage = buildUsage(
+      observations({
+        declarations: [declaration({ name: 'Spinner', file: 'src/Spinner.tsx' })],
+        styleValues: [
+          styleValue({ file: 'src/Spinner.tsx', property: 'color', value: 'var(--sds-eng-Switch-shadow-disable)' }),
+        ],
+      }),
+      [hardcodeFinding('src/Spinner.tsx')],
+      kit,
+      new Map(),
+    )
+
+    expect(usage.customComponents[0]?.tokenVerdict).toBe('mixed')
+  })
+
+  it('closes the element breakdown to exactly 100%', () => {
+    const usage = buildUsage(
+      observations({
+        declarations: [
+          declaration({ name: 'Clean', file: 'src/Clean.tsx' }),
+          declaration({ name: 'Dirty', file: 'src/Dirty.tsx' }),
+        ],
+        styleValues: [
+          styleValue({ file: 'src/Clean.tsx', property: 'color', value: 'var(--sds-eng-Switch-shadow-disable)' }),
+        ],
+        jsxElements: [
+          element({ name: 'Button', kitComponent: 'Button', resolvedFrom: '@sds-eng/base' }),
+          element({ name: 'Clean' }),
+          element({ name: 'Dirty' }),
+          element({ name: 'DatePicker', resolvedFrom: 'antd' }),
+          element({ name: 'div' }),
+        ],
+      }),
+      [hardcodeFinding('src/Dirty.tsx')],
+      kit,
+      new Map(),
+    )
+
+    const breakdown = usage.elementBreakdown
+    expect(breakdown.total).toBe(4)
+    expect(breakdown.kit).toBe(1)
+    expect(breakdown.kitClean).toBe(1)
+    expect(breakdown.customTokens).toBe(1)
+    expect(breakdown.customHardcode).toBe(1)
+    expect(breakdown.foreign).toBe(1)
+    expect(
+      breakdown.kit +
+        breakdown.customTokens +
+        breakdown.customMixed +
+        breakdown.customHardcode +
+        breakdown.customUnstyled +
+        breakdown.foreign,
+    ).toBe(breakdown.total)
   })
 })

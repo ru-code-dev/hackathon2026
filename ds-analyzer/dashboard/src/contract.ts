@@ -89,6 +89,11 @@ export interface CustomComponent {
   /** `kit-like`: resembles a kit component · `kit-candidate`: reused, kit has nothing like it · `local`: neither. */
   verdict: 'kit-like' | 'kit-candidate' | 'local'
   nameMatch: { component: string; kind: 'exact' | 'contains' | 'similar' } | null
+  /** Kit-token references attributable to this component (own file + imported stylesheets). */
+  tokenRefs: number
+  /** Hardcoded design values in the same scope, counted off the findings. */
+  hardcodedValues: number
+  tokenVerdict: 'tokens' | 'mixed' | 'hardcode' | 'no-styles'
 }
 
 export interface Usage {
@@ -103,6 +108,17 @@ export interface Usage {
   unusedComponents: string[]
   foreignComponents: { name: string; usages: number; local: boolean; source: string | null }[]
   customComponents: CustomComponent[]
+  /** Every rendered component element in exactly one bucket; sums to `total`. */
+  elementBreakdown: {
+    total: number
+    kit: number
+    kitClean: number
+    customTokens: number
+    customMixed: number
+    customHardcode: number
+    customUnstyled: number
+    foreign: number
+  }
   tokenUsage: Record<string, number>
 }
 

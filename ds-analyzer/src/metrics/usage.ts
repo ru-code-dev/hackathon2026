@@ -57,6 +57,18 @@ const CANDIDATE_MIN_FILES = 2
 const MIN_NAME_LENGTH_FOR_FUZZY = 4
 const MAX_NAME_EDIT_DISTANCE = 2
 
+/** Rules whose finding means "a design value written by hand" for the token verdict. */
+const HARDCODE_RULES: ReadonlySet<string> = new Set([
+  'token.literal.color',
+  'token.literal.dimension',
+  'token.typography.partial',
+  'font.foreign',
+])
+
+const STYLE_IMPORT = /\.(?:css|scss|sass|less|styl)$/
+
+type TokenVerdict = Usage['customComponents'][number]['tokenVerdict']
+
 /**
  * Does this local component's name point at a kit component?
  *
@@ -173,6 +185,8 @@ export const buildUsage = (
   }
 
   const tokenUsage: Record<string, number> = {}
+  /** Kit-token references per file — the raw material of the token verdict. */
+  const tokenRefsByFile = new Map<string, number>()
   for (const styleValue of observations.styleValues) {
     for (const literal of extractValueLiterals(styleValue.value)) {
       if (literal.kind !== 'var') {
@@ -181,8 +195,54 @@ export const buildUsage = (
       const token = kit.tokenByCssVariable(literal.name)
       if (token !== null) {
         tokenUsage[token.id] = (tokenUsage[token.id] ?? 0) + 1
+        tokenRefsByFile.set(styleValue.file, (tokenRefsByFile.get(styleValue.file) ?? 0) + 1)
       }
     }
+  }
+
+  // Hardcoded design values per file, taken from the findings rather than re-tokenized —
+  // the findings already encode every judgement call (zero is not a value, keywords are
+  // not colours), and a second counter would inevitably disagree with them.
+  const hardcodeByFile = new Map<string, number>()
+  for (const finding of findings) {
+    if (HARDCODE_RULES.has(finding.rule)) {
+      hardcodeByFile.set(finding.file, (hardcodeByFile.get(finding.file) ?? 0) + 1)
+    }
+  }
+
+  // Stylesheets a file imports; the component's styles live there as often as inline.
+  const styleImportsByFile = new Map<string, string[]>()
+  for (const record of observations.imports) {
+    if (!STYLE_IMPORT.test(record.specifier) || record.resolution.file === null) {
+      continue
+    }
+    const bucket = styleImportsByFile.get(record.file) ?? []
+    bucket.push(record.resolution.file)
+    styleImportsByFile.set(record.file, bucket)
+  }
+
+  /**
+   * Token verdict of one component: its own file plus the stylesheets that file imports.
+   * Styles reaching a component through unrelated global classes cannot be attributed
+   * statically — the verdict covers what provably belongs to the component.
+   */
+  const tokenVerdictOf = (
+    declaration: Declaration,
+  ): { tokenRefs: number; hardcodedValues: number; tokenVerdict: TokenVerdict } => {
+    const files = [declaration.file, ...(styleImportsByFile.get(declaration.file) ?? [])]
+    const tokenRefs = files.reduce((sum, file) => sum + (tokenRefsByFile.get(file) ?? 0), 0)
+    const hardcodedValues = files.reduce((sum, file) => sum + (hardcodeByFile.get(file) ?? 0), 0)
+
+    const tokenVerdict: TokenVerdict =
+      tokenRefs > 0 && hardcodedValues === 0
+        ? 'tokens'
+        : tokenRefs > 0
+          ? 'mixed'
+          : hardcodedValues > 0
+            ? 'hardcode'
+            : 'no-styles'
+
+    return { tokenRefs, hardcodedValues, tokenVerdict }
   }
 
   const used = new Set(components.keys())
@@ -227,9 +287,58 @@ export const buildUsage = (
       snippet: snippetOf(declaration, sources),
       verdict: nameMatch !== null ? 'kit-like' : reused ? 'kit-candidate' : 'local',
       nameMatch,
+      ...tokenVerdictOf(declaration),
     })
   }
   customComponents.sort((left, right) => right.usages - left.usages || compareStrings(left.name, right.name))
+
+  // One scale, one hundred per cent: every rendered component element lands in exactly
+  // one bucket, so the dashboard's breakdown always sums to the total.
+  const elementBreakdown = {
+    total: 0,
+    kit: 0,
+    kitClean: 0,
+    customTokens: 0,
+    customMixed: 0,
+    customHardcode: 0,
+    customUnstyled: 0,
+    foreign: 0,
+  }
+  for (const element of observations.jsxElements) {
+    if (!/^[A-Z]/.test(element.name)) {
+      continue
+    }
+    elementBreakdown.total += 1
+
+    if (element.kitComponent !== null) {
+      elementBreakdown.kit += 1
+      if ((components.get(element.kitComponent)?.findings ?? 0) === 0) {
+        elementBreakdown.kitClean += 1
+      }
+      continue
+    }
+
+    const declaration = declarationByName.get(element.name)
+    if (declaration === undefined) {
+      elementBreakdown.foreign += 1
+      continue
+    }
+
+    switch (tokenVerdictOf(declaration).tokenVerdict) {
+      case 'tokens':
+        elementBreakdown.customTokens += 1
+        break
+      case 'mixed':
+        elementBreakdown.customMixed += 1
+        break
+      case 'hardcode':
+        elementBreakdown.customHardcode += 1
+        break
+      case 'no-styles':
+        elementBreakdown.customUnstyled += 1
+        break
+    }
+  }
 
   return {
     components: [...components.entries()]
@@ -254,6 +363,7 @@ export const buildUsage = (
       })
       .sort((left, right) => right.usages - left.usages || compareStrings(left.name, right.name)),
     customComponents,
+    elementBreakdown,
     tokenUsage: Object.fromEntries(sortStrings(Object.keys(tokenUsage)).map((id) => [id, tokenUsage[id] ?? 0])),
   }
 }

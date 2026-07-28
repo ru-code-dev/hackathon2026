@@ -171,6 +171,13 @@ export const VERDICT_LABEL: Record<'kit-like' | 'kit-candidate' | 'local', strin
   local: 'локальный',
 }
 
+export const TOKEN_VERDICT_LABEL: Record<'tokens' | 'mixed' | 'hardcode' | 'no-styles', string> = {
+  tokens: 'на токенах ДС',
+  mixed: 'токены + хардкод',
+  hardcode: 'хардкод',
+  'no-styles': 'без стилей',
+}
+
 export const NAME_MATCH_LABEL: Record<'exact' | 'contains' | 'similar', string> = {
   exact: 'имя совпадает с китом',
   contains: 'имя содержит имя компонента кита',

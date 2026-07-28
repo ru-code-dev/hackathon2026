@@ -5,6 +5,7 @@ import { ScaleHistogram } from '../components/charts.js'
 import { Badge, Card, CardHeader, CopyButton, Disclosure, EmptyState, cx } from '../components/ui.js'
 import {
   NAME_MATCH_LABEL,
+  TOKEN_VERDICT_LABEL,
   VERDICT_LABEL,
   subkindLabel,
   type CustomComponent,
@@ -189,6 +190,22 @@ const CustomComponentCard = ({
             ≈ {component.nameMatch.component}
           </Badge>
         )}
+        <Badge
+          tone={
+            component.tokenVerdict === 'tokens'
+              ? 'ok'
+              : component.tokenVerdict === 'mixed'
+                ? 'warning'
+                : component.tokenVerdict === 'hardcode'
+                  ? 'error'
+                  : 'neutral'
+          }
+          title={`токенов: ${String(component.tokenRefs)} · хардкода: ${String(component.hardcodedValues)} — свой файл + импортированные стили`}
+        >
+          {TOKEN_VERDICT_LABEL[component.tokenVerdict]}
+          {component.tokenVerdict !== 'no-styles' &&
+            ` · ${String(component.tokenRefs)} var / ${String(component.hardcodedValues)}`}
+        </Badge>
         <span className="ml-auto flex items-center gap-2 text-[12px] text-muted">
           <span className="tabular-nums">
             {component.usages}× · {component.files} ф.
@@ -342,9 +359,17 @@ export const DesignScreen = ({
   const { usage } = payload
   const selected = usage.components.find((component) => component.name === state.component) ?? null
 
-  const kitLike = usage.customComponents.filter((component) => component.verdict === 'kit-like')
-  const candidates = usage.customComponents.filter((component) => component.verdict === 'kit-candidate')
-  const locals = usage.customComponents.filter((component) => component.verdict === 'local')
+  // Token-verdict filter for the custom list; `null` shows everything.
+  const [tokenFilter, setTokenFilter] = useState<CustomComponent['tokenVerdict'] | null>(null)
+  const filteredCustoms = usage.customComponents.filter(
+    (component) => tokenFilter === null || component.tokenVerdict === tokenFilter,
+  )
+  const kitLike = filteredCustoms.filter((component) => component.verdict === 'kit-like')
+  const candidates = filteredCustoms.filter((component) => component.verdict === 'kit-candidate')
+  const locals = filteredCustoms.filter((component) => component.verdict === 'local')
+
+  const styled = usage.customComponents.filter((component) => component.tokenVerdict !== 'no-styles')
+  const onTokens = usage.customComponents.filter((component) => component.tokenVerdict === 'tokens')
 
   const topTokens = Object.entries(usage.tokenUsage)
     .sort((left, right) => right[1] - left[1])
@@ -398,12 +423,51 @@ export const DesignScreen = ({
         <Card>
           <CardHeader
             title="Кастомные компоненты"
-            hint="написаны в проекте руками. «≈ Имя» — похоже, кит это уже умеет; без пары и с повторным использованием — кандидат в дизайн-систему."
+            hint={`написаны в проекте руками; «≈ Имя» — похоже, кит это уже умеет. Со стилями: ${String(styled.length)}, из них на токенах ДС — ${String(onTokens.length)}${styled.length > 0 ? ` (${String(Math.round((onTokens.length / styled.length) * 100))}%)` : ''}.`}
           />
           {usage.customComponents.length === 0 ? (
             <EmptyState>Заметных кастомных компонентов не найдено.</EmptyState>
           ) : (
             <div className="space-y-3 p-4">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTokenFilter(null)
+                  }}
+                  className={cx(
+                    'rounded-full border px-3 py-1 text-[12px] transition-colors',
+                    tokenFilter === null
+                      ? 'border-accent/60 bg-accent/15 text-fg'
+                      : 'border-border text-muted hover:border-border-strong hover:text-fg',
+                  )}
+                >
+                  все {usage.customComponents.length}
+                </button>
+                {(['tokens', 'mixed', 'hardcode', 'no-styles'] as const).map((verdict) => {
+                  const count = usage.customComponents.filter((component) => component.tokenVerdict === verdict).length
+                  if (count === 0) {
+                    return null
+                  }
+                  return (
+                    <button
+                      key={verdict}
+                      type="button"
+                      onClick={() => {
+                        setTokenFilter((previous) => (previous === verdict ? null : verdict))
+                      }}
+                      className={cx(
+                        'rounded-full border px-3 py-1 text-[12px] transition-colors',
+                        tokenFilter === verdict
+                          ? 'border-accent/60 bg-accent/15 text-fg'
+                          : 'border-border text-muted hover:border-border-strong hover:text-fg',
+                      )}
+                    >
+                      {TOKEN_VERDICT_LABEL[verdict]} {count}
+                    </button>
+                  )
+                })}
+              </div>
               {kitLike.length > 0 && (
                 <div className="space-y-1.5">
                   <h3 className="text-[12px] font-medium tracking-wide text-warning">
