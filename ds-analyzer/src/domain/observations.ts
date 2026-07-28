@@ -113,13 +113,33 @@ export const jsxElementSchema = z.object({
    */
   keysHandled: z.array(z.string()),
   /**
-   * `true` when the element has non-whitespace text among its children.
+   * What the element's subtree could contribute to an accessible name.
    *
-   * The cheapest possible proxy for "this control has a visible label". Without it, a rule
-   * about missing accessible names cannot tell `<button><Icon/></button>` from
-   * `<button>Save</button>` and would report every button in the project.
+   * Three separate facts rather than one "has a label" boolean, because the accname
+   * algorithm treats them differently and collapsing them is what makes a naming rule
+   * useless. A first version of this recorded only direct text children and reported eleven
+   * false positives out of eleven on the first real project it saw: every one was a button
+   * whose text sat inside a `<span>`, or came from an expression.
+   *
+   *  - `text`      literal JSX text anywhere in the subtree — a name, definitively
+   *  - `expression` an expression child anywhere — usually text, but unknowable
+   *  - `component`  a child component that is not a recognisable icon — may render anything
+   *
+   * The rule may only report when all three are false: that is provable absence. Anything
+   * else is a guess, and this is a rule where guessing costs more than silence.
    */
-  hasTextChild: z.boolean(),
+  content: z.object({
+    text: z.boolean(),
+    expression: z.boolean(),
+    component: z.boolean(),
+  }),
+  /**
+   * `true` when a `<label>` element encloses this one.
+   *
+   * Implicit labelling — `<label><span>Описание</span><textarea/></label>` — is valid HTML
+   * and common. Without this the rule reports every correctly labelled form control.
+   */
+  hasLabelAncestor: z.boolean(),
   /** Source line of each prop, for precise finding coordinates. */
   propLines: z.record(z.string(), z.number().int().positive()),
   styleRefs: z.array(styleRefSchema),
@@ -212,6 +232,8 @@ export const declarationSchema = z.object({
 /**
  * `@2` adds `propExpressions`, `eventHandlers` and `keysHandled` to JSX elements.
  * `@3` adds `hasTextChild` to elements and lifts the handler aggregation to declarations.
+ * `@4` replaces `hasTextChild` with `content` + `hasLabelAncestor`, so that the accessible
+ *      name of an element can be decided rather than guessed at.
  *
  * The version is bumped rather than the fields made optional, and that choice is the whole
  * point: an absent optional field and an empty array are indistinguishable at the rule, so
@@ -219,7 +241,7 @@ export const declarationSchema = z.object({
  * "clean" about code nobody looked at. Silence that reads as a pass is the one failure mode
  * this project refuses to ship. A version mismatch is loud; a missing field is not.
  */
-export const OBSERVATIONS_SCHEMA_ID = 'ds-analyzer/observations@3'
+export const OBSERVATIONS_SCHEMA_ID = 'ds-analyzer/observations@4'
 
 export const observationsSchema = z.object({
   $schema: z.literal(OBSERVATIONS_SCHEMA_ID),

@@ -130,6 +130,99 @@ describe('JSX accessibility signals', () => {
     }
   })
 
+  describe('accessible-name content', () => {
+    const contentOf = (code: string, tag: string) => elementNamed(code, tag)?.content
+
+    it('sees text sitting directly inside', () => {
+      expect(contentOf(`export const W = () => <button>Save</button>`, 'button')).toStrictEqual({
+        text: true,
+        expression: false,
+        component: false,
+      })
+    })
+
+    it('sees text nested one element deeper', () => {
+      // The regression that mattered: eleven of eleven false positives on the first real
+      // project were buttons whose text sat inside a <span>.
+      expect(contentOf(`export const W = () => <button><span>Save</span></button>`, 'button')?.text).toBe(true)
+    })
+
+    it('sees text nested several elements deep', () => {
+      expect(contentOf(`export const W = () => <button><span><b><i>Save</i></b></span></button>`, 'button')?.text).toBe(
+        true,
+      )
+    })
+
+    it('separates an expression from literal text', () => {
+      expect(contentOf('export const W = () => <button>{label}</button>', 'button')).toStrictEqual({
+        text: false,
+        expression: true,
+        component: false,
+      })
+    })
+
+    it('ignores whitespace-only text and empty expressions', () => {
+      expect(contentOf(`export const W = () => <button>   </button>`, 'button')).toStrictEqual({
+        text: false,
+        expression: false,
+        component: false,
+      })
+      expect(contentOf('export const W = () => <button>{/* nothing */}</button>', 'button')?.expression).toBe(false)
+    })
+
+    it('treats a glyph subtree as carrying no name', () => {
+      expect(contentOf(`export const W = () => <button><svg><path d="M0" /></svg></button>`, 'button')).toStrictEqual({
+        text: false,
+        expression: false,
+        component: false,
+      })
+    })
+
+    it('recognises an icon component by its name, not by what it renders', () => {
+      for (const icon of ['CloseIcon', 'IconClose', 'SvgChevron']) {
+        expect(contentOf(`export const W = () => <button><${icon} /></button>`, 'button')?.component).toBe(false)
+      }
+    })
+
+    it('treats any other child component as possibly text', () => {
+      expect(contentOf(`export const W = () => <button><Label /></button>`, 'button')?.component).toBe(true)
+    })
+
+    it('reads the subtree of a self-closing element as empty', () => {
+      expect(contentOf(`export const W = () => <input />`, 'input')).toStrictEqual({
+        text: false,
+        expression: false,
+        component: false,
+      })
+    })
+  })
+
+  describe('label ancestry', () => {
+    it('sees a control wrapped in its label', () => {
+      // Implicit labelling is valid HTML and common; without this every correctly labelled
+      // form control is reported.
+      const element = elementNamed(
+        `export const W = () => (
+           <label><span>Описание</span><textarea value={body} /></label>
+         )`,
+        'textarea',
+      )
+
+      expect(element?.hasLabelAncestor).toBe(true)
+    })
+
+    it('does not claim a label that is merely nearby', () => {
+      const element = elementNamed(
+        `export const W = () => (
+           <div><label htmlFor="a">Имя</label><input id="a" /></div>
+         )`,
+        'input',
+      )
+
+      expect(element?.hasLabelAncestor).toBe(false)
+    })
+  })
+
   it('treats a bare attribute as true rather than as an expression', () => {
     const element = elementNamed(`export const W = () => <div aria-modal role="dialog" />`, 'div')
 

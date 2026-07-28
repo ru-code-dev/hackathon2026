@@ -70,6 +70,93 @@ const KEYBOARD_EVENT_KEYS: ReadonlySet<string> = new Set([
   'Spacebar',
 ])
 
+/**
+ * Components that render a glyph and no text.
+ *
+ * Needed because `<button><CloseIcon /></button>` is the single most common icon-only
+ * control, and a child component is otherwise unknowable: `<Label/>` renders text,
+ * `<Icon/>` does not, and nothing in the syntax says which. Matching the naming convention
+ * is a heuristic, but a narrow and checkable one — and being wrong here costs a missed
+ * finding, not a false one.
+ */
+const ICON_COMPONENT_PATTERN = /Icon(?:$|[A-Z])|^Svg[A-Z]/
+
+/** Host tags that render a glyph rather than text. */
+const GLYPH_TAGS: ReadonlySet<string> = new Set(['svg', 'path', 'circle', 'rect', 'g', 'use', 'img', 'picture'])
+
+interface SubtreeContent {
+  text: boolean
+  expression: boolean
+  component: boolean
+}
+
+/**
+ * What a subtree could contribute to an accessible name.
+ *
+ * Walks the whole subtree rather than the direct children: an accessible name is computed
+ * from all descendant content, so `<button><span>Save</span></button>` is named and a rule
+ * that looked one level deep would say otherwise.
+ */
+const subtreeContentOf = (element: Node): SubtreeContent => {
+  const content: SubtreeContent = { text: false, expression: false, component: false }
+
+  const visitChildren = (node: Node): void => {
+    if (!Node.isJsxElement(node)) {
+      return
+    }
+
+    for (const child of node.getJsxChildren()) {
+      if (Node.isJsxText(child)) {
+        if (child.getText().trim().length > 0) {
+          content.text = true
+        }
+        continue
+      }
+
+      if (Node.isJsxExpression(child)) {
+        // `{' '}` and `{/* comment */}` carry no name; anything else might.
+        const inner = child.getExpression()
+        if (inner !== undefined && inner.getText().trim().length > 0) {
+          content.expression = true
+        }
+        continue
+      }
+
+      if (Node.isJsxElement(child) || Node.isJsxSelfClosingElement(child)) {
+        const tag = jsxTagName(child)
+
+        if (!isHostTag(tag) && !ICON_COMPONENT_PATTERN.test(tag)) {
+          content.component = true
+        }
+
+        // A glyph subtree holds no text worth walking, and `<title>` inside an SVG names the
+        // SVG itself rather than the control around it.
+        if (!GLYPH_TAGS.has(tag)) {
+          visitChildren(child)
+        }
+      }
+    }
+  }
+
+  visitChildren(element)
+
+  return content
+}
+
+/** `true` when a `<label>` element encloses `element`. */
+const hasLabelAncestorOf = (element: Node): boolean => {
+  let current: Node | undefined = element.getParent()
+
+  while (current !== undefined) {
+    if (Node.isJsxElement(current) && jsxTagName(current).toLowerCase() === 'label') {
+      return true
+    }
+    current = current.getParent()
+  }
+
+  return false
+}
+
 /** `onClick`, `onKeyDown` — the React convention, which no host attribute collides with. */
 const isEventHandlerProp = (name: string): boolean => /^on[A-Z]/.test(name)
 
@@ -547,14 +634,14 @@ export const collectTypeScript = (input: TypeScriptCollectionInput): TypeScriptC
       const styleRefs: StyleRef[] = []
       let hasInlineStyle = false
 
-      // `<button>Save</button>` has a visible label; `<button><Icon/></button>` does not.
-      // Only JSX text counts — an expression child may render to anything, including "".
+      // Opening elements carry the attributes but not the children: the subtree hangs off
+      // the enclosing `JsxElement`, which is where the name has to be read from.
       const parent = element.getParent()
-      const hasTextChild =
-        parent !== undefined &&
-        Node.isJsxElement(parent) &&
-        parent.getOpeningElement() === element &&
-        parent.getJsxChildren().some((child) => Node.isJsxText(child) && child.getText().trim().length > 0)
+      const owner =
+        parent !== undefined && Node.isJsxElement(parent) && parent.getOpeningElement() === element ? parent : element
+
+      const content = subtreeContentOf(owner)
+      const hasLabelAncestor = hasLabelAncestorOf(owner)
 
       for (const attribute of element.getAttributes()) {
         if (!Node.isJsxAttribute(attribute)) {
@@ -655,7 +742,8 @@ export const collectTypeScript = (input: TypeScriptCollectionInput): TypeScriptC
         propExpressions,
         eventHandlers: sortStrings(new Set(eventHandlers)),
         keysHandled: sortStrings(keysHandled),
-        hasTextChild,
+        content,
+        hasLabelAncestor,
         propLines,
         styleRefs: styleRefs.map((ref) => ({ ...ref, module: styleModules.get(ref.module) ?? ref.module })),
         hasInlineStyle,

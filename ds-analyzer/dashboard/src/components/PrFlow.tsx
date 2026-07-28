@@ -33,6 +33,59 @@ type SendState =
   | { kind: 'sent'; response: string | null }
   | { kind: 'blocked'; message: string }
 
+/**
+ * Unified diff, coloured the way every review tool colours it: green additions, red
+ * removals, file and hunk headers set off from the code. Classification by line prefix is
+ * exact here because the builder above produced the text — no heuristics involved.
+ */
+const DiffView = ({ diff }: { diff: string }): React.ReactElement => (
+  <pre className="max-h-72 overflow-auto py-1 font-mono text-[12px] leading-relaxed">
+    {diff.split('\n').map((line, index) => {
+      const key = `${String(index)}:${line}`
+
+      if (line.startsWith('diff --git')) {
+        return (
+          <div
+            key={key}
+            className="mt-2 border-t border-border bg-surface-2/60 px-3 py-1 font-semibold text-fg first:mt-0 first:border-t-0"
+          >
+            {line.replace('diff --git a/', '').split(' b/')[0]}
+          </div>
+        )
+      }
+      if (line.startsWith('---') || line.startsWith('+++')) {
+        return null
+      }
+      if (line.startsWith('@@')) {
+        return (
+          <div key={key} className="bg-accent/10 px-3 text-accent">
+            {line}
+          </div>
+        )
+      }
+      if (line.startsWith('+')) {
+        return (
+          <div key={key} className="bg-ok/15 px-3 text-ok">
+            {line}
+          </div>
+        )
+      }
+      if (line.startsWith('-')) {
+        return (
+          <div key={key} className="bg-error/15 px-3 text-error">
+            {line}
+          </div>
+        )
+      }
+      return (
+        <div key={key} className="px-3 text-muted">
+          {line}
+        </div>
+      )
+    })}
+  </pre>
+)
+
 const Field = ({
   label,
   value,
@@ -273,9 +326,7 @@ export const PrFlow = ({
                         ))}
                       </ul>
                     )}
-                    <pre className="max-h-64 overflow-auto px-3 py-2 font-mono text-[11.5px] leading-relaxed text-muted">
-                      {result.diff}
-                    </pre>
+                    <DiffView diff={result.diff} />
                   </div>
                 )}
               </div>

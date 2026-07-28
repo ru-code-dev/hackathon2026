@@ -50,7 +50,8 @@ const element = (overrides: Partial<JsxElement> & Pick<JsxElement, 'name'>): Jsx
   propExpressions: {},
   eventHandlers: [],
   keysHandled: [],
-  hasTextChild: false,
+  content: { text: false, expression: false, component: false },
+  hasLabelAncestor: false,
   propLines: {},
   styleRefs: [],
   hasInlineStyle: false,
@@ -333,39 +334,115 @@ describe('a11y.pattern.focus', () => {
 describe('a11y.name.missing', () => {
   const run = (elements: readonly JsxElement[]) => runRule(missingAccessibleNameRule, { jsxElements: [...elements] })
 
-  it('reports an icon-only button', () => {
-    const findings = run([element({ name: 'button' })])
+  const named = (element: JsxElement) => run([element]).length === 0
 
-    expect(findings).toHaveLength(1)
-    expect(findings[0]?.subkind).toBe('empty')
+  describe('reports only what it can prove has no name', () => {
+    it('an icon-only button', () => {
+      const findings = run([element({ name: 'button' })])
+
+      expect(findings).toHaveLength(1)
+      expect(findings[0]?.subkind).toBe('iconOnly')
+    })
+
+    it('a button holding nothing but a glyph', () => {
+      expect(
+        run([element({ name: 'button', content: { text: false, expression: false, component: false } })]),
+      ).toHaveLength(1)
+    })
+
+    it('an input with no label anywhere', () => {
+      expect(run([element({ name: 'textarea' })])).toHaveLength(1)
+    })
+
+    it('a tabpanel with content but no label', () => {
+      // `tabpanel` takes no name from its contents, so text does not save it.
+      const findings = run([
+        element({
+          name: 'div',
+          props: { role: 'tabpanel' },
+          content: { text: true, expression: false, component: false },
+        }),
+      ])
+
+      expect(findings).toHaveLength(1)
+      expect(findings[0]?.subkind).toBe('unlabelled')
+    })
   })
 
-  it('accepts a button with visible text', () => {
-    expect(run([element({ name: 'button', hasTextChild: true })])).toHaveLength(0)
+  describe('accepts every name source the syntax shows', () => {
+    it('direct text', () => {
+      expect(named(element({ name: 'button', content: { text: true, expression: false, component: false } }))).toBe(
+        true,
+      )
+    })
+
+    it('aria-label, title, alt and placeholder', () => {
+      for (const attribute of ['aria-label', 'title', 'alt', 'placeholder']) {
+        expect(named(element({ name: 'button', props: { [attribute]: 'Закрыть' } }))).toBe(true)
+      }
+    })
+
+    it('aria-labelledby', () => {
+      expect(named(element({ name: 'div', props: { role: 'tabpanel', 'aria-labelledby': 'tab-1' } }))).toBe(true)
+    })
+
+    it('an enclosing <label>', () => {
+      expect(named(element({ name: 'textarea', hasLabelAncestor: true }))).toBe(true)
+    })
+
+    it('a <label htmlFor> pointing at it from the same file', () => {
+      expect(
+        run([
+          element({ name: 'label', props: { htmlFor: 'body' } }),
+          element({ name: 'textarea', props: { id: 'body' } }),
+        ]),
+      ).toHaveLength(0)
+    })
+
+    it('the legacy `for` spelling', () => {
+      expect(
+        run([
+          element({ name: 'label', props: { for: 'body' } }),
+          element({ name: 'input', props: { id: 'body', role: 'textbox' } }),
+        ]),
+      ).toHaveLength(0)
+    })
   })
 
-  it('accepts any of the naming attributes', () => {
-    expect(run([element({ name: 'button', props: { 'aria-label': 'Закрыть' } })])).toHaveLength(0)
-    expect(run([element({ name: 'button', props: { title: 'Закрыть' } })])).toHaveLength(0)
+  describe('stays silent where the name is undecidable', () => {
+    it('an expression child, which usually renders text', () => {
+      expect(named(element({ name: 'button', content: { text: false, expression: true, component: false } }))).toBe(
+        true,
+      )
+    })
+
+    it('a child component that is not a recognisable icon', () => {
+      expect(named(element({ name: 'button', content: { text: false, expression: false, component: true } }))).toBe(
+        true,
+      )
+    })
+
+    it('a label in another file — not visible, not guessed at', () => {
+      expect(
+        run([element({ name: 'textarea', props: { id: 'body' }, file: 'src/Other.tsx' })]).map((f) => f.file),
+      ).toStrictEqual(['src/Other.tsx'])
+      // …but a label for that id in the *same* file silences it, which is the pair above.
+    })
   })
 
-  it('does not let text stand in for a name on a role that cannot take one', () => {
-    // `tabpanel` names itself from `aria-labelledby` only. Telling its author to add text
-    // would be advice that cannot work, so the message differs too.
-    const findings = run([element({ name: 'div', props: { role: 'tabpanel' }, hasTextChild: true })])
+  describe('leaves alone what it has no business judging', () => {
+    it('roles that need no name', () => {
+      expect(named(element({ name: 'div' }))).toBe(true)
+      expect(named(element({ name: 'span', props: { role: 'presentation' } }))).toBe(true)
+    })
 
-    expect(findings).toHaveLength(1)
-    expect(findings[0]?.subkind).toBe('unlabelled')
-    expect(findings[0]?.why).toContain('aria-labelledby')
-  })
+    it('custom components, which may label themselves internally', () => {
+      expect(named(element({ name: 'IconButton', props: { icon: 'close' } }))).toBe(true)
+    })
 
-  it('says nothing about roles that need no name', () => {
-    expect(run([element({ name: 'div' })])).toHaveLength(0)
-    expect(run([element({ name: 'span', props: { role: 'presentation' } })])).toHaveLength(0)
-  })
-
-  it('leaves custom components alone, since their labelling is internal', () => {
-    expect(run([element({ name: 'IconButton', props: { icon: 'close' } })])).toHaveLength(0)
+    it('the kit’s own components', () => {
+      expect(named(element({ name: 'Button', kitComponent: 'Button' }))).toBe(true)
+    })
   })
 })
 
