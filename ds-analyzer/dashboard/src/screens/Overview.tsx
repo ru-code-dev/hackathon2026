@@ -13,6 +13,7 @@ import {
   type Severity,
 } from '../data.js'
 import { buildFileGroups, buildProblems } from '../lib/model.js'
+import { breakdownShares } from '../lib/shares.js'
 import type { ViewState } from '../lib/url-state.js'
 
 /**
@@ -71,7 +72,14 @@ export const OverviewScreen = ({
   const cleanShare = summary.files.clean / Math.max(1, summary.files.scanned)
 
   const breakdown = payload.usage.elementBreakdown
-  const totalElements = Math.max(1, breakdown.total)
+  // Largest-remainder shares: the six buckets sum to exactly 100%, so the strip survives
+  // a reader with a calculator. The ledger tooltip spells out the whole denominator.
+  const shares = useMemo(() => breakdownShares(breakdown), [breakdown])
+  const restParts = [
+    breakdown.customMixed > 0 && `смешанные — ${String(breakdown.customMixed)}`,
+    breakdown.customUnstyled > 0 && `без стилей — ${String(breakdown.customUnstyled)}`,
+    breakdown.foreign > 0 && `внешние — ${String(breakdown.foreign)}`,
+  ].filter((part): part is string => part !== false)
 
   return (
     <div className="ds-enter h-full overflow-y-auto">
@@ -120,9 +128,10 @@ export const OverviewScreen = ({
             />
             <MetricCard
               label="Компоненты из ДС"
-              value={`${String(Math.round((breakdown.kit / totalElements) * 100))}%`}
-              meter={breakdown.kit / totalElements}
+              value={`${String(shares.kit)}%`}
+              meter={shares.kit / 100}
               tone="ok"
+              title={shares.ledger}
               detail={`${String(breakdown.kit)} из ${String(breakdown.total)} · из них без нарушений ${String(Math.round((breakdown.kitClean / Math.max(1, breakdown.kit)) * 100))}%`}
               onClick={() => {
                 navigate({ screen: 'design' })
@@ -130,20 +139,22 @@ export const OverviewScreen = ({
             />
             <MetricCard
               label="Кастомные на токенах ДС"
-              value={`${String(Math.round((breakdown.customTokens / totalElements) * 100))}%`}
-              meter={breakdown.customTokens / totalElements}
+              value={`${String(shares.customTokens)}%`}
+              meter={shares.customTokens / 100}
               tone="info"
-              detail={`${String(breakdown.customTokens)} из ${String(breakdown.total)} компонентов — кастомные, стилизованные только токенами`}
+              title={shares.ledger}
+              detail={`${String(breakdown.customTokens)} из ${String(breakdown.total)} — кастомные, стилизованные только токенами ДС`}
               onClick={() => {
                 navigate({ screen: 'design' })
               }}
             />
             <MetricCard
               label="Кастомные без токенов ДС"
-              value={`${String(Math.round((breakdown.customHardcode / totalElements) * 100))}%`}
-              meter={breakdown.customHardcode / totalElements}
+              value={`${String(shares.customHardcode)}%`}
+              meter={shares.customHardcode / 100}
               tone="error"
-              detail={`${String(breakdown.customHardcode)} из ${String(breakdown.total)} компонентов на хардкоде${breakdown.customMixed > 0 ? ` · ещё ${String(breakdown.customMixed)} смешанных` : ''}`}
+              title={shares.ledger}
+              detail={`на хардкоде — ${String(breakdown.customHardcode)} из ${String(breakdown.total)}${restParts.length > 0 ? ` · ${restParts.join(' · ')}` : ''}`}
               onClick={() => {
                 navigate({ screen: 'design' })
               }}

@@ -198,6 +198,7 @@ export const MetricCard = ({
   meter,
   tone,
   onClick,
+  title,
 }: {
   label: string
   value: ReactNode
@@ -206,10 +207,12 @@ export const MetricCard = ({
   meter?: number
   tone?: keyof typeof METER_TONE
   onClick?: () => void
+  title?: string
 }): React.ReactElement => (
   <button
     type="button"
     onClick={onClick}
+    title={title}
     className={cx(
       'flex min-w-0 flex-col gap-1.5 rounded-[var(--radius-card)] border border-border bg-surface/80 px-4 py-3 text-left transition-colors',
       onClick !== undefined ? 'cursor-pointer hover:border-border-strong hover:bg-surface-2/60' : 'cursor-default',
