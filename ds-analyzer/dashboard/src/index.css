@@ -1,0 +1,107 @@
+@import 'tailwindcss';
+
+/*
+ * Visual language (architecture.md §7.6).
+ *
+ * shadcn/ui's token set, retuned for an audit tool. Three decisions carry the look:
+ *
+ *  - **Dark by default.** This opens next to an editor, not in a browsing session.
+ *  - **Colour means severity and nothing else.** Everything structural is on a neutral
+ *    ramp, so that a red badge is information rather than decoration.
+ *  - **Denser than stock shadcn.** The point of the findings screen is to see many
+ *    findings at once.
+ */
+
+@theme {
+  --color-bg: oklch(0.16 0.008 265);
+  --color-surface: oklch(0.2 0.009 265);
+  --color-surface-2: oklch(0.24 0.01 265);
+  --color-border: oklch(0.3 0.012 265);
+  --color-border-strong: oklch(0.4 0.015 265);
+  --color-fg: oklch(0.96 0.003 265);
+  --color-muted: oklch(0.68 0.012 265);
+  --color-faint: oklch(0.52 0.012 265);
+
+  --color-error: oklch(0.65 0.21 25);
+  --color-warning: oklch(0.79 0.16 75);
+  --color-info: oklch(0.7 0.15 250);
+  --color-ok: oklch(0.72 0.17 155);
+  --color-candidate: oklch(0.68 0.19 300);
+
+  --radius-card: 0.75rem;
+
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Cascadia Code', ui-monospace, 'Liberation Mono', Menlo, monospace;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    Arial,
+    sans-serif;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Only functional motion: revealing detail and moving between levels. */
+@media (prefers-reduced-motion: no-preference) {
+  .ds-enter {
+    animation: ds-enter 160ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
+@keyframes ds-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Shiki emits inline colours for light mode; the dark palette is applied by class. */
+.shiki,
+.shiki span {
+  background-color: transparent !important;
+}
+
+.shiki {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+::selection {
+  background: color-mix(in oklch, var(--color-info) 35%, transparent);
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}

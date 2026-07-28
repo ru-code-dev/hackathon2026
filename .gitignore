@@ -1,0 +1,20 @@
+# The UI kit is a separate checkout with its own git history — not our code, and 391 MB
+# of it. It is resolved at runtime via `DS_UI_KIT_ROOT` or the sibling directory.
+ui-kit-eds-ce/
+
+node_modules/
+coverage/
+*.log
+
+# Build output. The dashboard template is regenerated with `npm run dashboard:build`.
+dist/
+build/
+
+# Written into whatever project is being analysed.
+ui-analyzer/
+
+.DS_Store
+
+# Note: `ds-analyzer/artifacts/*.json` IS committed on purpose. It is the extracted kit
+# specification that every later stage reads, it is byte-for-byte deterministic (there is a
+# test), and having it in the tree means the analyser runs without a checkout of the kit.

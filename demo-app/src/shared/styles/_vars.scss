@@ -1,0 +1,23 @@
+// FIXTURE: SCSS variable declarations consumed by three different modules.
+//
+// This file exists to exercise two-pass SCSS resolution (architecture.md §4.2):
+// `postcss-scss` alone sees `$brand` and learns nothing. The collector must resolve
+// the chain to `#ff1f78` while keeping the *usage* coordinates, and additionally
+// mark this declaration as the root cause — one fix here repairs three usages.
+//
+// Planted deviations:
+//   $brand         #ff1f78   exact ref.palette.pink.pink500 (sys: no Background role)
+//   $surface       #f7f9fc   near ref.palette.cool.cool50 (ΔE 0.001) — looks like a token, is not
+//   $ink           #262626   exact ref.palette.gray.gray900
+//   $radius-card   3px       border-radius off the [0,2,4,8,9999] scale
+//   $gap-tight     7px       magic number, no scale exists for gap
+
+$brand: #ff1f78;
+$surface: #f7f9fc;
+$ink: #262626;
+$radius-card: 3px;
+$gap-tight: 7px;
+
+// Indirection: `$accent-border` resolves through a second hop. The resolver has to
+// follow `$accent-border` -> `$brand` -> `#ff1f78`, not give up after one step.
+$accent-border: $brand;

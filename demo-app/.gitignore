@@ -1,0 +1,7 @@
+# FIXTURE: the profiler must honour .gitignore on top of its own hard ignore list
+# (architecture.md §3bis.2). `src/generated/` below contains a file stuffed with
+# deviations that must NOT appear in the report.
+node_modules
+dist
+src/generated/
+ui-analyzer/

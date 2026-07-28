@@ -1,0 +1,4 @@
+artifacts
+coverage
+dashboard/dist
+dashboard/node_modules

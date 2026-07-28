@@ -1,0 +1,131 @@
+{
+  "$schema": "ds-analyzer/summary@1",
+  "generatedAt": "2026-07-28T11:24:30.883Z",
+  "uiKitRoot": "/home/zach/WORKSPACE/hackathon/ui-kit-eds-ce",
+  "durationsMs": {
+    "tokens": 150,
+    "components": 1365,
+    "total": 1558
+  },
+  "artifacts": {
+    "tokens.json": {
+      "total": 2192,
+      "byTier": {
+        "ref": 317,
+        "sys": 258,
+        "comp": 1617
+      },
+      "byCategory": {
+        "color": 1125,
+        "dimension": 474,
+        "shadow": 98,
+        "typography": 492,
+        "other": 3
+      },
+      "byKind": {
+        "color": 1125,
+        "dimension": 474,
+        "shadow": 98,
+        "fontFamily": 88,
+        "fontSize": 117,
+        "fontWeight": 86,
+        "letterSpacing": 85,
+        "lineHeight": 116,
+        "unknown": 1,
+        "keyword": 2
+      },
+      "components": 65,
+      "cssVariables": 571,
+      "themeDependent": 689
+    },
+    "components.json": {
+      "componentDirectories": 61,
+      "publicComponentDirectories": 57,
+      "reactComponents": 168,
+      "propsTypes": 132,
+      "props": 373,
+      "variantSets": 38,
+      "slotSets": 48,
+      "slots": 246,
+      "publicSymbols": 462,
+      "externalReExports": 25,
+      "deprecatedSymbols": 9
+    }
+  },
+  "diagnostics": {
+    "tokens": [
+      {
+        "code": "spacing-scale-missing",
+        "severity": "warning",
+        "count": 14
+      },
+      {
+        "code": "value-non-finite",
+        "severity": "error",
+        "count": 1
+      },
+      {
+        "code": "value-kind-unknown",
+        "severity": "info",
+        "count": 1
+      },
+      {
+        "code": "comp-token-literal",
+        "severity": "warning",
+        "count": 25
+      },
+      {
+        "code": "sys-color-theme-invariant",
+        "severity": "info",
+        "count": 44
+      },
+      {
+        "code": "comp-key-unparsed",
+        "severity": "info",
+        "count": 2
+      }
+    ],
+    "components": [
+      {
+        "code": "external-reexport-unresolved",
+        "severity": "warning",
+        "count": 25
+      },
+      {
+        "code": "component-entry-missing",
+        "severity": "info",
+        "count": 2
+      },
+      {
+        "code": "component-not-in-barrel",
+        "severity": "info",
+        "count": 4
+      },
+      {
+        "code": "props-type-not-found",
+        "severity": "warning",
+        "count": 3
+      },
+      {
+        "code": "component-passthrough",
+        "severity": "info",
+        "count": 2
+      },
+      {
+        "code": "public-symbol-deprecated",
+        "severity": "info",
+        "count": 9
+      },
+      {
+        "code": "symbol-kind-unresolved",
+        "severity": "info",
+        "count": 39
+      },
+      {
+        "code": "do-not-use-exported",
+        "severity": "warning",
+        "count": 1
+      }
+    ]
+  }
+}
