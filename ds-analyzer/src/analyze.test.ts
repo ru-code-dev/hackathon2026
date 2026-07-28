@@ -68,6 +68,27 @@ describe('analyze on demo-app', () => {
     }
   })
 
+  it('says what to do about every accessibility finding', () => {
+    // `impact` states the consequence, `fix` states the remedy, and a report that has the
+    // first without the second is a list of complaints. Asserted on real output rather
+    // than per rule, because the rule that forgets is the one nobody wrote a test for.
+    const unguided = analysis.findings
+      .filter((finding) => finding.category === 'a11y' && (finding.a11y?.fix ?? null) === null)
+      .map((finding) => `${finding.rule}/${finding.subkind ?? '-'}`)
+
+    expect([...new Set(unguided)]).toStrictEqual([])
+  })
+
+  it('backs every auto-fixable accessibility finding with a real patch', () => {
+    // `autoFixable` is a promise the PR flow keeps: it builds the diff from `snippet.after`
+    // and silently skips anything without one. A finding that claims the label and cannot
+    // produce the patch is how that flow starts quietly dropping selected fixes.
+    for (const finding of analysis.findings.filter((item) => item.category === 'a11y' && item.autoFixable)) {
+      expect(finding.snippet.after, `${finding.rule} at ${finding.file}:${String(finding.line)}`).not.toBeNull()
+      expect(finding.snippet.after).not.toBe(finding.snippet.before)
+    }
+  })
+
   it('reports the accessibility findings the demo project was built to contain', () => {
     const rules = analysis.findings.filter((finding) => finding.category === 'a11y').map((finding) => finding.rule)
 

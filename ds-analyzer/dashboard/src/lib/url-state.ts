@@ -17,7 +17,7 @@ import { useCallback, useEffect, useState } from 'react'
  *    user cannot see is a bug, not a feature.
  */
 
-export type Screen = 'overview' | 'problems' | 'files' | 'design'
+export type Screen = 'overview' | 'problems' | 'files' | 'design' | 'a11y'
 
 export interface ViewState {
   screen: Screen
@@ -39,6 +39,8 @@ export interface ViewState {
   finding: string | null
   /** Selected kit component on the design screen. */
   component: string | null
+  /** Filter by WCAG success criterion, e.g. `2.1.1`. Set from the accessibility screen. */
+  wcag: string | null
   /** Free-text search across file, value and explanation. */
   query: string
   /** Only findings that can be patched without a human. */
@@ -57,11 +59,12 @@ const EMPTY: ViewState = {
   group: null,
   finding: null,
   component: null,
+  wcag: null,
   query: '',
   autoFixableOnly: false,
 }
 
-const SCREENS: readonly Screen[] = ['overview', 'problems', 'files', 'design']
+const SCREENS: readonly Screen[] = ['overview', 'problems', 'files', 'design', 'a11y']
 
 const parse = (search: string): ViewState => {
   const params = new URLSearchParams(search)
@@ -84,6 +87,7 @@ const parse = (search: string): ViewState => {
     group: read('group'),
     finding: read('finding'),
     component: read('component'),
+    wcag: read('wcag'),
     query: read('q') ?? '',
     autoFixableOnly: params.get('fix') === '1',
   }
@@ -109,6 +113,7 @@ const serialise = (state: ViewState): string => {
   write('group', state.group)
   write('finding', state.finding)
   write('component', state.component)
+  write('wcag', state.wcag)
   write('q', state.query)
   if (state.autoFixableOnly) {
     params.set('fix', '1')
@@ -183,6 +188,7 @@ export const activeFilters = (state: ViewState): { key: keyof ViewState; label: 
   if (state.value !== null) crumbs.push({ key: 'value', label: 'значение', value: state.value })
   if (state.file !== null) crumbs.push({ key: 'file', label: 'файл', value: state.file })
   if (state.component !== null) crumbs.push({ key: 'component', label: 'компонент', value: state.component })
+  if (state.wcag !== null) crumbs.push({ key: 'wcag', label: 'WCAG', value: state.wcag })
   if (state.query.length > 0) crumbs.push({ key: 'query', label: 'поиск', value: state.query })
   if (state.autoFixableOnly) crumbs.push({ key: 'autoFixableOnly', label: 'только', value: 'авто-фикс' })
 

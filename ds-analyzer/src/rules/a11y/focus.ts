@@ -182,6 +182,12 @@ export const suppressedFocusRule: Rule = {
           wcag: ['2.4.7'],
           pattern: null,
           impact: 'Навигация с клавиатуры становится невидимой — непонятно, какой элемент сейчас активен.',
+          // `:focus-visible` rather than `:focus`, and said in both variants: it is the
+          // reason the ring was removed in the first place — it keeps the outline off a
+          // mouse click and on a Tab press, which is what the author actually wanted.
+          fix: onFocusSelector
+            ? 'Нарисуйте в этом же блоке видимый индикатор — outline или box-shadow контрастным цветом.'
+            : 'Уберите сброс либо добавьте :focus-visible с видимым outline: он не показывается по клику мышью.',
         },
         impactKey: 'a11y.focus.suppressed',
         replaceWith: null,

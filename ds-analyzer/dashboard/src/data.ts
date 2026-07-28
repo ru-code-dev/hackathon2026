@@ -111,6 +111,7 @@ export const RULE_LABEL: Record<string, string> = {
   'a11y.aria.redundant': 'Роль дублирует семантику тега',
   'a11y.name.missing': 'Контрол без доступного имени',
   'a11y.contrast.text': 'Текст не набирает контраст',
+  'a11y.lint': 'Базовое правило доступности',
 }
 
 export const ruleLabel = (rule: string): string => RULE_LABEL[rule] ?? rule
@@ -147,6 +148,32 @@ export const SUBKIND_LABEL: Record<string, string> = {
 
 export const subkindLabel = (subkind: string): string => SUBKIND_LABEL[subkind] ?? subkind
 
+/**
+ * WCAG 2.1 success criteria, by the number the rules cite.
+ *
+ * Only the ones some rule can actually produce. A criterion the analyzer never references
+ * would be a promise the report does not keep, and a full copy of the standard here would
+ * turn a working vocabulary into a document to maintain.
+ */
+export const WCAG_LABEL: Record<string, string> = {
+  '1.1.1': 'Нетекстовый контент',
+  '1.2.2': 'Субтитры к записанному',
+  '1.3.1': 'Информация и связи',
+  '1.3.5': 'Назначение поля ввода',
+  '1.4.3': 'Контраст (минимум)',
+  '1.4.11': 'Контраст нетекстовых элементов',
+  '2.1.1': 'Клавиатура',
+  '2.1.2': 'Фокус не запирается',
+  '2.2.2': 'Пауза, остановка, скрытие',
+  '2.4.3': 'Порядок обхода фокусом',
+  '2.4.4': 'Назначение ссылки',
+  '2.4.7': 'Видимый фокус',
+  '3.1.1': 'Язык страницы',
+  '4.1.2': 'Имя, роль, значение',
+}
+
+export const wcagLabel = (criterion: string): string => WCAG_LABEL[criterion] ?? criterion
+
 export const LIMITATION_LABEL: Record<string, string> = {
   'dynamic-styles': 'динамические стили',
   'parse-error': 'ошибка разбора',
@@ -157,13 +184,8 @@ export const LIMITATION_LABEL: Record<string, string> = {
 
 export const limitationLabel = (reason: string): string => LIMITATION_LABEL[reason] ?? reason
 
-/** Mirror of the analyzer's health weights; used only for ordering, never recomputed into a score. */
-export const SEVERITY_WEIGHT: Record<Severity, number> = {
-  error: 3,
-  warning: 1,
-  info: 0.25,
-  candidate: 0,
-}
+/** Defined in `lib/severity.ts` so the analyzer's tests can reach it; re-exported here, where callers expect it. */
+export { SEVERITY_WEIGHT } from './lib/severity.js'
 
 export const VERDICT_LABEL: Record<'kit-like' | 'kit-candidate' | 'local', string> = {
   'kit-like': 'похож на компонент кита',

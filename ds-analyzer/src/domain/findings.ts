@@ -48,6 +48,18 @@ export const a11ySchema = z.object({
   pattern: z.string().nullable(),
   /** What the user actually loses, in one sentence — not a restatement of the rule. */
   impact: z.string().min(1),
+  /**
+   * What to do about it, in one sentence.
+   *
+   * Deliberately separate from `expected`, which holds a replacement string ready to paste.
+   * Most accessibility problems have no such string: "give the control an accessible name"
+   * is correct advice that no patch can express, because the name depends on what the
+   * control does. Prose in `expected.value` would be offered to the reader as copyable code
+   * and produce broken edits.
+   *
+   * `null` where the remedy is not general enough to state in one sentence.
+   */
+  fix: z.string().nullable(),
 })
 
 export const expectedSchema = z.object({

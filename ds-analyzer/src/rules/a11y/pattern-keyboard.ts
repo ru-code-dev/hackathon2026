@@ -142,6 +142,10 @@ export const patternKeyboardRule: Rule = {
           wcag: ['2.1.1'],
           pattern: role,
           impact: `Виджет ${role} недоступен с клавиатуры: фокус в него попадает, но управлять им нечем.`,
+          // Naming the kit component rather than the APG pattern: the keys are already
+          // implemented there, and "read the specification and write the handlers" is
+          // advice that loses to a one-line import every time.
+          fix: `Возьмите ${best.component} из кита — он уже обрабатывает ${keys}.`,
         },
         impactKey: `a11y.pattern.keyboard:${role}`,
         replaceWith: null,

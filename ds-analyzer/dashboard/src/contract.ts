@@ -24,6 +24,8 @@ export interface A11yFacet {
   wcag: string[]
   pattern: string | null
   impact: string
+  /** One sentence on what to do; prose guidance, never pasteable code. `null` when none. */
+  fix: string | null
 }
 
 export interface Expected {

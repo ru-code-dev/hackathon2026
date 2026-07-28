@@ -1164,6 +1164,26 @@
       "rule": "a11y.contrast.text",
       "subkind": "normalText",
       "actual": "#ffffff на #00d4aa"
+    },
+    {
+      "id": "e305",
+      "stage": "M3",
+      "file": "src/features/settings/SettingsToolbar.tsx",
+      "line": 20,
+      "rule": "a11y.aria.redundant",
+      "actual": " role=\"list\"",
+      "note": "actual is the exact text to delete, leading space included — that is what makes the diff land cleanly"
+    },
+    {
+      "id": "e306",
+      "stage": "M3",
+      "file": "src/features/settings/SettingsToolbar.tsx",
+      "line": 33,
+      "rule": "a11y.aria.invalid",
+      "subkind": "unknownRole",
+      "actual": "role=\"buton\"",
+      "expect": "role=\"button\"",
+      "note": "the correction is offered as a diff: one edit away from a legal role, and unambiguously so"
     }
   ]
 }

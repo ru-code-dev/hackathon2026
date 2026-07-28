@@ -126,6 +126,10 @@ export const dialogFocusRule: Rule = {
           wcag: handlesEscape ? ['2.1.2'] : ['2.1.2', '2.4.3'],
           pattern: 'dialog-modal',
           impact: 'Фокус остаётся заперт вне диалога или не возвращается: пользователь клавиатуры теряет управление.',
+          fix:
+            equivalent === null
+              ? `Допишите недостающее: ${missing.join(', ')}.`
+              : `Возьмите ${equivalent.component} из кита — он закрывается по Escape и сам управляет фокусом.`,
         },
         impactKey: 'a11y.pattern.focus',
         replaceWith: null,

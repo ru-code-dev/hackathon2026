@@ -5,6 +5,7 @@ import { Badge, cx } from './components/ui.js'
 import { readPayload, type Payload } from './data.js'
 import { buildFileGroups, buildProblems } from './lib/model.js'
 import { activeFilters, useViewState, type Screen } from './lib/url-state.js'
+import { A11yScreen } from './screens/A11y.js'
 import { DesignScreen } from './screens/Design.js'
 import { FilesScreen } from './screens/Files.js'
 import { OverviewScreen } from './screens/Overview.js'
@@ -53,11 +54,12 @@ export const App = (): React.ReactElement => {
 
   const counts = useMemo(() => {
     if (payload === null) {
-      return { problems: 0, files: 0 }
+      return { problems: 0, files: 0, a11y: 0 }
     }
     return {
       problems: buildProblems(payload.findings).length,
       files: buildFileGroups(payload.findings).length,
+      a11y: payload.findings.filter((finding) => finding.category === 'a11y').length,
     }
   }, [])
 
@@ -73,6 +75,7 @@ export const App = (): React.ReactElement => {
       if (event.key === '2') reset('problems')
       if (event.key === '3') reset('files')
       if (event.key === '4') reset('design')
+      if (event.key === '5') reset('a11y')
       if (event.key === 'Escape') reset(state.screen)
       if (event.key === '/') {
         event.preventDefault()
@@ -110,6 +113,7 @@ export const App = (): React.ReactElement => {
     { key: 'problems', label: 'План работ', count: counts.problems, hint: 'решения по приоритету' },
     { key: 'files', label: 'По файлам', count: counts.files, hint: 'правки файла сверху вниз' },
     { key: 'design', label: 'Дизайн-система', hint: 'кастомы, палитра, компоненты' },
+    { key: 'a11y', label: 'Доступность', count: counts.a11y, hint: 'клавиатура, имена, контраст' },
   ]
 
   return (
@@ -152,7 +156,7 @@ export const App = (): React.ReactElement => {
         </nav>
 
         <div className="border-t border-border px-4 py-3 text-[11px] leading-relaxed text-faint">
-          1–4 — экраны · / — поиск
+          1–5 — экраны · / — поиск
           <br />
           Esc — сбросить фильтры
         </div>
@@ -204,6 +208,16 @@ export const App = (): React.ReactElement => {
             <FilesScreen payload={data} state={state} go={go} selection={selection} onSelectToggle={toggleSelection} />
           )}
           {state.screen === 'design' && <DesignScreen payload={data} state={state} go={go} navigate={navigate} />}
+          {state.screen === 'a11y' && (
+            <A11yScreen
+              payload={data}
+              state={state}
+              go={go}
+              navigate={navigate}
+              selection={selection}
+              onSelectToggle={toggleSelection}
+            />
+          )}
 
           <PrFlow
             payload={data}

@@ -1,14 +1,18 @@
 import {
+  ariaAttributeNames,
   implicitRoleOf,
   isAbstractRole,
   isKnownAriaAttribute,
   isKnownRole,
   prohibitedPropsOf,
   requiredPropsOf,
+  roleNames,
   roleSupports,
 } from '../../a11y/aria-model.js'
 import type { JsxElement } from '../../domain/observations.js'
+import { editDistance } from '../../shared/edit-distance.js'
 import type { RawFinding, Rule, RuleContext } from '../types.js'
+import { deletionOf, occursOn } from './source-edit.js'
 
 /**
  * ARIA that the specification itself rejects.
@@ -22,6 +26,11 @@ import type { RawFinding, Rule, RuleContext } from '../types.js'
  * Deliberately confined to what the specification calls illegal. "This role is unusual
  * here" is a different, softer claim, and mixing the two would let a debatable warning
  * discredit the ones that are simply facts.
+ *
+ * This is also the one accessibility family where a *patch* is possible rather than advice.
+ * A name that is not in the specification and is one character away from one that is has
+ * exactly one plausible reading, and a role that repeats what the tag already says can only
+ * be deleted. Both are offered as diffs; everything else here still needs a human.
  */
 
 const ariaAttributesOf = (element: JsxElement): string[] =>
@@ -31,6 +40,47 @@ const ariaAttributesOf = (element: JsxElement): string[] =>
 const isHostElement = (element: JsxElement): boolean => /^[a-z]/.test(element.name)
 
 const lineOf = (element: JsxElement, prop: string): number => element.propLines[prop] ?? element.line
+
+const sourceLineOf = (context: RuleContext, file: string, line: number): string | undefined =>
+  context.sources.get(file)?.[line - 1]
+
+/**
+ * The known name the author most plausibly meant, or `null`.
+ *
+ * Two guards, and both are there because a wrong suggestion is worse than none. The
+ * tolerance scales with length, so a five-letter role has to be within one edit while a
+ * long `aria-*` name may be within two — otherwise every short unknown role would acquire a
+ * confident correction to some unrelated one. And a tie is refused outright: if two known
+ * names are equally close, the tool does not know which was meant, and saying so by staying
+ * quiet is the only defensible answer.
+ */
+const nearestKnown = (written: string, known: readonly string[]): string | null => {
+  const tolerance = Math.min(2, Math.max(1, Math.floor(written.length / 3)))
+
+  let best: string | null = null
+  let bestDistance = Number.POSITIVE_INFINITY
+  let tied = false
+
+  for (const candidate of known) {
+    // Levenshtein cannot be smaller than the length gap, so this skips most of the table
+    // without computing anything.
+    if (Math.abs(candidate.length - written.length) > tolerance) {
+      continue
+    }
+
+    const distance = editDistance(written, candidate)
+
+    if (distance < bestDistance) {
+      best = candidate
+      bestDistance = distance
+      tied = false
+    } else if (distance === bestDistance) {
+      tied = true
+    }
+  }
+
+  return best === null || tied || bestDistance > tolerance ? null : best
+}
 
 const base = (
   element: JsxElement,
@@ -60,33 +110,51 @@ export const invalidAriaRule: Rule = {
       const role = element.props['role']
 
       if (typeof role === 'string' && !isKnownRole(role)) {
+        const written = `role="${role}"`
+        const suggestion = isAbstractRole(role) ? null : nearestKnown(role, roleNames())
+        const sourceLine = sourceLineOf(context, element.file, lineOf(element, 'role'))
+        const patchable = suggestion !== null && occursOn(sourceLine, written)
+
         findings.push({
           ...base(element, 'role'),
           rule: 'a11y.aria.invalid',
           subkind: isAbstractRole(role) ? 'abstractRole' : 'unknownRole',
           severity: 'error',
           confidence: 1,
-          actual: `role="${role}"`,
-          expected: null,
+          actual: written,
+          expected:
+            suggestion === null ? null : { token: null, cssVar: null, component: null, value: `role="${suggestion}"` },
           why: isAbstractRole(role)
             ? `role="${role}" — абстрактная роль. Спецификация запрещает ставить её в разметку: ` +
               'она существует только как основа для других ролей, и вспомогательные технологии её игнорируют.'
             : `role="${role}" нет в ARIA 1.2. Атрибут будет проигнорирован, и элемент останется тем, ` +
-              'чем был по своему тегу.',
+              'чем был по своему тегу.' +
+              (suggestion === null ? '' : ` Ближайшая существующая роль — ${suggestion}.`),
           note: null,
-          autoFixable: false,
+          autoFixable: patchable,
           needsAgent: false,
           a11y: {
             wcag: ['4.1.2'],
             pattern: null,
             impact: 'Скринридер объявит элемент не тем, чем он выглядит, либо не объявит вовсе.',
+            fix: isAbstractRole(role)
+              ? 'Замените абстрактную роль на конкретную из ARIA 1.2 либо уберите атрибут.'
+              : suggestion === null
+                ? 'Сверьтесь со списком ролей ARIA 1.2 и поставьте существующую — или уберите атрибут, ' +
+                  'если роль тега уже верна.'
+                : `Исправьте опечатку: role="${suggestion}".`,
           },
           impactKey: `a11y.aria.invalid:role:${role}`,
+          replaceWith: patchable ? `role="${suggestion ?? ''}"` : null,
         })
       }
 
       for (const attribute of ariaAttributesOf(element)) {
         if (!isKnownAriaAttribute(attribute)) {
+          const suggestion = nearestKnown(attribute, ariaAttributeNames())
+          const sourceLine = sourceLineOf(context, element.file, lineOf(element, attribute))
+          const patchable = suggestion !== null && occursOn(sourceLine, attribute)
+
           findings.push({
             ...base(element, attribute),
             rule: 'a11y.aria.invalid',
@@ -94,19 +162,25 @@ export const invalidAriaRule: Rule = {
             severity: 'error',
             confidence: 1,
             actual: attribute,
-            expected: null,
+            expected: suggestion === null ? null : { token: null, cssVar: null, component: null, value: suggestion },
             why:
               `${attribute} нет в ARIA 1.2 — скорее всего опечатка. Атрибут молча игнорируется, ` +
-              'поэтому состояние, которое он должен был передать, не передаётся вообще.',
+              'поэтому состояние, которое он должен был передать, не передаётся вообще.' +
+              (suggestion === null ? '' : ` Ближайший существующий атрибут — ${suggestion}.`),
             note: null,
-            autoFixable: false,
+            autoFixable: patchable,
             needsAgent: false,
             a11y: {
               wcag: ['4.1.2'],
               pattern: null,
               impact: 'Состояние элемента не доходит до вспомогательных технологий.',
+              fix:
+                suggestion === null
+                  ? 'Сверьтесь со списком атрибутов ARIA 1.2: существующего атрибута с таким именем нет.'
+                  : `Исправьте опечатку: ${suggestion}.`,
             },
             impactKey: `a11y.aria.invalid:attr:${attribute}`,
+            replaceWith: patchable ? suggestion : null,
           })
           continue
         }
@@ -135,6 +209,7 @@ export const invalidAriaRule: Rule = {
               wcag: ['4.1.2'],
               pattern: null,
               impact: 'Запрещённый атрибут игнорируется или ломает объявление элемента.',
+              fix: `Уберите ${attribute} — либо смените роль на ту, для которой этот атрибут разрешён.`,
             },
             impactKey: `a11y.aria.invalid:prohibited:${role}:${attribute}`,
           })
@@ -155,6 +230,7 @@ export const invalidAriaRule: Rule = {
               wcag: ['4.1.2'],
               pattern: null,
               impact: 'Атрибут не даёт ничего — состояние остаётся необъявленным.',
+              fix: `Уберите ${attribute} или поставьте роль, которая его поддерживает.`,
             },
             impactKey: `a11y.aria.invalid:unsupported:${role}:${attribute}`,
           })
@@ -204,6 +280,9 @@ export const requiredAriaRule: Rule = {
           wcag: ['4.1.2'],
           pattern: role,
           impact: `Состояние ${role} не передаётся: пользователь скринридера не узнает, включён элемент или нет.`,
+          // Naming the attributes but not their values on purpose: the value is the state,
+          // and only the component's own logic knows it.
+          fix: `Добавьте ${missing.join(', ')} и обновляйте значение вместе с состоянием элемента.`,
         },
         impactKey: `a11y.aria.required:${role}:${missing.join(',')}`,
       })
@@ -231,27 +310,36 @@ export const redundantRoleRule: Rule = {
         continue
       }
 
+      // Both quotings occur in real JSX, and the deletion has to match the file's own.
+      const sourceLine = sourceLineOf(context, element.file, lineOf(element, 'role'))
+      const deletion = deletionOf(sourceLine, `role="${role}"`) ?? deletionOf(sourceLine, `role='${role}'`)
+
       findings.push({
         ...base(element, 'role'),
         rule: 'a11y.aria.redundant',
         subkind: null,
         severity: 'info',
         confidence: 1,
-        actual: `<${element.name} role="${role}">`,
-        expected: { token: null, cssVar: null, component: null, value: `<${element.name}>` },
+        // The text to delete when it was found, so the diff is exact; otherwise the element
+        // as written, which at least says where to look.
+        actual: deletion ?? `<${element.name} role="${role}">`,
+        // No replacement string exists — the fix is a deletion, and offering `<ul>` as
+        // something to paste would invite replacing the whole opening tag.
+        expected: null,
         why:
           `<${element.name}> уже имеет роль ${role}. Атрибут ничего не добавляет и создаёт впечатление, ` +
           'что семантика держится на нём, — при рефакторинге тег заменят, а роль оставят.',
         note: null,
-        autoFixable: true,
+        autoFixable: deletion !== null,
         needsAgent: false,
         a11y: {
           wcag: [],
           pattern: null,
           impact: 'Вреда сейчас нет; риск в том, что явная роль переживёт замену тега.',
+          fix: `Удалите role="${role}": тег <${element.name}> несёт эту роль сам.`,
         },
         impactKey: `a11y.aria.redundant:${element.name}`,
-        replaceWith: null,
+        replaceWith: deletion === null ? null : '',
       })
     }
 

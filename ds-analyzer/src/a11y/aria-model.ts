@@ -56,6 +56,17 @@ const GLOBAL_ARIA_ATTRIBUTES: ReadonlySet<string> = new Set(Object.keys(roleTabl
 
 export const isKnownRole = (role: string): boolean => CONCRETE_ROLES.has(role)
 
+/**
+ * Every legal spelling, sorted — the search space a typo is matched against.
+ *
+ * Returned as data rather than searched here: "which known name did the author mean" is a
+ * judgement about how close is close enough, and that belongs with the rule that has to
+ * defend the suggestion, not with the module that only reports what the specification says.
+ */
+export const roleNames = (): readonly string[] => [...CONCRETE_ROLES].sort()
+
+export const ariaAttributeNames = (): readonly string[] => [...ALL_ARIA_ATTRIBUTES].sort()
+
 export const isAbstractRole = (role: string): boolean => roleTable.get(role) !== undefined && !CONCRETE_ROLES.has(role)
 
 export const isKnownAriaAttribute = (attribute: string): boolean => ALL_ARIA_ATTRIBUTES.has(attribute)

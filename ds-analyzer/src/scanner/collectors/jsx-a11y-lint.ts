@@ -56,6 +56,17 @@ const SUPERSEDED_RULES: ReadonlySet<string> = new Set([
   'role-supports-aria-props',
   // `a11y.name.missing` reasons about accname, including label ancestry and htmlFor.
   'control-has-associated-label',
+  /**
+   * `a11y.aria.redundant` reaches the same verdict and ships the deletion as an applicable
+   * diff, which the plugin's report cannot.
+   *
+   * This one narrows coverage rather than merely relocating it: ours reads an implicit-role
+   * table deliberately restricted to the mappings that hold unconditionally, so a redundant
+   * role on a tag whose role depends on its attributes now goes unreported. That is the
+   * accepted cost. Two findings on one line about one deletion, only one of which can be
+   * applied, is worse for the reader than a narrower rule that always tells the truth.
+   */
+  'no-redundant-roles',
 ])
 
 const enabledRules = (): Record<string, 'error'> =>

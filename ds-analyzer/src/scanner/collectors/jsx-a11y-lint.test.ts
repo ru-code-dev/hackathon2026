@@ -90,9 +90,18 @@ describe('collectJsxA11yLint', () => {
       'aria-role',
       'role-has-required-aria-props',
       'control-has-associated-label',
+      // `a11y.aria.redundant` reaches the same verdict *and* ships the deletion as a diff.
+      // Both firing put two findings on one line about one edit, only one of them appliable.
+      'no-redundant-roles',
     ]) {
       expect(ids).not.toContain(superseded)
     }
+  })
+
+  it('reports a redundant role exactly once across the whole pipeline', () => {
+    // The regression this guards is invisible in either half alone: the plugin rule and the
+    // project's own rule are each correct, and the duplicate only appears in the report.
+    expect(rulesFired('export const W = () => <ul role="list"><li>a</li></ul>')).toStrictEqual([])
   })
 
   it('runs a substantial rule set', () => {

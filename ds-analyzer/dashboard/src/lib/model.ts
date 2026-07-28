@@ -1,4 +1,5 @@
 import { SEVERITY_WEIGHT, type Finding, type FindingCategory, type Severity } from '../data.js'
+import { SEVERITY_RANK } from './severity.js'
 import type { ViewState } from './url-state.js'
 
 /**
@@ -10,7 +11,7 @@ import type { ViewState } from './url-state.js'
  * computed here once, so every screen ranks and counts identically.
  */
 
-export const SEVERITY_RANK: Record<Severity, number> = { error: 0, warning: 1, info: 2, candidate: 3 }
+export { SEVERITY_RANK }
 
 export const worstSeverity = (findings: readonly Finding[]): Severity =>
   findings.reduce<Severity>(

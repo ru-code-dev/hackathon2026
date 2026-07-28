@@ -158,6 +158,13 @@ export const missingAccessibleNameRule: Rule = {
           wcag: ['4.1.2'],
           pattern: null,
           impact: `Пользователь скринридера слышит «${role}» и не узнаёт, что это за элемент.`,
+          // Two different remedies, because the two subkinds fail differently: a `button`
+          // can be named by its own text, a `tabpanel` never can. Telling the second one
+          // to "add some text" would be advice that cannot work.
+          fix: fromContents
+            ? 'Добавьте aria-label с описанием действия — или видимый текст рядом с иконкой.'
+            : `Свяжите элемент с его заголовком через aria-labelledby, либо задайте aria-label: ` +
+              `роль ${role} не берёт имя из содержимого.`,
         },
         impactKey: `a11y.name.missing:${role}`,
         replaceWith: null,

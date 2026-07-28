@@ -9,6 +9,7 @@ import { A11ySpec } from '../../kit/a11y-spec.js'
 import { IconSpec } from '../../kit/icon-spec.js'
 import { KnowledgeSpec } from '../../kit/knowledge-spec.js'
 import { KitSpec } from '../../kit/spec.js'
+import { jsxA11yRuleIds } from '../../scanner/collectors/jsx-a11y-lint.js'
 import { buildSpacingIndex } from '../context.js'
 import type { Rule, RuleContext } from '../types.js'
 import { invalidAriaRule, redundantRoleRule, requiredAriaRule } from './aria.js'
@@ -116,7 +117,15 @@ const profile: ProjectProfile = {
   limitations: [],
 }
 
-const runRule = (rule: Rule, extra: Partial<Observations>, a11y: A11ySpec = dialogSpec) => {
+/** Source text for the file under test, for the rules that build a patch against it. */
+const sourceOf = (...lines: string[]): ReadonlyMap<string, readonly string[]> => new Map([['src/Widget.tsx', lines]])
+
+const runRule = (
+  rule: Rule,
+  extra: Partial<Observations>,
+  a11y: A11ySpec = dialogSpec,
+  sources: ReadonlyMap<string, readonly string[]> = new Map(),
+) => {
   const observations: Observations = {
     $schema: OBSERVATIONS_SCHEMA_ID,
     styleValues: [],
@@ -138,7 +147,7 @@ const runRule = (rule: Rule, extra: Partial<Observations>, a11y: A11ySpec = dial
     a11y,
     profile,
     observations,
-    sources: new Map(),
+    sources,
     spacing: buildSpacingIndex(observations.styleValues),
     elementsByFile: new Map(),
   }
@@ -148,6 +157,10 @@ const runRule = (rule: Rule, extra: Partial<Observations>, a11y: A11ySpec = dial
 
 describe('a11y.aria.invalid', () => {
   const run = (elements: readonly JsxElement[]) => runRule(invalidAriaRule, { jsxElements: [...elements] })
+
+  /** Same, with the element on line 1 of a file whose text is known. */
+  const runOn = (source: string, elements: readonly JsxElement[]) =>
+    runRule(invalidAriaRule, { jsxElements: [...elements] }, dialogSpec, sourceOf(source))
 
   it('reports a role that does not exist', () => {
     const findings = run([element({ name: 'div', props: { role: 'buton' } })])
@@ -165,6 +178,76 @@ describe('a11y.aria.invalid', () => {
     const findings = run([element({ name: 'div', props: { 'aria-labeledby': 'x' } })])
 
     expect(findings[0]?.subkind).toBe('unknownAttribute')
+  })
+
+  describe('typo correction', () => {
+    // The one accessibility family where a patch is possible: a name one character away
+    // from a legal one has exactly one plausible reading.
+
+    it('offers the corrected spelling as a diff', () => {
+      const source = '<div role="buton">'
+      const [finding] = runOn(source, [element({ name: 'div', props: { role: 'buton' }, propLines: { role: 1 } })])
+
+      expect(finding?.expected?.value).toBe('role="button"')
+      expect(finding?.replaceWith).toBe('role="button"')
+      expect(finding?.autoFixable).toBe(true)
+      expect(source.replace(finding?.actual ?? '', finding?.replaceWith ?? '')).toBe('<div role="button">')
+    })
+
+    it('corrects a misspelled attribute the same way', () => {
+      const source = '<div aria-labeledby="t">'
+      const [finding] = runOn(source, [
+        element({ name: 'div', props: { 'aria-labeledby': 't' }, propLines: { 'aria-labeledby': 1 } }),
+      ])
+
+      expect(finding?.replaceWith).toBe('aria-labelledby')
+      expect(finding?.autoFixable).toBe(true)
+    })
+
+    it('claims no fix when the source is not written the way the prop resolved', () => {
+      // `role={KIND}` resolves to a string in the observations; the file says something
+      // else. The finding stands, the patch does not.
+      const [finding] = runOn('<div role={KIND}>', [
+        element({ name: 'div', props: { role: 'buton' }, propLines: { role: 1 } }),
+      ])
+
+      expect(finding?.autoFixable).toBe(false)
+      expect(finding?.replaceWith).toBeNull()
+      // The suggestion itself survives — it is advice, and advice does not need the source.
+      expect(finding?.expected?.value).toBe('role="button"')
+    })
+
+    it('stays silent when no known name is close enough', () => {
+      // Nothing in ARIA is within one edit of `sidebar`, and inventing a correction would
+      // send the reader to a role that means something else entirely.
+      const [finding] = run([element({ name: 'div', props: { role: 'sidebar' } })])
+
+      expect(finding?.expected).toBeNull()
+      expect(finding?.autoFixable).toBe(false)
+    })
+
+    it('refuses a tie rather than guessing which was meant', () => {
+      // `none` and `note` are both one substitution away from this, and they mean opposite
+      // things: one strips semantics, the other adds an annotation. Two equally close
+      // answers is not knowing the answer.
+      const [finding] = run([element({ name: 'div', props: { role: 'nome' } })])
+
+      expect(finding?.subkind).toBe('unknownRole')
+      expect(finding?.expected).toBeNull()
+      expect(finding?.autoFixable).toBe(false)
+    })
+
+    it('never offers a correction for an abstract role', () => {
+      // `widget` exists in the specification; it is simply not usable in markup, so the
+      // remedy is to pick a concrete role — not to fix a spelling that is already right.
+      const [finding] = runOn('<div role="widget">', [
+        element({ name: 'div', props: { role: 'widget' }, propLines: { role: 1 } }),
+      ])
+
+      expect(finding?.subkind).toBe('abstractRole')
+      expect(finding?.expected).toBeNull()
+      expect(finding?.autoFixable).toBe(false)
+    })
   })
 
   it('reports an attribute the role does not support', () => {
@@ -217,6 +300,44 @@ describe('a11y.aria.redundant', () => {
   it('says nothing when the role changes what the tag means', () => {
     expect(run([element({ name: 'div', props: { role: 'button' } })])).toHaveLength(0)
     expect(run([element({ name: 'button', props: { role: 'tab' } })])).toHaveLength(0)
+  })
+
+  describe('as a diff', () => {
+    const runOn = (source: string) =>
+      runRule(
+        redundantRoleRule,
+        { jsxElements: [element({ name: 'ul', props: { role: 'list' }, propLines: { role: 1 } })] },
+        dialogSpec,
+        sourceOf(source),
+      )
+
+    it('deletes the attribute and nothing else', () => {
+      const source = '  <ul role="list" className="items">'
+      const [finding] = runOn(source)
+
+      expect(finding?.autoFixable).toBe(true)
+      expect(finding?.replaceWith).toBe('')
+      expect(source.replace(finding?.actual ?? '', '')).toBe('  <ul className="items">')
+    })
+
+    it('matches single quotes too', () => {
+      expect(runOn("  <ul role='list'>")[0]?.actual).toBe(" role='list'")
+    })
+
+    it('offers no replacement string, because the fix is a removal', () => {
+      // `expected.value` is presented to the reader as something to paste. There is nothing
+      // to paste here, and offering `<ul>` would invite replacing the whole opening tag.
+      expect(runOn('  <ul role="list">')[0]?.expected).toBeNull()
+    })
+
+    it('is not auto-fixable when the source cannot be seen', () => {
+      const [finding] = run([element({ name: 'ul', props: { role: 'list' } })])
+
+      expect(finding?.autoFixable).toBe(false)
+      expect(finding?.replaceWith).toBeNull()
+      // Still says where to look, so the finding remains usable without the patch.
+      expect(finding?.actual).toBe('<ul role="list">')
+    })
   })
 })
 
@@ -577,5 +698,61 @@ describe('a11y.lint', () => {
     ])
 
     expect(new Set(findings.map((finding) => finding.impactKey)).size).toBe(1)
+  })
+
+  it('says what to do for every rule that is actually enabled', () => {
+    // The invariant that keeps the table honest as the plugin moves. Enabling a rule
+    // without writing its remedy fails here rather than shipping a finding whose only
+    // guidance is a restatement of the violation.
+    const unguided = jsxA11yRuleIds().filter((rule) => (run([{ rule, message: 'x' }])[0]?.a11y?.fix ?? null) === null)
+
+    expect(unguided).toStrictEqual([])
+  })
+
+  it('leaves guidance off a rule it has not classified', () => {
+    // Inventing advice for a rule nobody has read would be worse than admitting there is
+    // none — the finding still reports.
+    expect(run([{ rule: 'some-future-rule', message: 'x' }])[0]?.a11y?.fix).toBeNull()
+  })
+
+  describe('mechanical fixes', () => {
+    const runOn = (rule: string, source: string, needle: string) =>
+      runRule(
+        jsxA11yLintRule,
+        {
+          lintMessages: [{ rule, message: 'x', file: 'src/Widget.tsx', line: 1, column: source.indexOf(needle) + 1 }],
+        },
+        dialogSpec,
+        sourceOf(source),
+      )
+
+    it('carries a patch for a positive tabIndex', () => {
+      const source = '  <a href="/x" tabIndex={3}>go</a>'
+      const [finding] = runOn('tabindex-no-positive', source, 'tabIndex')
+
+      expect(finding?.autoFixable).toBe(true)
+      expect(source.replace(finding?.actual ?? '', finding?.replaceWith ?? '')).toBe(
+        '  <a href="/x" tabIndex={0}>go</a>',
+      )
+    })
+
+    it('carries a patch for autoFocus', () => {
+      const source = '  <input autoFocus name="q" />'
+      const [finding] = runOn('no-autofocus', source, 'autoFocus')
+
+      expect(finding?.autoFixable).toBe(true)
+      expect(finding?.expected).toBeNull()
+      expect(source.replace(finding?.actual ?? '', finding?.replaceWith ?? '')).toBe('  <input name="q" />')
+    })
+
+    it('keeps the linter’s message as `actual` when there is no patch', () => {
+      // `actual` is prose for most of this rule family, which is exactly why it can never
+      // match the source and no diff is ever produced by accident.
+      const [finding] = runOn('alt-text', '  <img src="a.png" />', '<img')
+
+      expect(finding?.actual).toBe('x')
+      expect(finding?.autoFixable).toBe(false)
+      expect(finding?.replaceWith).toBeNull()
+    })
   })
 })
