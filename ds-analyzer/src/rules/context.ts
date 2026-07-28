@@ -6,6 +6,7 @@ import type { JsxElement, Observations, StyleValue } from '../domain/observation
 import type { ProjectProfile } from '../domain/profile.js'
 import { A11ySpec } from '../kit/a11y-spec.js'
 import { IconSpec } from '../kit/icon-spec.js'
+import { KnowledgeSpec } from '../kit/knowledge-spec.js'
 import type { KitSpec } from '../kit/spec.js'
 import { fromProjectPath } from '../shared/path.js'
 import { parseDimension } from '../tokens/dimension.js'
@@ -188,10 +189,13 @@ export const buildRuleContext = (input: {
   readonly a11y?: A11ySpec
   /** Omitted by callers that have not built `kit-icons.json`; degrades, never throws. */
   readonly icons?: IconSpec
+  /** Omitted by callers that have not built `kit-signatures.json`; degrades, never throws. */
+  readonly knowledge?: KnowledgeSpec
 }): RuleContext => ({
   kit: input.kit,
   a11y: input.a11y ?? A11ySpec.unavailable(),
   icons: input.icons ?? IconSpec.unavailable(),
+  knowledge: input.knowledge ?? KnowledgeSpec.unavailable(),
   profile: input.profile,
   observations: input.observations,
   sources: readSources(input.profile.root, input.observations.files),

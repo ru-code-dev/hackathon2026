@@ -8,6 +8,7 @@ import type { ProjectProfile } from '../../domain/profile.js'
 import { svgFingerprint } from '../../icons/fingerprint.js'
 import { A11ySpec } from '../../kit/a11y-spec.js'
 import { IconSpec } from '../../kit/icon-spec.js'
+import { KnowledgeSpec } from '../../kit/knowledge-spec.js'
 import { KitSpec } from '../../kit/spec.js'
 import { buildSpacingIndex } from '../context.js'
 import type { RuleContext } from '../types.js'
@@ -135,6 +136,7 @@ const contextFor = (
   return {
     kit,
     icons: options.icons ?? icons,
+    knowledge: KnowledgeSpec.unavailable(),
     svg: options.svg ?? (() => null),
     a11y: A11ySpec.unavailable(),
     profile,

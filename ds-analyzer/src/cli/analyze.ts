@@ -8,6 +8,7 @@ import { projectProfileSchema } from '../domain/profile.js'
 import { validateArtifact } from '../domain/validate.js'
 import { A11ySpec } from '../kit/a11y-spec.js'
 import { IconSpec } from '../kit/icon-spec.js'
+import { KnowledgeSpec } from '../kit/knowledge-spec.js'
 import { KitSpec } from '../kit/spec.js'
 import { defaultArtifactsDir } from '../config.js'
 import { scanProject } from '../scanner/scan.js'
@@ -88,6 +89,7 @@ const main = async (): Promise<void> => {
   const kit = KitSpec.load(artifactsDir)
   const a11y = A11ySpec.load(artifactsDir)
   const icons = IconSpec.load(artifactsDir)
+  const knowledge = KnowledgeSpec.load(artifactsDir)
 
   const { profile, observations } = scanProject({
     path: args.path,
@@ -106,6 +108,7 @@ const main = async (): Promise<void> => {
     kit,
     a11y,
     icons,
+    knowledge,
     profile,
     observations,
     disabledRules,

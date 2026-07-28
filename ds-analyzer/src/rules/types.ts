@@ -3,6 +3,7 @@ import type { Declaration, ImportRecord, JsxElement, Observations, StyleValue } 
 import type { Limitation, ProjectProfile } from '../domain/profile.js'
 import type { A11ySpec } from '../kit/a11y-spec.js'
 import type { IconSpec } from '../kit/icon-spec.js'
+import type { KnowledgeSpec } from '../kit/knowledge-spec.js'
 import type { KitSpec } from '../kit/spec.js'
 
 /**
@@ -81,6 +82,8 @@ export interface RuleContext {
   readonly kit: KitSpec
   /** Kit icon geometry index; `available === false` when `kit-icons.json` is not built. */
   readonly icons: IconSpec
+  /** Kit component signatures; `available === false` when `kit-signatures.json` is not built. */
+  readonly knowledge: KnowledgeSpec
   /**
    * Contents of an `.svg` file referenced from `fromFile` by a relative or root-absolute
    * path; `null` when unresolvable. Reading happens in the context builder — rules stay

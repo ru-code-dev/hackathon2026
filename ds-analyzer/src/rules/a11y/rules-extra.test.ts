@@ -7,6 +7,7 @@ import type { KitA11yArtifact } from '../../domain/kit-a11y.js'
 import type { ProjectProfile } from '../../domain/profile.js'
 import { A11ySpec } from '../../kit/a11y-spec.js'
 import { IconSpec } from '../../kit/icon-spec.js'
+import { KnowledgeSpec } from '../../kit/knowledge-spec.js'
 import { KitSpec } from '../../kit/spec.js'
 import { buildSpacingIndex } from '../context.js'
 import type { Rule, RuleContext } from '../types.js'
@@ -132,6 +133,7 @@ const runRule = (rule: Rule, extra: Partial<Observations>, a11y: A11ySpec = dial
   const context: RuleContext = {
     kit,
     icons: IconSpec.unavailable(),
+    knowledge: KnowledgeSpec.unavailable(),
     svg: () => null,
     a11y,
     profile,

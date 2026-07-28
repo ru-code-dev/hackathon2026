@@ -1049,7 +1049,7 @@
       "note": "name collides exactly with a kit component"
     },
     {
-      "id": "e206",
+      "id": "e210",
       "stage": "M3",
       "file": "src/shared/ui/InfoGlyph.tsx",
       "line": 11,

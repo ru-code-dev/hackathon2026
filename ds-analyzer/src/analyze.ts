@@ -3,6 +3,7 @@ import type { Observations } from './domain/observations.js'
 import type { ProjectProfile } from './domain/profile.js'
 import type { A11ySpec } from './kit/a11y-spec.js'
 import type { IconSpec } from './kit/icon-spec.js'
+import type { KnowledgeSpec } from './kit/knowledge-spec.js'
 import type { KitSpec } from './kit/spec.js'
 import { buildSummary } from './metrics/health.js'
 import { buildUsage } from './metrics/usage.js'
@@ -24,6 +25,8 @@ export interface AnalyzeInput {
   readonly a11y?: A11ySpec
   /** Kit icon geometry; omitted when `kit-icons.json` has not been built. */
   readonly icons?: IconSpec
+  /** Kit component signatures; omitted when `kit-signatures.json` has not been built. */
+  readonly knowledge?: KnowledgeSpec
   /** Rule ids switched off in `ds.config.json`. */
   readonly disabledRules?: ReadonlySet<string>
   /** Finding ids the project has decided to live with. */

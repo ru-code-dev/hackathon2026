@@ -7,6 +7,7 @@ import { styleOverrideRule } from './api/overrides.js'
 import { suppressedFocusRule } from './a11y/focus.js'
 import { patternKeyboardRule } from './a11y/pattern-keyboard.js'
 import { foreignIconPackRule, foreignSvgFileRule, inlineSvgRule } from './icons/icons.js'
+import { customComponentRule, novelComponentRule } from './components/custom.js'
 import { invalidAriaRule, redundantRoleRule, requiredAriaRule } from './a11y/aria.js'
 import { ariaRelationsRule } from './a11y/relations.js'
 import { dialogFocusRule } from './a11y/dialog.js'
@@ -58,6 +59,8 @@ export const RULES: readonly Rule[] = [
   inlineSvgRule,
   foreignSvgFileRule,
   foreignIconPackRule,
+  customComponentRule,
+  novelComponentRule,
 ]
 
 /** Stable, zero-padded so that lexical order matches numeric order in the dashboard. */

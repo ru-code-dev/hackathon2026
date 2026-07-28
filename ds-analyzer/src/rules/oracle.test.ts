@@ -6,6 +6,8 @@ import { analyze } from '../analyze.js'
 import { analyzerRoot, resolvePaths } from '../config.js'
 import type { AnalysisArtifact } from '../domain/findings.js'
 import { A11ySpec } from '../kit/a11y-spec.js'
+import { IconSpec } from '../kit/icon-spec.js'
+import { KnowledgeSpec } from '../kit/knowledge-spec.js'
 import { KitSpec } from '../kit/spec.js'
 import { scanProject } from '../scanner/scan.js'
 import { formatMismatches, loadOracle, scoreAgainstOracle, type Oracle } from '../testing/oracle.js'
@@ -31,13 +33,16 @@ describe('deviation detection against the demo-app oracle', () => {
 
     const artifactsDir = resolvePaths().artifactsDir
     const kit = KitSpec.load(artifactsDir)
-    // Loaded here rather than defaulted away: the accessibility rules only speak when there
-    // is upstream evidence behind them, so an oracle run without it would score rules that
-    // had been silently switched off.
+    // Loaded here rather than defaulted away: these rule families only speak when their
+    // artifact exists, so an oracle run without them would score rules that had been
+    // silently switched off — and a sub-threshold number of missing expectations would
+    // pass unnoticed.
     const a11y = A11ySpec.load(artifactsDir)
+    const icons = IconSpec.load(artifactsDir)
+    const knowledge = KnowledgeSpec.load(artifactsDir)
     const { profile, observations } = scanProject({ path: DEMO_APP })
 
-    analysis = analyze({ kit, a11y, profile, observations })
+    analysis = analyze({ kit, a11y, icons, knowledge, profile, observations })
   })
 
   it('reaches the agreed precision and recall on the token and API rules', () => {
@@ -45,6 +50,13 @@ describe('deviation detection against the demo-app oracle', () => {
 
     // The message carries every disagreement, so a regression says what changed rather
     // than only that a number moved.
+    expect(score.recall, formatMismatches(score)).toBeGreaterThanOrEqual(THRESHOLD)
+    expect(score.precision, formatMismatches(score)).toBeGreaterThanOrEqual(THRESHOLD)
+  })
+
+  it('reaches the agreed precision and recall on the component rules', () => {
+    const score = scoreAgainstOracle(oracle, analysis.findings, 'M5')
+
     expect(score.recall, formatMismatches(score)).toBeGreaterThanOrEqual(THRESHOLD)
     expect(score.precision, formatMismatches(score)).toBeGreaterThanOrEqual(THRESHOLD)
   })
@@ -97,8 +109,12 @@ describe('deviation detection against the demo-app oracle', () => {
     const artifactsDir = resolvePaths().artifactsDir
     const kit = KitSpec.load(artifactsDir)
     const a11y = A11ySpec.load(artifactsDir)
+    const icons = IconSpec.load(artifactsDir)
+    const knowledge = KnowledgeSpec.load(artifactsDir)
     const { profile, observations } = scanProject({ path: DEMO_APP })
 
-    expect(JSON.stringify(analyze({ kit, a11y, profile, observations }))).toBe(JSON.stringify(analysis))
+    expect(JSON.stringify(analyze({ kit, a11y, icons, knowledge, profile, observations }))).toBe(
+      JSON.stringify(analysis),
+    )
   })
 })

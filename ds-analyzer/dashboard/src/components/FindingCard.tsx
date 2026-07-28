@@ -80,6 +80,29 @@ export const FindingDetail = ({
         </div>
       )}
 
+      {finding.candidates.length > 0 && (
+        <div className="mx-4 mb-3 rounded-md border border-border bg-bg/40 px-3 py-2.5">
+          <div className="mb-1.5 text-[12px] font-medium text-muted">Кандидаты из кита</div>
+          <div className="space-y-1.5">
+            {finding.candidates.map((candidate) => (
+              <div key={candidate.component} className="flex items-center gap-2.5 text-[12.5px]">
+                <span className="w-28 shrink-0 truncate font-mono">{candidate.component}</span>
+                <span className="h-1.5 w-24 shrink-0 overflow-hidden rounded-full bg-surface-2">
+                  <span
+                    className="block h-full rounded-full bg-accent/80"
+                    style={{ width: `${String(Math.round(Math.min(1, candidate.score) * 100))}%` }}
+                  />
+                </span>
+                <span className="w-10 shrink-0 tabular-nums text-faint">{candidate.score.toFixed(2)}</span>
+                <span className="min-w-0 flex-1 truncate text-muted" title={candidate.reasons.join('; ')}>
+                  {candidate.reasons.join('; ')}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {finding.rootCause !== null && (
         <button
           type="button"

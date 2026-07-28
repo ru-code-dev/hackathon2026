@@ -3,7 +3,14 @@ import { useMemo, useState } from 'react'
 import { Highlighted } from '../components/FindingCard.js'
 import { ScaleHistogram } from '../components/charts.js'
 import { Badge, Card, CardHeader, CopyButton, Disclosure, EmptyState, cx } from '../components/ui.js'
-import { NAME_MATCH_LABEL, VERDICT_LABEL, subkindLabel, type CustomComponent, type Payload } from '../data.js'
+import {
+  NAME_MATCH_LABEL,
+  VERDICT_LABEL,
+  subkindLabel,
+  type CustomComponent,
+  type Finding,
+  type Payload,
+} from '../data.js'
 import type { ViewState } from '../lib/url-state.js'
 
 /**
@@ -156,9 +163,12 @@ const dimensionsFrom = (payload: Payload): { px: number; count: number }[] => {
  */
 const CustomComponentCard = ({
   component,
+  finding,
   navigate,
 }: {
   component: CustomComponent
+  /** The component-rule finding for this declaration, when the scorer produced one. */
+  finding: Finding | null
   navigate: (patch: Partial<ViewState>) => void
 }): React.ReactElement => {
   const [showCode, setShowCode] = useState(false)
@@ -211,7 +221,35 @@ const CustomComponentCard = ({
             <div className="min-w-0 border-t border-border lg:border-l lg:border-t-0">
               <div className="border-b border-border px-4 py-2 text-[12px] text-faint">Что предлагает кит</div>
               <div className="space-y-2.5 p-4 text-[12.5px] leading-relaxed">
-                {component.nameMatch !== null ? (
+                {finding !== null ? (
+                  <>
+                    <p className="text-muted">{finding.why}</p>
+                    {finding.candidates.length > 0 && (
+                      <div className="space-y-1.5">
+                        {finding.candidates.map((candidate) => (
+                          <div key={candidate.component} className="flex items-center gap-2.5">
+                            <span className="w-28 shrink-0 truncate font-mono text-fg">{candidate.component}</span>
+                            <span className="h-1.5 w-20 shrink-0 overflow-hidden rounded-full bg-surface-2">
+                              <span
+                                className="block h-full rounded-full bg-accent/80"
+                                style={{ width: `${String(Math.round(Math.min(1, candidate.score) * 100))}%` }}
+                              />
+                            </span>
+                            <span className="w-10 shrink-0 tabular-nums text-[12px] text-faint">
+                              {candidate.score.toFixed(2)}
+                            </span>
+                            <span
+                              className="min-w-0 flex-1 truncate text-[12px] text-muted"
+                              title={candidate.reasons.join('; ')}
+                            >
+                              {candidate.reasons.join('; ')}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                ) : component.nameMatch !== null ? (
                   <>
                     <p>
                       <span className="font-mono text-fg">{component.nameMatch.component}</span>{' '}
@@ -242,8 +280,8 @@ const CustomComponentCard = ({
                 )}
 
                 <div className="rounded-md border border-dashed border-border-strong px-3 py-2.5 text-faint">
-                  Код замены появится на этапе ИИ-анализа (M5): скоринг по структуре, пропам и ARIA, а не только по
-                  имени.
+                  Готовый код замены соберёт ИИ-этап (M6) — статический скоринг по имени, ARIA, пропам и структуре уже
+                  отработал.
                 </div>
 
                 <div className="flex flex-wrap gap-1.5 pt-1">
@@ -282,6 +320,25 @@ export const DesignScreen = ({
   const dimensions = useMemo(() => dimensionsFrom(payload), [payload])
   const iconGroups = useMemo(() => iconGroupsFrom(payload), [payload])
 
+  // The scorer's verdict per local component, for the custom-component cards.
+  const componentFindings = useMemo(() => {
+    const byName = new Map<string, Finding>()
+    for (const finding of payload.findings) {
+      if (finding.category === 'component' && !byName.has(finding.actual)) {
+        byName.set(finding.actual, finding)
+      }
+    }
+    return byName
+  }, [payload])
+
+  const novel = useMemo(
+    () =>
+      payload.findings.filter(
+        (finding) => finding.rule === 'component.novel' || finding.rule === 'component.duplicate',
+      ),
+    [payload],
+  )
+
   const { usage } = payload
   const selected = usage.components.find((component) => component.name === state.component) ?? null
 
@@ -303,6 +360,40 @@ export const DesignScreen = ({
           кит мог бы забрать себе. Каждая строка ведёт в план работ или в файл.
         </p>
 
+        {novel.length > 0 && (
+          <Card>
+            <CardHeader
+              title="Кандидаты в дизайн-систему"
+              hint="компоненты без аналога в ките, которые проект переиспользует или уже дублирует — выход для команды кита, а не претензия к продукту"
+            />
+            <ul>
+              {novel.map((finding) => (
+                <li key={finding.id} className="border-t border-border first:border-t-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigate({ screen: 'problems', group: finding.impactKey })
+                    }}
+                    className="flex w-full items-start gap-3 px-4 py-2.5 text-left transition-colors hover:bg-surface-2/50"
+                  >
+                    <Badge tone="candidate" className="mt-0.5">
+                      {finding.rule === 'component.duplicate' ? 'дубли' : 'кандидат'}
+                    </Badge>
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-mono text-[13px] font-medium">{finding.actual}</span>
+                      <span className="block text-[12.5px] leading-relaxed text-muted">{finding.why}</span>
+                      {finding.note !== null && <span className="block text-[11.5px] text-faint">{finding.note}</span>}
+                    </span>
+                    <span className="shrink-0 font-mono text-[11px] text-faint">
+                      {finding.file}:{finding.line}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        )}
+
         {/* Custom components — the part the ds team scrolls to first. */}
         <Card>
           <CardHeader
@@ -319,7 +410,12 @@ export const DesignScreen = ({
                     Похожи на компоненты кита — проверить на дубль ({kitLike.length})
                   </h3>
                   {kitLike.map((component) => (
-                    <CustomComponentCard key={component.name} component={component} navigate={navigate} />
+                    <CustomComponentCard
+                      key={component.name}
+                      component={component}
+                      finding={componentFindings.get(component.name) ?? null}
+                      navigate={navigate}
+                    />
                   ))}
                 </div>
               )}
@@ -330,7 +426,12 @@ export const DesignScreen = ({
                     Кандидаты на добавление в дизайн-систему ({candidates.length})
                   </h3>
                   {candidates.map((component) => (
-                    <CustomComponentCard key={component.name} component={component} navigate={navigate} />
+                    <CustomComponentCard
+                      key={component.name}
+                      component={component}
+                      finding={componentFindings.get(component.name) ?? null}
+                      navigate={navigate}
+                    />
                   ))}
                 </div>
               )}
@@ -341,7 +442,12 @@ export const DesignScreen = ({
                     {VERDICT_LABEL.local} ({locals.length})
                   </h3>
                   {locals.map((component) => (
-                    <CustomComponentCard key={component.name} component={component} navigate={navigate} />
+                    <CustomComponentCard
+                      key={component.name}
+                      component={component}
+                      finding={componentFindings.get(component.name) ?? null}
+                      navigate={navigate}
+                    />
                   ))}
                 </div>
               )}
