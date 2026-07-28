@@ -76,11 +76,12 @@ export const OverviewScreen = ({
   return (
     <div className="ds-enter h-full overflow-y-auto">
       <div className="mx-auto max-w-6xl space-y-4 p-5">
-        {/* Verdict strip: eight uniform cards, 4×2, no holes. All shares of components use
-            one denominator — every rendered component element — so the numbers agree. */}
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {/* Verdict strip: health plus eight cards — a 3×3 grid with no holes (on mobile the
+            health card spans the full row). All component shares use one denominator —
+            every rendered component element — so the numbers agree. */}
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
           <div
-            className="flex min-w-0 items-center gap-4 rounded-[var(--radius-card)] border border-border bg-surface/80 px-4 py-3"
+            className="col-span-2 flex min-w-0 items-center gap-4 rounded-[var(--radius-card)] border border-border bg-surface/80 px-4 py-3 lg:col-span-1"
             title={summary.healthFormula}
           >
             <HealthRing score={summary.healthScore} size={76} />
@@ -151,6 +152,14 @@ export const OverviewScreen = ({
             detail="доля стилевых значений через var(--токен), остальное — сырые литералы"
             onClick={() => {
               navigate({ screen: 'design' })
+            }}
+          />
+          <MetricCard
+            label="Доступность"
+            value={summary.findings.byCategory.a11y}
+            detail="нарушений a11y: фокус, клавиатура, ARIA, имена, контраст · клик — план с фильтром"
+            onClick={() => {
+              navigate({ screen: 'problems', category: 'a11y' })
             }}
           />
         </div>
