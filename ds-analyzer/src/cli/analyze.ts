@@ -13,6 +13,7 @@ import { scanProject } from '../scanner/scan.js'
 import { loadDsConfig } from '../scanner/ds-config.js'
 import { renderDashboard } from '../report/render.js'
 import { writeJsonFile } from '../shared/fs.js'
+import { detectGitBranch, detectGitRemote } from '../shared/git.js'
 
 /**
  * `tsx src/cli/analyze.ts <path> [--out <dir>] [--exclude <glob>]… [--no-dashboard]`
@@ -124,11 +125,17 @@ const main = async (): Promise<void> => {
   let dashboardPath: string | null = null
   if (!args.skipDashboard) {
     try {
+      // The PR target is the analyzed repository itself: remote and branch are read off
+      // its checkout, with `ds.config.json` as an explicit override for the odd setup.
       const html = await renderDashboard({
         profile,
         analysis,
         generatedAt: new Date().toISOString().slice(0, 10),
-        ci: dsConfig.ci ?? null,
+        ci: {
+          ...(dsConfig.ci ?? {}),
+          repositoryUrl: dsConfig.ci?.repositoryUrl ?? detectGitRemote(profile.root) ?? undefined,
+          targetBranch: dsConfig.ci?.targetBranch ?? detectGitBranch(profile.root) ?? undefined,
+        },
       })
       dashboardPath = join(outputDirectory, 'dashboard.html')
       await mkdir(outputDirectory, { recursive: true })

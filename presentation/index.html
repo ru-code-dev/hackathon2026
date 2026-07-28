@@ -1,0 +1,988 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ds-analyzer — аудит дизайн-системы</title>
+<style>
+/* ─────────────────────────────  базис  ───────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+
+:root {
+  --bg:        #07080c;
+  --bg-2:      #0d0f16;
+  --card:      #12141d;
+  --card-2:    #161926;
+  --line:      #242838;
+  --fg:        #e9ebf2;
+  --fg-dim:    #a5adc2;
+  --fg-mute:   #6f7791;
+
+  --violet:    #8b5cf6;
+  --cyan:      #22d3ee;
+  --pink:      #ff1f78;
+  --green:     #34d399;
+  --amber:     #fbbf24;
+  --red:       #f87171;
+  --blue:      #60a5fa;
+
+  --mono: "JetBrains Mono", "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+  --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--sans);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* фон: мягкие световые пятна */
+body::before {
+  content: "";
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(900px 600px at 12% -10%, rgba(139,92,246,.20), transparent 60%),
+    radial-gradient(800px 600px at 92% 8%,  rgba(34,211,238,.14), transparent 60%),
+    radial-gradient(900px 700px at 60% 115%, rgba(255,31,120,.12), transparent 60%);
+}
+
+/* ─────────────────────────────  сцена  ───────────────────────────── */
+#stage {
+  position: fixed; inset: 0; z-index: 1;
+  display: grid; place-items: center;
+}
+#deck {
+  position: relative;
+  width: 1280px; height: 720px;
+  transform-origin: center center;
+}
+.slide {
+  position: absolute; inset: 0;
+  padding: 58px 72px;
+  display: none;
+  flex-direction: column;
+  opacity: 0;
+  overflow: hidden;
+}
+.slide.on { display: flex; animation: in .45s cubic-bezier(.2,.7,.3,1) forwards; }
+@keyframes in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+.slide > * { animation: rise .5s cubic-bezier(.2,.7,.3,1) backwards; }
+.slide.on > *:nth-child(1) { animation-delay: .04s; }
+.slide.on > *:nth-child(2) { animation-delay: .10s; }
+.slide.on > *:nth-child(3) { animation-delay: .16s; }
+.slide.on > *:nth-child(4) { animation-delay: .22s; }
+.slide.on > *:nth-child(5) { animation-delay: .28s; }
+.slide.on > *:nth-child(6) { animation-delay: .34s; }
+@keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+
+/* ─────────────────────────────  типографика  ───────────────────────────── */
+h1 { font-size: 72px; line-height: 1.02; margin: 0; letter-spacing: -.03em; font-weight: 800; }
+h2 { font-size: 44px; line-height: 1.08; margin: 0 0 8px; letter-spacing: -.025em; font-weight: 750; }
+h3 { font-size: 21px; margin: 0 0 6px; font-weight: 650; letter-spacing: -.01em; }
+p  { margin: 0; font-size: 19px; line-height: 1.5; color: var(--fg-dim); }
+b, strong { color: var(--fg); font-weight: 650; }
+code, .mono { font-family: var(--mono); }
+
+.eyebrow {
+  font-size: 13px; letter-spacing: .17em; text-transform: uppercase;
+  color: var(--fg-mute); font-weight: 650; margin-bottom: 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.eyebrow::before {
+  content: ""; width: 26px; height: 2px; border-radius: 2px;
+  background: linear-gradient(90deg, var(--violet), var(--cyan));
+}
+.lead { font-size: 23px; line-height: 1.45; color: var(--fg-dim); max-width: 60ch; }
+.grad {
+  background: linear-gradient(100deg, #a78bfa 0%, #22d3ee 52%, #ff1f78 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.hl { color: var(--fg); border-bottom: 2px solid rgba(139,92,246,.55); }
+
+/* ─────────────────────────────  сетки и карточки  ───────────────────────────── */
+.body { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+.grid { display: grid; gap: 18px; }
+.g2 { grid-template-columns: 1fr 1fr; }
+.g3 { grid-template-columns: repeat(3, 1fr); }
+.g4 { grid-template-columns: repeat(4, 1fr); }
+
+.card {
+  background: linear-gradient(160deg, var(--card), var(--card-2));
+  border: 1px solid var(--line);
+  border-radius: 16px; padding: 22px 24px;
+  position: relative; overflow: hidden;
+}
+.card.tint::after {
+  content: ""; position: absolute; inset: 0 auto auto 0; width: 100%; height: 2px;
+  background: linear-gradient(90deg, var(--violet), transparent);
+}
+.card .num { font-size: 40px; font-weight: 800; letter-spacing: -.03em; line-height: 1; }
+.card p { font-size: 16px; line-height: 1.45; }
+.card .kicker { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--fg-mute); font-weight: 650; }
+
+.pill {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 12px; border-radius: 999px; font-size: 13px; font-weight: 600;
+  border: 1px solid var(--line); background: rgba(255,255,255,.03); color: var(--fg-dim);
+}
+.dot { width: 7px; height: 7px; border-radius: 50%; }
+
+.chip { font-family: var(--mono); font-size: 13px; padding: 4px 9px; border-radius: 7px;
+        background: rgba(255,255,255,.05); border: 1px solid var(--line); color: var(--fg-dim); }
+
+/* ─────────────────────────────  терминал  ───────────────────────────── */
+.term {
+  background: #05060a; border: 1px solid var(--line); border-radius: 14px;
+  font-family: var(--mono); font-size: 15px; line-height: 1.65; overflow: hidden;
+}
+.term .bar { display: flex; gap: 7px; padding: 11px 14px; border-bottom: 1px solid var(--line); background: rgba(255,255,255,.02); }
+.term .bar i { width: 11px; height: 11px; border-radius: 50%; display: block; }
+.term .out { padding: 16px 20px; white-space: pre; color: var(--fg-dim); }
+.term .out .c { color: var(--cyan); }
+.term .out .v { color: var(--violet); }
+.term .out .g { color: var(--green); }
+.term .out .a { color: var(--amber); }
+.term .out .r { color: var(--red); }
+.term .out .w { color: var(--fg); }
+.term .out .m { color: var(--fg-mute); }
+
+/* ─────────────────────────────  прочее  ───────────────────────────── */
+.kv { display: flex; align-items: baseline; gap: 12px; font-size: 17px; }
+.kv .k { color: var(--fg-mute); min-width: 132px; font-size: 15px; }
+
+.bar-track { height: 8px; border-radius: 99px; background: rgba(255,255,255,.06); overflow: hidden; }
+.bar-fill  { height: 100%; border-radius: 99px; }
+
+.list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 11px; }
+.list li { display: flex; gap: 12px; font-size: 17px; line-height: 1.45; color: var(--fg-dim); }
+.list li .mk { flex: none; width: 22px; text-align: center; font-weight: 700; }
+
+.note {
+  border-left: 3px solid var(--violet); padding: 4px 0 4px 16px;
+  font-size: 17px; color: var(--fg-dim); line-height: 1.5;
+}
+
+/* ─────────────────────────────  хром презентации  ───────────────────────────── */
+#chrome { position: fixed; inset: auto 0 0 0; z-index: 5; pointer-events: none; }
+#prog { height: 3px; background: linear-gradient(90deg, var(--violet), var(--cyan), var(--pink)); width: 0; transition: width .35s ease; }
+#meta {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 22px; font-size: 12px; color: var(--fg-mute); font-family: var(--mono);
+}
+#hint { opacity: .55; }
+
+#nav { position: fixed; inset: 0; z-index: 4; display: flex; }
+#nav div { flex: 1; cursor: pointer; }
+
+/* обзор слайдов */
+#overview {
+  position: fixed; inset: 0; z-index: 9; background: rgba(5,6,10,.96);
+  display: none; grid-template-columns: repeat(5, 1fr); gap: 14px;
+  padding: 34px; overflow: auto; align-content: start;
+}
+#overview.on { display: grid; }
+#overview button {
+  background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+  color: var(--fg-dim); text-align: left; padding: 14px; cursor: pointer;
+  font-family: var(--sans); font-size: 13px; line-height: 1.35; min-height: 84px;
+}
+#overview button:hover { border-color: var(--violet); color: var(--fg); }
+#overview button i { display: block; font-style: normal; font-family: var(--mono); font-size: 11px; color: var(--fg-mute); margin-bottom: 6px; }
+</style>
+</head>
+<body>
+
+<div id="stage"><div id="deck">
+
+<!-- ══════════════ 1 · титул ══════════════ -->
+<section class="slide" data-title="Титул">
+  <div class="body" style="justify-content:center">
+    <div class="pill" style="align-self:flex-start; margin-bottom:26px">
+      <span class="dot" style="background:var(--green)"></span> Хакатон · 2026
+    </div>
+    <h1>Дизайн-система<br>под <span class="grad">контролем</span></h1>
+    <p class="lead" style="margin-top:26px; font-size:26px">
+      Инструмент, который берёт любой React-проект и за секунды показывает,
+      <b>где он разошёлся с дизайн-системой</b> — и что именно с этим делать.
+    </p>
+    <div style="display:flex; gap:12px; margin-top:34px">
+      <span class="chip">без сервера</span>
+      <span class="chip">без установки зависимостей проекта</span>
+      <span class="chip">без единого токена LLM</span>
+      <span class="chip">любой UI-кит через адаптер</span>
+    </div>
+  </div>
+  <div style="display:flex; justify-content:space-between; align-items:flex-end; color:var(--fg-mute); font-size:14px">
+    <span class="mono">ds-analyzer</span>
+    <span>→ / пробел — вперёд · O — все слайды</span>
+  </div>
+</section>
+
+<!-- ══════════════ 2 · проблема ══════════════ -->
+<section class="slide" data-title="Проблема">
+  <div class="eyebrow">Проблема</div>
+  <h2>Дизайн-система есть у всех.<br>Соблюдается — <span class="grad">не везде</span>.</h2>
+  <div class="body">
+    <div class="grid g3" style="margin-top:12px">
+      <div class="card">
+        <div class="num" style="color:var(--pink)">#ff1f78</div>
+        <h3 style="margin-top:10px">Цвет мимо токена</h3>
+        <p>Дизайнер поменял акцент — половина продукта осталась старой. Искать руками по всему репозиторию.</p>
+      </div>
+      <div class="card">
+        <div class="num" style="color:var(--amber)">13px</div>
+        <h3 style="margin-top:10px">Размер мимо шкалы</h3>
+        <p>Магические числа, которых нет ни в одной шкале кита. Каждое — маленькая трещина в единообразии.</p>
+      </div>
+      <div class="card">
+        <div class="num mono" style="color:var(--cyan); font-size:26px">&lt;div role="dialog"&gt;</div>
+        <h3 style="margin-top:10px">Свой компонент вместо готового</h3>
+        <p>В ките есть <code>Modal</code>. Самописный диалог не закроется по Escape и потеряет фокус.</p>
+      </div>
+    </div>
+    <div class="note" style="margin-top:30px">
+      Проверить это глазами на ревью невозможно: отклонения размазаны по сотням файлов и четырём разным
+      способам писать стили. А код-ревьюер видит один пул-реквест, а не систему целиком.
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 3 · решение ══════════════ -->
+<section class="slide" data-title="Решение: одна команда">
+  <div class="eyebrow">Решение</div>
+  <h2>Одна команда — и весь разбор перед вами</h2>
+  <div class="body">
+    <div class="grid g2" style="align-items:center; gap:28px">
+      <div class="term">
+        <div class="bar"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></div>
+        <div class="out"><span class="g">$</span> <span class="w">npm run analyze -- ~/work/my-product</span>
+
+  <span class="w">my-product · health 47/100 · 0.76s</span>
+
+  Adoption        <span class="c">76%</span>
+  Token coverage  <span class="a">4%</span>
+  Чистых файлов   <span class="w">8 из 24</span>
+  Отклонений      <span class="w">103</span>  (<span class="r">35 error</span> · <span class="a">45 warn</span> · <span class="c">23 info</span>)
+  Авто-фиксится   <span class="g">27</span>
+
+  <span class="m">→ ui-analyzer/dashboard.html  ← двойной клик</span></div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:18px">
+        <div class="card tint">
+          <h3>Нужен только Node</h3>
+          <p>Не нужен чекаут кита. Не нужны <code>node_modules</code> анализируемого проекта.
+             Не нужно, чтобы проект вообще собирался — ошибка типов не мешает разобрать код.</p>
+        </div>
+        <div class="card tint">
+          <h3>Результат — один HTML-файл</h3>
+          <p>Открывается двойным кликом. Без сервера, без интернета. Можно отправить в мессенджер
+             и открыть на любой машине.</p>
+        </div>
+        <div class="card tint">
+          <h3>Секунды, а не минуты</h3>
+          <p>Проект на 24 файла — 0,76 с. Репозиторий самого кита, 2378 файлов — 8 с.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 4 · живые цифры ══════════════ -->
+<section class="slide" data-title="Живой прогон">
+  <div class="eyebrow">Живой прогон · demo-app</div>
+  <h2>Что видно с первого экрана</h2>
+  <div class="body">
+    <div class="grid g4">
+      <div class="card">
+        <div class="kicker">Health</div>
+        <div class="num" style="color:var(--amber); margin:8px 0 12px">47<span style="font-size:20px; color:var(--fg-mute)">/100</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:47%; background:linear-gradient(90deg,var(--amber),var(--red))"></div></div>
+        <p style="margin-top:10px; font-size:14px">Формула публикуется прямо в отчёте — цифре можно не верить на слово.</p>
+      </div>
+      <div class="card">
+        <div class="kicker">Внедрение кита</div>
+        <div class="num" style="color:var(--cyan); margin:8px 0 12px">76%</div>
+        <div class="bar-track"><div class="bar-fill" style="width:76%; background:linear-gradient(90deg,var(--cyan),var(--blue))"></div></div>
+        <p style="margin-top:10px; font-size:14px">Доля элементов интерфейса, взятых из дизайн-системы.</p>
+      </div>
+      <div class="card">
+        <div class="kicker">Покрытие токенами</div>
+        <div class="num" style="color:var(--red); margin:8px 0 12px">4%</div>
+        <div class="bar-track"><div class="bar-fill" style="width:4%; background:var(--red)"></div></div>
+        <p style="margin-top:10px; font-size:14px">Компоненты берут из кита, а цвета и размеры пишут руками. Типичная картина.</p>
+      </div>
+      <div class="card">
+        <div class="kicker">Чинится само</div>
+        <div class="num" style="color:var(--green); margin:8px 0 12px">27</div>
+        <div class="bar-track"><div class="bar-fill" style="width:26%; background:var(--green)"></div></div>
+        <p style="margin-top:10px; font-size:14px">Готовый код замены, точная строка, кнопка «скопировать».</p>
+      </div>
+    </div>
+    <div class="grid g2" style="margin-top:22px; gap:22px">
+      <div class="card">
+        <h3>103 отклонения — но <span class="grad">не 103 задачи</span></h3>
+        <p>Единица отчёта — не находка, а <b>решение</b>. Один цвет, повторённый 200 раз, — это одна карточка:
+           «замени на токен, закроет 200 вхождений в 30 файлах». План работ, а не список претензий.</p>
+      </div>
+      <div class="card">
+        <h3>И то, чего мы <span class="grad">не смогли</span> проверить</h3>
+        <p>2 места с динамическими стилями честно помечены «не проанализировано».
+           Молчаливый пропуск читался бы как «здесь чисто» — а это ложь.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 5 · идея 1 ══════════════ -->
+<section class="slide" data-title="Идея 1: адаптеры синтаксиса">
+  <div class="eyebrow">Ключевая идея · 1 из 2</div>
+  <h2>Одно нарушение — четыре синтаксиса</h2>
+  <div class="body">
+    <div class="grid g4" style="gap:14px">
+      <div class="card" style="padding:16px 18px"><div class="kicker">SCSS-модуль</div><div class="mono" style="font-size:14px; margin-top:10px; color:var(--fg)">background:<br><span style="color:var(--pink)">#ff1f78</span>;</div></div>
+      <div class="card" style="padding:16px 18px"><div class="kicker">styled-components</div><div class="mono" style="font-size:14px; margin-top:10px; color:var(--fg)">styled.div`<br>bg: <span style="color:var(--pink)">#ff1f78</span>`</div></div>
+      <div class="card" style="padding:16px 18px"><div class="kicker">инлайн-стиль</div><div class="mono" style="font-size:14px; margin-top:10px; color:var(--fg)">style={{ bg:<br><span style="color:var(--pink)">'#ff1f78'</span> }}</div></div>
+      <div class="card" style="padding:16px 18px"><div class="kicker">Tailwind</div><div class="mono" style="font-size:14px; margin-top:10px; color:var(--fg)">className=<br>"bg-[<span style="color:var(--pink)">#ff1f78</span>]"</div></div>
+    </div>
+
+    <div style="display:flex; align-items:center; justify-content:center; gap:16px; margin:26px 0 22px; color:var(--fg-mute)">
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 5v14M6 13l6 6 6-6"/></svg>
+      <span style="font-size:19px">это <b style="color:var(--fg)">одно и то же</b> нарушение — различается только способ его достать</span>
+    </div>
+
+    <div class="grid g2" style="gap:22px">
+      <div class="card tint">
+        <h3>Сбор — зависит от синтаксиса</h3>
+        <p>Свой маленький адаптер на каждый способ писать стили: SCSS, CSS-модули, styled-components,
+           emotion, инлайн, JSS. <b>По 100–150 строк каждый.</b></p>
+      </div>
+      <div class="card tint">
+        <h3>Анализ — не зависит ни от чего</h3>
+        <p>Все адаптеры сводят находки к одному формату. Дальше правила работают с фактами и не знают,
+           откуда те пришли. <b>Новый синтаксис = один новый файл, ноль правок в правилах.</b></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 6 · идея 2 — универсальность ══════════════ -->
+<section class="slide" data-title="Идея 2: адаптеры китов">
+  <div class="eyebrow">Ключевая идея · 2 из 2 — универсальность</div>
+  <h2>Кит превращается в <span class="grad">спецификацию</span></h2>
+  <div class="body">
+    <p class="lead" style="margin-bottom:26px">
+      Мы не зашили знание об одной дизайн-системе в анализатор. Мы один раз извлекаем из кита
+      машиночитаемое описание — и дальше вся система работает уже с ним.
+    </p>
+
+    <svg viewBox="0 0 1140 200" style="width:100%; height:auto">
+      <defs>
+        <linearGradient id="gA" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#8b5cf6"/><stop offset="1" stop-color="#22d3ee"/>
+        </linearGradient>
+        <marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+          <path d="M0 0 L9 4.5 L0 9 z" fill="#4b5570"/>
+        </marker>
+      </defs>
+
+      <!-- киты -->
+      <g>
+        <rect x="0" y="8" width="230" height="52" rx="12" fill="#12141d" stroke="#8b5cf6" stroke-width="1.4"/>
+        <text x="20" y="40" fill="#e9ebf2" font-size="17" font-weight="600">sds-eng · наш кит</text>
+
+        <rect x="0" y="74" width="230" height="52" rx="12" fill="#12141d" stroke="#242838"/>
+        <text x="20" y="106" fill="#a5adc2" font-size="17">MUI · Ant · Chakra</text>
+
+        <rect x="0" y="140" width="230" height="52" rx="12" fill="#12141d" stroke="#242838"/>
+        <text x="20" y="172" fill="#a5adc2" font-size="17">ваша внутренняя ДС</text>
+      </g>
+
+      <path d="M236 34 H320" stroke="#4b5570" stroke-width="1.6" marker-end="url(#ar)"/>
+      <path d="M236 100 H320" stroke="#4b5570" stroke-width="1.6" marker-end="url(#ar)"/>
+      <path d="M236 166 H320" stroke="#4b5570" stroke-width="1.6" marker-end="url(#ar)"/>
+
+      <!-- адаптер -->
+      <rect x="330" y="52" width="196" height="96" rx="14" fill="#161926" stroke="url(#gA)" stroke-width="1.8"/>
+      <text x="428" y="90" text-anchor="middle" fill="#e9ebf2" font-size="18" font-weight="700">АДАПТЕР</text>
+      <text x="428" y="116" text-anchor="middle" fill="#6f7791" font-size="14">экстрактор кита</text>
+
+      <path d="M532 100 H610" stroke="#4b5570" stroke-width="1.6" marker-end="url(#ar)"/>
+
+      <!-- спека -->
+      <rect x="620" y="34" width="240" height="132" rx="14" fill="#12141d" stroke="#22d3ee" stroke-width="1.4"/>
+      <text x="740" y="66" text-anchor="middle" fill="#e9ebf2" font-size="17" font-weight="650">Спецификация</text>
+      <text x="740" y="92"  text-anchor="middle" fill="#a5adc2" font-size="14">токены · компоненты</text>
+      <text x="740" y="114" text-anchor="middle" fill="#a5adc2" font-size="14">варианты · слоты</text>
+      <text x="740" y="136" text-anchor="middle" fill="#a5adc2" font-size="14">доступность</text>
+      <text x="740" y="158" text-anchor="middle" fill="#6f7791" font-size="12.5" font-family="monospace">единый формат</text>
+
+      <path d="M866 100 H944" stroke="#4b5570" stroke-width="1.6" marker-end="url(#ar)"/>
+
+      <!-- анализатор -->
+      <rect x="954" y="52" width="186" height="96" rx="14" fill="#161926" stroke="#242838"/>
+      <text x="1047" y="90" text-anchor="middle" fill="#e9ebf2" font-size="17" font-weight="650">Анализатор</text>
+      <text x="1047" y="116" text-anchor="middle" fill="#6f7791" font-size="13.5">не меняется никогда</text>
+    </svg>
+
+    <div class="grid g3" style="margin-top:26px; gap:18px">
+      <div class="card"><h3>Дорого — один раз</h3><p>Разбор кита занимает секунды и делается раз на версию, а не на каждый проект.</p></div>
+      <div class="card"><h3>Проверяемо</h3><p>Спека — обычный файл: его можно провалидировать, закоммитить и сравнить между версиями кита.</p></div>
+      <div class="card"><h3>Универсально</h3><p>Новый кит — новый адаптер. Правила, метрики, дашборд и весь отчёт остаются те же.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 7 · архитектура ══════════════ -->
+<section class="slide" data-title="Архитектура">
+  <div class="eyebrow">Архитектура</div>
+  <h2>Пять стадий, каждая проверяема отдельно</h2>
+  <div class="body">
+    <svg viewBox="0 0 1140 330" style="width:100%; height:auto">
+      <defs>
+        <marker id="ar2" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+          <path d="M0 0 L9 4.5 L0 9 z" fill="#4b5570"/>
+        </marker>
+        <linearGradient id="gB" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#8b5cf6" stop-opacity=".25"/><stop offset="1" stop-color="#8b5cf6" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+
+      <!-- ряд входов -->
+      <rect x="0" y="0" width="330" height="56" rx="12" fill="#12141d" stroke="#8b5cf6" stroke-width="1.3"/>
+      <text x="18" y="26" fill="#e9ebf2" font-size="15.5" font-weight="650">UI-кит</text>
+      <text x="18" y="45" fill="#6f7791" font-size="13">раз на версию</text>
+
+      <rect x="810" y="0" width="330" height="56" rx="12" fill="#12141d" stroke="#22d3ee" stroke-width="1.3"/>
+      <text x="828" y="26" fill="#e9ebf2" font-size="15.5" font-weight="650">Любой React/TS-проект</text>
+      <text x="828" y="45" fill="#6f7791" font-size="13">файл · папка · монорепа</text>
+
+      <path d="M165 60 V96" stroke="#4b5570" stroke-width="1.5" marker-end="url(#ar2)"/>
+      <path d="M975 60 V96" stroke="#4b5570" stroke-width="1.5" marker-end="url(#ar2)"/>
+
+      <!-- A -->
+      <rect x="0" y="104" width="330" height="86" rx="13" fill="#161926" stroke="#242838"/>
+      <rect x="0" y="104" width="330" height="86" rx="13" fill="url(#gB)"/>
+      <text x="18" y="132" fill="#a78bfa" font-size="13" font-weight="700" font-family="monospace">A · СПЕКА КИТА</text>
+      <text x="18" y="156" fill="#e9ebf2" font-size="14.5">токены · компоненты · доступность</text>
+      <text x="18" y="177" fill="#6f7791" font-size="13">≈1,5 с · адаптер под каждый кит</text>
+
+      <!-- B0 -->
+      <rect x="810" y="104" width="330" height="86" rx="13" fill="#161926" stroke="#242838"/>
+      <text x="828" y="132" fill="#22d3ee" font-size="13" font-weight="700" font-family="monospace">B · РАЗВЕДКА И СБОР</text>
+      <text x="828" y="156" fill="#e9ebf2" font-size="14.5">корень · алиасы · где здесь кит</text>
+      <text x="828" y="177" fill="#6f7791" font-size="13">→ сырые факты, без суждений</text>
+
+      <path d="M165 194 V232 H540" stroke="#4b5570" stroke-width="1.5" fill="none" marker-end="url(#ar2)"/>
+      <path d="M975 194 V232 H600" stroke="#4b5570" stroke-width="1.5" fill="none" marker-end="url(#ar2)"/>
+
+      <!-- C -->
+      <rect x="380" y="204" width="380" height="56" rx="13" fill="#12141d" stroke="#8b5cf6" stroke-width="1.3"/>
+      <text x="570" y="228" text-anchor="middle" fill="#e9ebf2" font-size="15.5" font-weight="700">C · АНАЛИЗ</text>
+      <text x="570" y="248" text-anchor="middle" fill="#6f7791" font-size="13">факты × спека = отклонения · чистая функция</text>
+
+      <path d="M570 264 V292" stroke="#4b5570" stroke-width="1.5" marker-end="url(#ar2)"/>
+
+      <!-- D -->
+      <rect x="300" y="298" width="240" height="32" rx="10" fill="#12141d" stroke="#34d399" stroke-width="1.3"/>
+      <text x="420" y="319" text-anchor="middle" fill="#e9ebf2" font-size="14.5" font-weight="650">D · Дашборд · 0 токенов LLM</text>
+
+      <rect x="600" y="298" width="240" height="32" rx="10" fill="#12141d" stroke="#242838" stroke-dasharray="5 4"/>
+      <text x="720" y="319" text-anchor="middle" fill="#a5adc2" font-size="14.5">E · ИИ-слой · по запросу</text>
+    </svg>
+
+    <div class="note" style="margin-top:22px">
+      <b>Главное свойство:</b> отчёт готов уже после стадии D — быстро, бесплатно и без интернета.
+      Искусственный интеллект подключается отдельной командой и только там, где без него правда не обойтись.
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 8 · что находит ══════════════ -->
+<section class="slide" data-title="Что находит">
+  <div class="eyebrow">Что находит</div>
+  <h2>20 правил · каждая находка объясняет <span class="grad">последствие</span></h2>
+  <div class="body">
+    <div class="grid g4" style="gap:16px">
+      <div class="card">
+        <div class="pill" style="margin-bottom:12px"><span class="dot" style="background:var(--pink)"></span> Токены</div>
+        <ul class="list" style="gap:8px">
+          <li><span class="mk">·</span>сырой цвет вместо токена</li>
+          <li><span class="mk">·</span>размер вне шкалы</li>
+          <li><span class="mk">·</span>разъехавшаяся типографика</li>
+          <li><span class="mk">·</span>чужая гарнитура</li>
+          <li><span class="mk">·</span>краска вместо роли</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="pill" style="margin-bottom:12px"><span class="dot" style="background:var(--cyan)"></span> API кита</div>
+        <ul class="list" style="gap:8px">
+          <li><span class="mk">·</span>несуществующее значение пропа</li>
+          <li><span class="mk">·</span>устаревший компонент</li>
+          <li><span class="mk">·</span>импорт в обход кита</li>
+          <li><span class="mk">·</span>лазание во внутренности</li>
+          <li><span class="mk">·</span>помеченное «не использовать»</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="pill" style="margin-bottom:12px"><span class="dot" style="background:var(--amber)"></span> Переопределения</div>
+        <ul class="list" style="gap:8px">
+          <li><span class="mk">·</span>перекраска компонента кита</li>
+          <li><span class="mk">·</span>вторжение в приватные части</li>
+          <li><span class="mk">·</span><code>!important</code> против системы</li>
+          <li><span class="mk">·</span>подгонка размеров руками</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="pill" style="margin-bottom:12px"><span class="dot" style="background:var(--green)"></span> Доступность</div>
+        <ul class="list" style="gap:8px">
+          <li><span class="mk">·</span>убитая обводка фокуса</li>
+          <li><span class="mk">·</span>кнопка без имени для диктора</li>
+          <li><span class="mk">·</span>невалидные ARIA-атрибуты</li>
+          <li><span class="mk">·</span>виджет без клавиатуры</li>
+          <li><span class="mk">·</span>недостаточный контраст</li>
+        </ul>
+      </div>
+    </div>
+    <div class="grid g2" style="margin-top:22px; gap:22px">
+      <div class="card tint">
+        <h3>Не «нарушено правило №7»</h3>
+        <p>А: «этот цвет не переключится в тёмной теме», «пользователь клавиатуры не сможет закрыть диалог».
+           Отчёт объясняет <b>цену</b>, а не цитирует регламент.</p>
+      </div>
+      <div class="card tint">
+        <h3>Со ссылкой на стандарт</h3>
+        <p>Находки доступности помечены критериями WCAG — тем самым языком, на котором разговаривают
+           аудиторы и заказчики за пределами фронтенда.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 9 · умные детали ══════════════ -->
+<section class="slide" data-title="Что делает решение умным">
+  <div class="eyebrow">Детали, которые отличают от grep</div>
+  <h2>Почему это не «поиск по регулярке»</h2>
+  <div class="body">
+    <div class="grid g2" style="gap:20px">
+      <div class="card">
+        <h3>Видит <span class="grad">похожие</span> цвета, а не только точные</h3>
+        <p>Цвета сравниваются так, как их видит глаз, а не как их хранит компьютер.
+           Поэтому <code>#ff1f78</code> и <code>#ff2078</code> — «визуально одно и то же, и всё равно не токен»,
+           а не два разных случая.</p>
+      </div>
+      <div class="card">
+        <h3>Различает <span class="grad">краску</span> и <span class="grad">роль</span></h3>
+        <p>«Розовый 500» — это краска, она такая всегда. «Фон акцентного элемента» — это роль, и система
+           сама решает, какой она в тёмной теме. Первое вместо второго — тихая поломка, которую видно
+           только ночью.</p>
+      </div>
+      <div class="card">
+        <h3>Чинит <span class="grad">причину</span>, а не 14 следствий</h3>
+        <p>Цвет объявлен переменной и используется в 14 местах? Находка будет одна — на строке, где
+           литерал действительно записан. Чинить надо там.</p>
+      </div>
+      <div class="card">
+        <h3>Находит кит, даже если он <span class="grad">переименован</span></h3>
+        <p>Проекты заворачивают кит в собственную «бочку» и импортируют из неё. Наивный сканер решил бы,
+           что кит не используется, и нарисовал бы идеальный балл. Мы раскручиваем цепочку до конца.</p>
+      </div>
+    </div>
+    <div class="note" style="margin-top:24px">
+      <b>Найти ≠ предложить.</b> Находим всё — любой сырой цвет, даже если он в точности равен токену.
+      А вот что предложить взамен, зависит от того, что вообще есть в ките. Если подходящей роли в системе нет —
+      это находка <b>про кит</b>, и она попадает в отдельный блок для команды дизайн-системы.
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 10 · a11y слепая зона ══════════════ -->
+<section class="slide" data-title="Доступность: слепая зона">
+  <div class="eyebrow">Доступность · то, чего нет ни у кого</div>
+  <h2>Существующие инструменты смотрят<br>на атрибуты. Мы — на <span class="grad">поведение</span>.</h2>
+  <div class="body">
+    <div class="card" style="padding:0; overflow:hidden">
+      <table style="width:100%; border-collapse:collapse; font-size:17px">
+        <thead>
+          <tr style="background:rgba(255,255,255,.03)">
+            <th style="text-align:left; padding:14px 22px; color:var(--fg-mute); font-weight:650; font-size:14px">Инструмент</th>
+            <th style="padding:14px; color:var(--fg-mute); font-weight:650; font-size:14px">атрибуты</th>
+            <th style="padding:14px; color:var(--fg-mute); font-weight:650; font-size:14px">структура</th>
+            <th style="padding:14px; color:var(--fg-mute); font-weight:650; font-size:14px">поведение</th>
+            <th style="padding:14px; color:var(--fg-mute); font-weight:650; font-size:14px">контраст</th>
+          </tr>
+        </thead>
+        <tbody style="color:var(--fg-dim)">
+          <tr style="border-top:1px solid var(--line)">
+            <td style="padding:14px 22px">Линтеры доступности</td>
+            <td style="text-align:center; color:var(--green)">●</td><td style="text-align:center; color:var(--fg-mute)">○</td>
+            <td style="text-align:center; color:var(--fg-mute)">○</td><td style="text-align:center; color:var(--fg-mute)">○</td>
+          </tr>
+          <tr style="border-top:1px solid var(--line)">
+            <td style="padding:14px 22px">Проверка в браузере (axe)</td>
+            <td style="text-align:center; color:var(--green)">●</td><td style="text-align:center; color:var(--green)">●</td>
+            <td style="text-align:center; color:var(--fg-mute)">○</td><td style="text-align:center; color:var(--amber)">◐ <span style="font-size:13px">нужен запуск</span></td>
+          </tr>
+          <tr style="border-top:1px solid var(--line); background:rgba(139,92,246,.07)">
+            <td style="padding:14px 22px; color:var(--fg); font-weight:650">ds-analyzer</td>
+            <td style="text-align:center; color:var(--green)">●</td><td style="text-align:center; color:var(--green)">●</td>
+            <td style="text-align:center; color:var(--violet); font-weight:700">● единственные</td><td style="text-align:center; color:var(--green)">● без браузера</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="grid g2" style="margin-top:24px; gap:22px">
+      <div class="card">
+        <h3 style="color:var(--red)">Проходит все проверки. И всё равно сломано.</h3>
+        <p>Самописные вкладки, которые не переключаются стрелками. Диалог, который не закрывается по Escape
+           и отпускает фокус на страницу под собой. Ни один существующий инструмент этого не видит —
+           одному не хватает контекста, другой не нажимает клавиши.</p>
+      </div>
+      <div class="card">
+        <h3 style="color:var(--green)">Мы видим — и знаем, чем заменить</h3>
+        <p>«Ваш диалог не закрывается по Escape и не удерживает фокус — <b>компонент кита это умеет</b>».
+           Это уже не спор о вкусах, а нарушение стандарта, о котором спрашивают на аудите.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 11 · a11y как это работает ══════════════ -->
+<section class="slide" data-title="Доступность: как это возможно">
+  <div class="eyebrow">Доступность · как это вообще возможно</div>
+  <h2>Два приёма, которых обычно не делают</h2>
+  <div class="body">
+    <div class="grid g2" style="gap:24px">
+      <div class="card tint">
+        <div class="kicker">Приём первый</div>
+        <h3 style="margin-top:8px; font-size:24px">Контраст считается без браузера</h3>
+        <p style="margin-top:10px">Чтобы проверить контраст, обычно поднимают браузер: нужно узнать, какие два цвета
+           оказались друг на друге. Но у нас уже есть все цвета кита в светлой и тёмной теме — с прозрачностью
+           и точными значениями. Там, где пара определима, контраст — просто арифметика.</p>
+        <div style="display:flex; gap:10px; margin-top:16px; align-items:center">
+          <span style="width:34px;height:34px;border-radius:8px;background:#13181b"></span>
+          <span style="width:34px;height:34px;border-radius:8px;background:#2a72f8"></span>
+          <span class="mono" style="font-size:14px; color:var(--fg-mute)">→ 4.7 : 1 · AA пройдено</span>
+        </div>
+      </div>
+      <div class="card tint">
+        <div class="kicker">Приём второй</div>
+        <h3 style="margin-top:8px; font-size:24px">Кит проверен, а не принят на веру</h3>
+        <p style="margin-top:10px">Мы разобрали то, что лежит внутри опубликованных пакетов кита, и узнали
+           про каждый компонент: какие роли он объявляет, какие клавиши обрабатывает, удерживает ли фокус.
+           Теперь «возьмите компонент кита — он доступен» подкреплено фактами.</p>
+        <div style="display:flex; gap:22px; margin-top:18px">
+          <div><div class="num" style="font-size:32px; color:var(--cyan)">32</div><div class="kicker" style="margin-top:4px">паттерна</div></div>
+          <div><div class="num" style="font-size:32px; color:var(--cyan)">63</div><div class="kicker" style="margin-top:4px">пакета разобрано</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="note" style="margin-top:26px">
+      А там, где статически ответить нельзя — порядок фокуса, экранные дикторы, паттерн, размазанный
+      по нескольким файлам, — отчёт так и пишет: <b>требует ручной проверки</b>. Это честнее, чем зелёная галочка.
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 12 · дашборд ══════════════ -->
+<section class="slide" data-title="Дашборд">
+  <div class="eyebrow">Отчёт</div>
+  <h2>Четыре экрана. Ничего тупикового.</h2>
+  <div class="body">
+    <div class="grid g4" style="gap:16px">
+      <div class="card">
+        <div class="kicker" style="color:var(--violet)">Экран 1</div>
+        <h3 style="margin-top:8px">Сводка</h3>
+        <p>Кольцо здоровья с открытой формулой, метрики с расшифровкой «из чего посчитано»,
+           «с чего начать» — топ решений по эффекту, и раздел «что хорошо».</p>
+      </div>
+      <div class="card">
+        <div class="kicker" style="color:var(--cyan)">Экран 2</div>
+        <h3 style="margin-top:8px">План работ</h3>
+        <p>Решения, отсортированные по эффекту. Раскрывается: объяснение, корень проблемы,
+           все вхождения по файлам, дифф с подсветкой и кнопкой «скопировать».</p>
+      </div>
+      <div class="card">
+        <div class="kicker" style="color:var(--amber)">Экран 3</div>
+        <h3 style="margin-top:8px">По файлам</h3>
+        <p>Слева файлы по суммарному весу, справа — правки выбранного файла по порядку строк.
+           План правок для файла, открытого рядом в редакторе.</p>
+      </div>
+      <div class="card">
+        <div class="kicker" style="color:var(--green)">Экран 4</div>
+        <h3 style="margin-top:8px">Дизайн-система</h3>
+        <p>Взгляд со стороны кита: что реально используется, какие цвета идут мимо палитры,
+           каких ролей в системе не хватает.</p>
+      </div>
+    </div>
+
+    <div class="grid g3" style="margin-top:24px; gap:18px">
+      <div class="card">
+        <h3>Ссылкой можно делиться</h3>
+        <p>Всё состояние — фильтры, выбранная находка, уровень погружения — живёт в адресе страницы.</p>
+      </div>
+      <div class="card">
+        <h3>Пустого списка не бывает</h3>
+        <p>Фильтры показывают счётчик <b>до</b> клика. Тупик без объяснения физически невозможен.</p>
+      </div>
+      <div class="card">
+        <h3>Один файл ≈ 1–2 МБ</h3>
+        <p>Шрифты, графики, подсветка кода — всё внутри. Ни одного обращения в сеть.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 13 · честность и качество ══════════════ -->
+<section class="slide" data-title="Доверие">
+  <div class="eyebrow">Почему отчёту можно верить</div>
+  <h2>Инструмент, который врёт, закрывают на второй раз</h2>
+  <div class="body">
+    <div class="grid g2" style="gap:24px; align-items:start">
+      <div>
+        <div class="card" style="margin-bottom:18px">
+          <h3>Измеряем себя на размеченном эталоне</h3>
+          <p>Есть учебный проект, где каждое отклонение посажено осознанно и записано вручную —
+             113 ожиданий. По ним считается, сколько находок верных и сколько пропущено.</p>
+          <div style="display:flex; gap:34px; margin-top:18px">
+            <div><div class="num" style="color:var(--green)">1.000</div><div class="kicker" style="margin-top:6px">точность</div></div>
+            <div><div class="num" style="color:var(--green)">1.000</div><div class="kicker" style="margin-top:6px">полнота</div></div>
+            <div><div class="num" style="color:var(--cyan)">620</div><div class="kicker" style="margin-top:6px">тестов</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Ноль ложных срабатываний на коде самого кита</h3>
+          <p>Правила прогоняются по 684 эталонным примерам дизайн-системы. Детектор, который ругается
+             на образцовый код, откалиброван неверно — и это проверяется автоматически.</p>
+        </div>
+      </div>
+      <div>
+        <div class="card" style="margin-bottom:18px">
+          <h3>Пробелы фиксируются, а не замалчиваются</h3>
+          <p>Файл не разобрался, стиль вычисляется во время работы, конфиг не прочитался —
+             всё это попадает в отдельный блок «не проанализировано и почему».
+             <b>Молчаливый пропуск читается как «здесь чисто» — а это ложь.</b></p>
+        </div>
+        <div class="card">
+          <h3>Попутно нашли дефекты в самой дизайн-системе</h3>
+          <ul class="list" style="gap:9px; margin-top:10px">
+            <li><span class="mk" style="color:var(--red)">▲</span>токен, который вычисляется в «не число»</li>
+            <li><span class="mk" style="color:var(--amber)">▲</span>25 значений, зашитых в обход тем</li>
+            <li><span class="mk" style="color:var(--amber)">▲</span>44 цвета, одинаковых в светлой и тёмной теме</li>
+            <li><span class="mk" style="color:var(--fg-mute)">▲</span>опечатка в служебной пометке — из-за неё
+                устаревший размер выглядит актуальным во всех IDE</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 14 · универсальность практически ══════════════ -->
+<section class="slide" data-title="Свой кит — за один вечер">
+  <div class="eyebrow">Универсальность на практике</div>
+  <h2>Подключить свою дизайн-систему — <span class="grad">три шага</span></h2>
+  <div class="body">
+    <div class="grid g3" style="gap:20px">
+      <div class="card">
+        <div class="num" style="color:var(--violet)">1</div>
+        <h3 style="margin-top:12px">Написать адаптер</h3>
+        <p>Один модуль, который читает ваш кит и отдаёт спеку в общем формате: цвета, размеры, шрифты,
+           компоненты, допустимые значения пропов. Схема проверит результат сама — забыть поле не получится.</p>
+      </div>
+      <div class="card">
+        <div class="num" style="color:var(--cyan)">2</div>
+        <h3 style="margin-top:12px">Прогнать один раз</h3>
+        <p>Получается файл спецификации. Его коммитят рядом с китом и обновляют вместе с версией —
+           дальше он никому не мешает и ничего не тормозит.</p>
+      </div>
+      <div class="card">
+        <div class="num" style="color:var(--pink)">3</div>
+        <h3 style="margin-top:12px">Всё остальное уже работает</h3>
+        <p>Правила, метрики, health score, дашборд, доступность, ИИ-слой — они не знают названия вашего кита
+           и знать не должны.</p>
+      </div>
+    </div>
+
+    <div class="card tint" style="margin-top:26px">
+      <h3>Что не придётся менять никогда</h3>
+      <div class="grid g4" style="margin-top:14px; gap:12px">
+        <span class="chip">20 правил</span>
+        <span class="chip">метрики и health score</span>
+        <span class="chip">дашборд и все 4 экрана</span>
+        <span class="chip">6 адаптеров синтаксиса стилей</span>
+        <span class="chip">определение корня и алиасов</span>
+        <span class="chip">проверки доступности</span>
+        <span class="chip">формат находок</span>
+        <span class="chip">ИИ-слой</span>
+      </div>
+    </div>
+
+    <p class="lead" style="margin-top:26px; font-size:21px">
+      То же самое верно и в другую сторону: <b>новый способ писать стили</b> — тоже один небольшой адаптер.
+      Хоть Tailwind, хоть что-то, чего ещё не придумали.
+    </p>
+  </div>
+</section>
+
+<!-- ══════════════ 15 · цифры ══════════════ -->
+<section class="slide" data-title="Цифры">
+  <div class="eyebrow">Что уже сделано</div>
+  <h2>Не концепт. Работающий инструмент.</h2>
+  <div class="body">
+    <div class="grid g4" style="gap:16px">
+      <div class="card"><div class="num" style="color:var(--violet)">2192</div><p style="margin-top:8px">токена извлечено из кита — с исходной записью и разрешённым значением в обеих темах</p></div>
+      <div class="card"><div class="num" style="color:var(--cyan)">61</div><p style="margin-top:8px">компонент со всеми вариантами, слотами и публичными символами</p></div>
+      <div class="card"><div class="num" style="color:var(--green)">32</div><p style="margin-top:8px">паттерна доступности, вычитанных прямо из опубликованных пакетов кита</p></div>
+      <div class="card"><div class="num" style="color:var(--amber)">20</div><p style="margin-top:8px">правил, каждое с объяснением последствия и, где можно, готовым фиксом</p></div>
+    </div>
+    <div class="grid g4" style="gap:16px; margin-top:18px">
+      <div class="card"><div class="num" style="color:var(--pink)">620</div><p style="margin-top:8px">автоматических тестов, все зелёные</p></div>
+      <div class="card"><div class="num" style="color:var(--blue)">2378</div><p style="margin-top:8px">файлов самого кита разобрано за 8 секунд — ни одного пропущенного</p></div>
+      <div class="card"><div class="num" style="color:var(--fg)">6</div><p style="margin-top:8px">адаптеров стилей: SCSS, CSS, styled-components, emotion, инлайн, JSS</p></div>
+      <div class="card"><div class="num" style="color:var(--fg)">5</div><p style="margin-top:8px">источников алиасов читаются, чтобы не потерять ни одного импорта</p></div>
+    </div>
+    <div class="note" style="margin-top:26px">
+      Проверено на реальных входах: учебном проекте, репозитории самого кита, на самом анализаторе
+      (честно отвечает «кит не используется»), и на проекте без привычной структуры, без конфигов
+      и с переименованным китом.
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 16 · дальше ══════════════ -->
+<section class="slide" data-title="Что дальше">
+  <div class="eyebrow">Дорожная карта</div>
+  <h2>Куда это растёт</h2>
+  <div class="body">
+    <div class="grid g2" style="gap:24px">
+      <div class="card">
+        <div class="pill" style="margin-bottom:14px"><span class="dot" style="background:var(--violet)"></span> Ближайшее</div>
+        <h3>Кандидаты в дизайн-систему</h3>
+        <p style="margin-top:8px">Компонент, у которого <b>нет</b> аналога в ките, — не ошибка. Если он используется
+           23 раза в 8 местах и уже скопирован в три файла, это готовый кандидат в библиотеку.
+           Отдельный экран — не претензия продуктовой команде, а вход в роадмап дизайн-системы.</p>
+      </div>
+      <div class="card">
+        <div class="pill" style="margin-bottom:14px"><span class="dot" style="background:var(--cyan)"></span> Затем</div>
+        <h3>ИИ там, где он незаменим</h3>
+        <p style="margin-top:8px">Простые замены считаются формулами и не требуют ИИ вообще.
+           А вот «перепиши этот самописный диалог на компонент кита» — задача для модели.
+           Каждый такой случай уходит отдельному агенту с маленьким точным контекстом,
+           а спорные ответы проверяются тремя независимыми критиками.</p>
+      </div>
+    </div>
+    <div class="grid g3" style="margin-top:22px; gap:18px">
+      <div class="card"><h3>Прямо в редакторе</h3><p>Команда <code>/ds-audit</code> — отчёт, не выходя из среды разработки.</p></div>
+      <div class="card"><h3>Патч одной кнопкой</h3><p>Все безопасные исправления собираются в один файл изменений.</p></div>
+      <div class="card"><h3>Ворота в CI</h3><p>Здоровье упало ниже порога — сборка не проходит.</p></div>
+    </div>
+    <div class="note" style="margin-top:24px">
+      Важное свойство: ИИ ничего не пишет в ваши файлы. Он предлагает — <b>решает человек</b>.
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 17 · финал ══════════════ -->
+<section class="slide" data-title="Финал">
+  <div class="body" style="justify-content:center">
+    <h1 style="font-size:60px">Дизайн-система работает только тогда,<br>когда её <span class="grad">видно в коде</span>.</h1>
+    <p class="lead" style="margin-top:28px; font-size:23px">
+      Мы сделали инструмент, который делает её видимой: за секунды, на любом проекте,
+      без настройки — и для любого UI-кита, а не только для нашего.
+    </p>
+    <div class="grid g3" style="margin-top:40px; gap:18px">
+      <div class="card"><h3 style="color:var(--green)">Разработчику</h3><p>план правок с готовым кодом, а не список претензий</p></div>
+      <div class="card"><h3 style="color:var(--cyan)">Команде дизайн-системы</h3><p>что реально используют, чего не хватает, где кит подводит</p></div>
+      <div class="card"><h3 style="color:var(--violet)">Бизнесу</h3><p>единый интерфейс, доступность и одна цифра, за которой можно следить</p></div>
+    </div>
+    <div style="margin-top:44px; display:flex; gap:14px; align-items:center">
+      <span class="chip" style="font-size:15px; padding:8px 14px">npm run analyze -- ./ваш-проект</span>
+      <span style="color:var(--fg-mute); font-size:16px">— и через секунду у вас есть ответ</span>
+    </div>
+  </div>
+</section>
+
+</div></div>
+
+<div id="nav"><div id="prev"></div><div id="next"></div></div>
+
+<div id="chrome">
+  <div id="prog"></div>
+  <div id="meta">
+    <span id="label"></span>
+    <span id="hint">← → навигация · O — обзор · F — во весь экран</span>
+    <span id="count"></span>
+  </div>
+</div>
+
+<div id="overview"></div>
+
+<script>
+(() => {
+  const deck   = document.getElementById('deck');
+  const slides = [...document.querySelectorAll('.slide')];
+  const prog   = document.getElementById('prog');
+  const label  = document.getElementById('label');
+  const count  = document.getElementById('count');
+  const ov     = document.getElementById('overview');
+  let i = 0;
+
+  // масштабируем фиксированный холст 1280×720 под окно
+  const fit = () => {
+    const s = Math.min(innerWidth / 1280, innerHeight / 720);
+    deck.style.transform = `scale(${s})`;
+  };
+  addEventListener('resize', fit); fit();
+
+  const show = (n) => {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, k) => s.classList.toggle('on', k === i));
+    prog.style.width  = ((i + 1) / slides.length * 100) + '%';
+    label.textContent = slides[i].dataset.title || '';
+    count.textContent = (i + 1) + ' / ' + slides.length;
+    location.hash = i + 1;
+  };
+
+  // обзор всех слайдов
+  slides.forEach((s, k) => {
+    const b = document.createElement('button');
+    b.innerHTML = '<i>' + String(k + 1).padStart(2, '0') + '</i>' + (s.dataset.title || '');
+    b.onclick = () => { ov.classList.remove('on'); show(k); };
+    ov.append(b);
+  });
+
+  document.getElementById('next').onclick = () => show(i + 1);
+  document.getElementById('prev').onclick = () => show(i - 1);
+
+  addEventListener('keydown', (e) => {
+    const k = e.key;
+    if (k === 'ArrowRight' || k === 'PageDown' || k === ' ' || k === 'Enter') { e.preventDefault(); show(i + 1); }
+    else if (k === 'ArrowLeft' || k === 'PageUp' || k === 'Backspace') { e.preventDefault(); show(i - 1); }
+    else if (k === 'Home') show(0);
+    else if (k === 'End') show(slides.length - 1);
+    else if (k === 'o' || k === 'O' || k === 'щ' || k === 'Щ') ov.classList.toggle('on');
+    else if (k === 'Escape') ov.classList.remove('on');
+    else if (k === 'f' || k === 'F' || k === 'а' || k === 'А') {
+      document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+    }
+  });
+
+  // свайпы на тачскрине
+  let x0 = null;
+  addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; }, { passive: true });
+  addEventListener('touchend',   (e) => {
+    if (x0 === null) return;
+    const dx = e.changedTouches[0].clientX - x0;
+    if (Math.abs(dx) > 50) show(i + (dx < 0 ? 1 : -1));
+    x0 = null;
+  }, { passive: true });
+
+  show(Math.max(0, (parseInt(location.hash.slice(1), 10) || 1) - 1));
+})();
+</script>
+</body>
+</html>

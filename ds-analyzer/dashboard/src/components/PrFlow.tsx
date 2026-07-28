@@ -7,34 +7,19 @@ import { Badge, Button, CopyButton, cx } from './ui.js'
 /**
  * The hand-off: selected fixes → unified diff → Jenkins webhook → pull request.
  *
- * Two paths, both honest about their limits. The in-browser POST works only when the
- * Jenkins instance answers CORS preflight; when the browser blocks it, the UI says so and
- * puts the equivalent curl command one click away instead of pretending the send worked.
- * The webhook token is never baked into this file — the report is committed and shared —
- * it is typed once and kept in the browser's localStorage.
+ * Zero configuration by design. The webhook is a project constant; the repository and the
+ * target branch are read off the analyzed checkout at scan time (`git remote` / `HEAD`)
+ * and arrive in the payload — the reader confirms them, they never type them. Only what
+ * is genuinely per-PR (branch name, title, body) is editable.
+ *
+ * The in-browser POST works only when the Jenkins instance answers CORS preflight; when
+ * the browser blocks it, the UI says so and puts the equivalent curl command one click
+ * away instead of pretending the send worked.
  */
 
-const STORAGE_KEYS = {
-  webhookUrl: 'ds-analyzer.ci.webhookUrl',
-  repositoryUrl: 'ds-analyzer.ci.repositoryUrl',
-  targetBranch: 'ds-analyzer.ci.targetBranch',
-} as const
-
-const stored = (key: string): string => {
-  try {
-    return window.localStorage.getItem(key) ?? ''
-  } catch {
-    return ''
-  }
-}
-
-const store = (key: string, value: string): void => {
-  try {
-    window.localStorage.setItem(key, value)
-  } catch {
-    // Storage can be unavailable for file:// pages under strict policies; the form still works.
-  }
-}
+/** The team's Jenkins generic-webhook-trigger endpoint. */
+const WEBHOOK_URL =
+  'https://sbt-jenkins.sigma.sbrf.ru/sberworks/generic-webhook-trigger/invoke?token=77j8ZrC6rpBi7E5E9PpStqQmwsRzOJKj'
 
 const defaultBranchName = (): string => {
   const now = new Date()
@@ -52,13 +37,11 @@ const Field = ({
   label,
   value,
   onChange,
-  placeholder,
   mono = true,
 }: {
   label: string
   value: string
   onChange: (value: string) => void
-  placeholder?: string
   mono?: boolean
 }): React.ReactElement => (
   <label className="block">
@@ -68,7 +51,6 @@ const Field = ({
       onChange={(event) => {
         onChange(event.target.value)
       }}
-      placeholder={placeholder}
       spellCheck={false}
       className={cx(
         'w-full rounded-md border border-border bg-bg px-3 py-1.5 text-[13px] outline-none placeholder:text-faint focus:border-accent/60',
@@ -91,13 +73,9 @@ export const PrFlow = ({
   const [showDiff, setShowDiff] = useState(false)
   const [sendState, setSendState] = useState<SendState>({ kind: 'idle' })
 
-  const [webhookUrl, setWebhookUrl] = useState(() => stored(STORAGE_KEYS.webhookUrl) || (payload.ci?.webhookUrl ?? ''))
-  const [repositoryUrl, setRepositoryUrl] = useState(
-    () => stored(STORAGE_KEYS.repositoryUrl) || (payload.ci?.repositoryUrl ?? ''),
-  )
-  const [targetBranch, setTargetBranch] = useState(
-    () => stored(STORAGE_KEYS.targetBranch) || (payload.ci?.targetBranch ?? 'master'),
-  )
+  const repositoryUrl = payload.ci?.repositoryUrl ?? null
+  const targetBranch = payload.ci?.targetBranch ?? null
+
   const [branchName, setBranchName] = useState(defaultBranchName)
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
@@ -137,24 +115,21 @@ export const PrFlow = ({
   ].join('\n')
 
   const request: PrRequest = {
-    repository_url: repositoryUrl,
+    repository_url: repositoryUrl ?? '',
     branch_name: branchName,
-    target_branch: targetBranch,
+    target_branch: targetBranch ?? '',
     pr_title: title.length > 0 ? title : autoTitle,
     pr_body: body.length > 0 ? body : autoBody,
     diff_content: result.diff,
   }
 
-  const curl = toCurlCommand(webhookUrl.length > 0 ? webhookUrl : '<webhook-url>', request)
-  const ready = webhookUrl.length > 0 && repositoryUrl.length > 0 && targetBranch.length > 0 && result.diff.length > 0
+  const curl = toCurlCommand(WEBHOOK_URL, request)
+  const ready = repositoryUrl !== null && targetBranch !== null && result.diff.length > 0
 
   const send = (): void => {
-    store(STORAGE_KEYS.webhookUrl, webhookUrl)
-    store(STORAGE_KEYS.repositoryUrl, repositoryUrl)
-    store(STORAGE_KEYS.targetBranch, targetBranch)
     setSendState({ kind: 'sending' })
 
-    void fetch(webhookUrl, {
+    void fetch(WEBHOOK_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(request),
@@ -228,22 +203,33 @@ export const PrFlow = ({
             </header>
 
             <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-5 py-4">
-              <Field
-                label="Вебхук Jenkins (с токеном — хранится только в этом браузере, в отчёт не попадает)"
-                value={webhookUrl}
-                onChange={setWebhookUrl}
-                placeholder="https://…/generic-webhook-trigger/invoke?token=…"
-              />
-              <Field
-                label="Репозиторий"
-                value={repositoryUrl}
-                onChange={setRepositoryUrl}
-                placeholder="https://…/project.git"
-              />
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Ветка с фиксами" value={branchName} onChange={setBranchName} />
-                <Field label="Целевая ветка" value={targetBranch} onChange={setTargetBranch} />
+              {/* Computed target — read off the analyzed checkout, shown for confirmation only. */}
+              <div className="space-y-1.5 rounded-md border border-border bg-bg/50 px-3.5 py-2.5 text-[12.5px]">
+                <div className="flex items-baseline gap-2">
+                  <span className="w-28 shrink-0 text-faint">Репозиторий</span>
+                  {repositoryUrl !== null ? (
+                    <span className="min-w-0 truncate font-mono">{repositoryUrl}</span>
+                  ) : (
+                    <span className="text-warning">не определён — у проекта нет git-remote</span>
+                  )}
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="w-28 shrink-0 text-faint">Целевая ветка</span>
+                  {targetBranch !== null ? (
+                    <span className="font-mono">{targetBranch}</span>
+                  ) : (
+                    <span className="text-warning">не определена — HEAD не на ветке</span>
+                  )}
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="w-28 shrink-0 text-faint">Конвейер</span>
+                  <span className="min-w-0 truncate font-mono text-muted" title={WEBHOOK_URL}>
+                    sbt-jenkins.sigma.sbrf.ru · design-control-analysis-pr-creator
+                  </span>
+                </div>
               </div>
+
+              <Field label="Ветка с фиксами" value={branchName} onChange={setBranchName} />
               <Field
                 label="Заголовок PR"
                 value={title.length > 0 ? title : autoTitle}
@@ -329,7 +315,9 @@ export const PrFlow = ({
               <CopyButton value={result.diff} label="Скопировать дифф" />
               {!ready && (
                 <span className="text-[12px] text-faint">
-                  {result.diff.length === 0 ? 'В выборе нет применимых правок.' : 'Заполните вебхук и репозиторий.'}
+                  {result.diff.length === 0
+                    ? 'В выборе нет применимых правок.'
+                    : 'Репозиторий или ветка не определены — перегенерируйте отчёт из git-чекаута.'}
                 </span>
               )}
             </footer>
