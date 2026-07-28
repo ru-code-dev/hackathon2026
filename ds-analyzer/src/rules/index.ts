@@ -3,6 +3,8 @@ import { compareStrings } from '../shared/sort.js'
 import { deprecatedApiRule, invalidPropRule } from './api/props.js'
 import { bypassImportRule, doNotUseImportRule, internalImportRule } from './api/imports.js'
 import { styleOverrideRule } from './api/overrides.js'
+import { suppressedFocusRule } from './a11y/focus.js'
+import { patternKeyboardRule } from './a11y/pattern-keyboard.js'
 import { buildSnippet } from './snippet.js'
 import { colorLiteralRule } from './tokens/color.js'
 import { dimensionLiteralRule } from './tokens/dimension.js'
@@ -35,6 +37,8 @@ export const RULES: readonly Rule[] = [
   invalidPropRule,
   deprecatedApiRule,
   styleOverrideRule,
+  suppressedFocusRule,
+  patternKeyboardRule,
 ]
 
 /** Stable, zero-padded so that lexical order matches numeric order in the dashboard. */
@@ -91,10 +95,12 @@ export const runRules = (context: RuleContext, options: RunOptions = {}): Findin
       note: finding.note,
       rootCause: finding.rootCause,
       appliedTo: finding.appliedTo,
+      a11y: finding.a11y ?? null,
       autoFixable: finding.autoFixable,
       needsAgent: finding.needsAgent,
       candidates: finding.candidates,
       impact: { occurrences: impact.count, files: impact.files.size },
+      impactKey: finding.impactKey,
     }
   })
 }

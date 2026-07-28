@@ -18,6 +18,7 @@
     "test:coverage": "vitest run --coverage",
     "extract:tokens": "tsx src/cli/extract-tokens.ts",
     "extract:components": "tsx src/cli/extract-components.ts",
+    "extract:kit-a11y": "tsx src/cli/extract-kit-a11y.ts",
     "extract": "tsx src/cli/extract-all.ts",
     "scan": "tsx src/cli/scan.ts",
     "analyze": "tsx src/cli/analyze.ts",

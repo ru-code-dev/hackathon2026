@@ -6,6 +6,7 @@ import { analysisArtifactSchema } from '../domain/findings.js'
 import { observationsSchema } from '../domain/observations.js'
 import { projectProfileSchema } from '../domain/profile.js'
 import { validateArtifact } from '../domain/validate.js'
+import { A11ySpec } from '../kit/a11y-spec.js'
 import { KitSpec } from '../kit/spec.js'
 import { defaultArtifactsDir } from '../config.js'
 import { scanProject } from '../scanner/scan.js'
@@ -81,7 +82,9 @@ const main = async (): Promise<void> => {
   const args = parseArguments(process.argv.slice(2))
   const started = Date.now()
 
-  const kit = KitSpec.load(args.artifactsDir ?? defaultArtifactsDir)
+  const artifactsDir = args.artifactsDir ?? defaultArtifactsDir
+  const kit = KitSpec.load(artifactsDir)
+  const a11y = A11ySpec.load(artifactsDir)
 
   const { profile, observations } = scanProject({
     path: args.path,
@@ -98,6 +101,7 @@ const main = async (): Promise<void> => {
 
   const analysis = analyze({
     kit,
+    a11y,
     profile,
     observations,
     disabledRules,

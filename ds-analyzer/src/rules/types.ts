@@ -1,6 +1,7 @@
-import type { Expected, FindingCategory, Severity } from '../domain/findings.js'
+import type { A11yFacet, Expected, FindingCategory, Severity } from '../domain/findings.js'
 import type { Declaration, ImportRecord, JsxElement, Observations, StyleValue } from '../domain/observations.js'
 import type { ProjectProfile } from '../domain/profile.js'
+import type { A11ySpec } from '../kit/a11y-spec.js'
 import type { KitSpec } from '../kit/spec.js'
 
 /**
@@ -39,6 +40,15 @@ export interface RawFinding {
   readonly rootCause: { readonly file: string; readonly line: number; readonly name: string } | null
   readonly appliedTo: { readonly component: string; readonly slot: string | null } | null
 
+  /**
+   * Accessibility consequence, for the rules that carry one.
+   *
+   * Optional here and `null`-filled by the runner, unlike every other field: it is a facet
+   * of a minority of rules, and making eleven existing rules restate `a11y: null` would be
+   * ceremony that teaches nothing. The wire contract stays strict — see `findingSchema`.
+   */
+  readonly a11y?: A11yFacet
+
   readonly autoFixable: boolean
   readonly needsAgent: boolean
 
@@ -68,6 +78,14 @@ export interface FrequencyIndex {
 
 export interface RuleContext {
   readonly kit: KitSpec
+  /**
+   * What the kit's own components do about accessibility.
+   *
+   * Always present, but `available` is `false` when `@v-uik` was never installed. Rules
+   * must check it: an empty spec means "not checked", and treating it as "nothing to
+   * report" would print a clean bill of health for code nobody looked at.
+   */
+  readonly a11y: A11ySpec
   readonly profile: ProjectProfile
   readonly observations: Observations
   /** File contents, project-relative, for snippet extraction. */

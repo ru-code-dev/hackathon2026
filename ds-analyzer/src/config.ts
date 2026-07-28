@@ -31,7 +31,23 @@ export interface AnalyzerPaths {
   readonly baseBarrel: string
   /** Output directory for generated JSON artifacts. */
   readonly artifactsDir: string
+  /**
+   * `@v-uik` package root, or `null` when the upstream library is not installed.
+   *
+   * Optional by design. Every extractor that existed before this one runs on a bare
+   * checkout, and that property is worth keeping: the analyzer must never require a
+   * successful `npm install` of somebody else's monorepo to produce a report. What depends
+   * on the upstream degrades to a recorded gap instead of a crash.
+   */
+  readonly upstreamDir: string | null
 }
+
+/** Where `@v-uik` may sit, in order of preference. */
+const UPSTREAM_CANDIDATES = [
+  ['node_modules', '@v-uik'],
+  // Probe install used to read the upstream without disturbing the kit's own tree.
+  ['.vuik', 'node_modules', '@v-uik'],
+] as const
 
 const DEFAULT_UI_KIT_DIRNAME = 'ui-kit-eds-ce'
 
@@ -76,7 +92,19 @@ export const resolvePaths = (explicitUiKitRoot?: string): AnalyzerPaths => {
     componentsBarrel: join(componentsDir, 'index.ts'),
     baseBarrel: join(baseSrcDir, 'index.ts'),
     artifactsDir: join(analyzerRoot, 'artifacts'),
+    upstreamDir: resolveUpstreamDir(uiKitRoot),
   }
+}
+
+const resolveUpstreamDir = (uiKitRoot: string): string | null => {
+  for (const segments of UPSTREAM_CANDIDATES) {
+    const candidate = join(uiKitRoot, ...segments)
+    if (existsSync(candidate)) {
+      return candidate
+    }
+  }
+
+  return null
 }
 
 /**

@@ -22,7 +22,33 @@ import { limitationSchema } from './profile.js'
 
 export const severitySchema = z.enum(['error', 'warning', 'info', 'candidate'])
 
-export const findingCategorySchema = z.enum(['token', 'typography', 'font', 'api', 'override', 'component', 'icon'])
+export const findingCategorySchema = z.enum([
+  'token',
+  'typography',
+  'font',
+  'api',
+  'override',
+  'component',
+  'icon',
+  'a11y',
+])
+
+/**
+ * Accessibility facet, present only on findings that carry one.
+ *
+ * A nested nullable object rather than three flat fields: `pattern` is meaningless on a
+ * colour literal, and widening the universal shape with one rule family's vocabulary is
+ * how a wire contract turns into a junk drawer. Grouping also lets the facet grow without
+ * touching `Finding` again.
+ */
+export const a11ySchema = z.object({
+  /** WCAG success criteria the finding violates, e.g. `['1.4.3']`. Empty when none applies. */
+  wcag: z.array(z.string()),
+  /** APG pattern slug for pattern-conformance findings, e.g. `tabs`; `null` otherwise. */
+  pattern: z.string().nullable(),
+  /** What the user actually loses, in one sentence — not a restatement of the rule. */
+  impact: z.string().min(1),
+})
 
 export const expectedSchema = z.object({
   /** Token id, e.g. `sys.Border.borderAccent`. */
@@ -85,6 +111,9 @@ export const findingSchema = z.object({
   /** Kit component this declaration lands on, when it lands on one. */
   appliedTo: z.object({ component: z.string(), slot: z.string().nullable() }).nullable(),
 
+  /** Accessibility consequence, for the rules and screens that reason about it. */
+  a11y: a11ySchema.nullable(),
+
   autoFixable: z.boolean(),
   needsAgent: z.boolean(),
 
@@ -95,6 +124,12 @@ export const findingSchema = z.object({
     occurrences: z.number().int().positive(),
     files: z.number().int().positive(),
   }),
+
+  /**
+   * Groups occurrences of one underlying decision: findings share a key when fixing one
+   * teaches you how to fix the rest. The dashboard's problem view folds on it.
+   */
+  impactKey: z.string().min(1),
 })
 
 export const usageSchema = z.object({
@@ -113,7 +148,40 @@ export const usageSchema = z.object({
   /** Kit components never used anywhere. */
   unusedComponents: z.array(z.string()),
   /** Non-kit component elements, ranked by how often they appear. */
-  foreignComponents: z.array(z.object({ name: z.string(), usages: z.number().int().nonnegative() })),
+  foreignComponents: z.array(
+    z.object({
+      name: z.string(),
+      usages: z.number().int().nonnegative(),
+      /** Declared inside the project (its code is on disk) rather than imported from a package. */
+      local: z.boolean(),
+      /** Most frequent import specifier the element resolves from; `null` when declared in place. */
+      source: z.string().nullable(),
+    }),
+  ),
+  /**
+   * Locally declared components worth the design-system team's attention: reused ones,
+   * ones that look like a kit component by name, and inline-SVG icons.
+   *
+   * The verdict is a deterministic heuristic (name similarity, reuse, composition) — the
+   * honest precursor of the M5 scorer. It says "worth checking", never "is a duplicate".
+   */
+  customComponents: z.array(
+    z.object({
+      name: z.string(),
+      file: z.string(),
+      line: z.number().int().positive(),
+      usages: z.number().int().nonnegative(),
+      files: z.number().int().nonnegative(),
+      props: z.array(z.string()),
+      kitComponentsUsed: z.array(z.string()),
+      hasInlineSvg: z.boolean(),
+      /** First lines of the declaration, for the side-by-side view in the report. */
+      snippet: z.string(),
+      /** `kit-like`: resembles a kit component · `kit-candidate`: reused, kit has nothing like it · `local`: neither. */
+      verdict: z.enum(['kit-like', 'kit-candidate', 'local']),
+      nameMatch: z.object({ component: z.string(), kind: z.enum(['exact', 'contains', 'similar']) }).nullable(),
+    }),
+  ),
   /** Token id → how often it is referenced correctly through `var()`. */
   tokenUsage: z.record(z.string(), z.number().int().nonnegative()),
 })
@@ -159,6 +227,7 @@ export const analysisArtifactSchema = z.object({
 
 export type Severity = z.infer<typeof severitySchema>
 export type FindingCategory = z.infer<typeof findingCategorySchema>
+export type A11yFacet = z.infer<typeof a11ySchema>
 export type Expected = z.infer<typeof expectedSchema>
 export type Candidate = z.infer<typeof candidateSchema>
 export type Snippet = z.infer<typeof snippetSchema>

@@ -27,6 +27,10 @@ export const SEVERITY_DOT: Record<Severity, string> = {
   candidate: 'bg-candidate',
 }
 
+export const Dot = ({ severity, className }: { severity: Severity; className?: string }): React.ReactElement => (
+  <span className={cx('inline-block size-2 shrink-0 rounded-full', SEVERITY_DOT[severity], className)} />
+)
+
 export const Card = ({
   children,
   className,
@@ -36,7 +40,7 @@ export const Card = ({
   className?: string
   as?: 'section' | 'div' | 'article'
 }): React.ReactElement => (
-  <Element className={cx('rounded-[var(--radius-card)] border border-border bg-surface', className)}>
+  <Element className={cx('rounded-[var(--radius-card)] border border-border bg-surface/80', className)}>
     {children}
   </Element>
 )
@@ -44,8 +48,8 @@ export const Card = ({
 export const CardHeader = ({ title, hint, right }: { title: ReactNode; hint?: ReactNode; right?: ReactNode }) => (
   <header className="flex items-baseline justify-between gap-4 border-b border-border px-4 py-3">
     <div className="min-w-0">
-      <h2 className="truncate text-[13px] font-semibold tracking-tight">{title}</h2>
-      {hint !== undefined && <p className="mt-0.5 truncate text-[11px] text-faint">{hint}</p>}
+      <h2 className="truncate text-[15px] font-semibold tracking-tight">{title}</h2>
+      {hint !== undefined && <p className="mt-0.5 text-[12px] leading-snug text-faint">{hint}</p>}
     </div>
     {right}
   </header>
@@ -55,22 +59,27 @@ export const Badge = ({
   children,
   tone = 'neutral',
   className,
+  title,
 }: {
   children: ReactNode
-  tone?: Severity | 'neutral' | 'ok'
+  tone?: Severity | 'neutral' | 'ok' | 'accent'
   className?: string
+  title?: string
 }): React.ReactElement => {
   const toneClass =
     tone === 'neutral'
       ? 'text-muted border-border bg-surface-2'
       : tone === 'ok'
         ? 'text-ok border-ok/40 bg-ok/10'
-        : SEVERITY_CLASS[tone]
+        : tone === 'accent'
+          ? 'text-accent border-accent/40 bg-accent/10'
+          : SEVERITY_CLASS[tone]
 
   return (
     <span
+      title={title}
       className={cx(
-        'inline-flex shrink-0 items-center gap-1 rounded-md border px-1.5 py-0.5 font-mono text-[10px] leading-4',
+        'inline-flex shrink-0 items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] leading-4',
         toneClass,
         className,
       )}
@@ -98,9 +107,9 @@ export const Button = ({
     onClick={onClick}
     title={title}
     className={cx(
-      'inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] transition-colors',
+      'inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-[12px] transition-colors',
       active
-        ? 'border-border-strong bg-surface-2 text-fg'
+        ? 'border-accent/50 bg-accent/15 text-fg'
         : 'border-border bg-transparent text-muted hover:border-border-strong hover:text-fg',
       className,
     )}
@@ -156,6 +165,7 @@ export const CopyButton = ({ value, label = 'Копировать' }: { value: s
 const clamp01 = (value: number): number => Math.min(1, Math.max(0, value))
 
 const METER_TONE = {
+  accent: 'bg-accent',
   info: 'bg-info',
   ok: 'bg-ok',
   warning: 'bg-warning',
@@ -164,7 +174,7 @@ const METER_TONE = {
 
 export const Meter = ({
   value,
-  tone = 'info',
+  tone = 'accent',
 }: {
   value: number
   tone?: keyof typeof METER_TONE
@@ -177,30 +187,125 @@ export const Meter = ({
   </div>
 )
 
-export const Stat = ({
+/**
+ * A headline metric. Always interactive: a number the reader cannot click to see its
+ * makeup is a number they will argue with instead.
+ */
+export const MetricCard = ({
   label,
   value,
-  hint,
+  detail,
+  meter,
+  tone,
   onClick,
 }: {
   label: string
   value: ReactNode
-  hint?: ReactNode
+  /** One line in plain words: what the number is made of. */
+  detail: ReactNode
+  meter?: number
+  tone?: keyof typeof METER_TONE
   onClick?: () => void
 }): React.ReactElement => (
-  <div
-    className={cx(
-      'rounded-lg border border-border bg-surface px-3 py-2.5',
-      onClick !== undefined && 'cursor-pointer transition-colors hover:border-border-strong',
-    )}
+  <button
+    type="button"
     onClick={onClick}
+    className={cx(
+      'flex min-w-0 flex-col gap-1.5 rounded-[var(--radius-card)] border border-border bg-surface/80 px-4 py-3 text-left transition-colors',
+      onClick !== undefined ? 'cursor-pointer hover:border-border-strong hover:bg-surface-2/60' : 'cursor-default',
+    )}
   >
-    <div className="text-[10px] uppercase tracking-wider text-faint">{label}</div>
-    <div className="mt-1 text-xl font-semibold tabular-nums">{value}</div>
-    {hint !== undefined && <div className="mt-0.5 text-[11px] text-muted">{hint}</div>}
+    <span className="text-[12px] font-medium tracking-wide text-muted">{label}</span>
+    <span className="text-[26px] font-semibold leading-none tracking-tight tabular-nums">{value}</span>
+    {meter !== undefined && <Meter value={meter} tone={tone} />}
+    <span className="text-[12px] leading-snug text-faint">{detail}</span>
+  </button>
+)
+
+/** The health ring — draws itself on load, colour follows the score. */
+export const HealthRing = ({ score, size = 132 }: { score: number; size?: number }): React.ReactElement => {
+  const stroke = 10
+  const radius = (size - stroke) / 2
+  const circumference = 2 * Math.PI * radius
+  const offset = circumference * (1 - clamp01(score / 100))
+  const tone = score >= 75 ? 'var(--color-ok)' : score >= 45 ? 'var(--color-warning)' : 'var(--color-error)'
+
+  return (
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90">
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="var(--color-surface-2)"
+          strokeWidth={stroke}
+        />
+        <circle
+          className="ds-ring"
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke={tone}
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          style={
+            {
+              '--ds-ring-circumference': `${String(circumference)}px`,
+              '--ds-ring-offset': `${String(offset)}px`,
+            } as React.CSSProperties
+          }
+        />
+      </svg>
+      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-[32px] font-semibold leading-none tabular-nums">{score}</span>
+        <span className="mt-1 text-[11px] tracking-wide text-faint">из 100</span>
+      </div>
+    </div>
+  )
+}
+
+/** An empty list must explain itself and offer the way out — a silent void reads as a bug. */
+export const EmptyState = ({
+  children,
+  action,
+  onAction,
+}: {
+  children: ReactNode
+  action?: string
+  onAction?: () => void
+}): React.ReactElement => (
+  <div className="flex flex-col items-center gap-3 px-4 py-14 text-center">
+    <p className="text-[13px] text-muted">{children}</p>
+    {action !== undefined && onAction !== undefined && (
+      <Button onClick={onAction} className="border-accent/50 text-accent hover:text-accent">
+        {action}
+      </Button>
+    )}
   </div>
 )
 
-export const Empty = ({ children }: { children: ReactNode }): React.ReactElement => (
-  <div className="px-4 py-10 text-center text-[12px] text-faint">{children}</div>
+/** Collapsed-by-default section for the report's appendices. */
+export const Disclosure = ({
+  summary,
+  children,
+  defaultOpen = false,
+}: {
+  summary: ReactNode
+  children: ReactNode
+  defaultOpen?: boolean
+}): React.ReactElement => (
+  <details
+    open={defaultOpen}
+    className="group rounded-[var(--radius-card)] border border-border bg-surface/80 open:pb-1"
+  >
+    <summary className="cursor-pointer select-none px-4 py-3 text-[14px] font-medium text-muted transition-colors hover:text-fg [&::-webkit-details-marker]:hidden">
+      <span className="mr-2 inline-block transition-transform group-open:rotate-90">›</span>
+      {summary}
+    </summary>
+    {children}
+  </details>
 )

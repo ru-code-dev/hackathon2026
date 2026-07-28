@@ -86,6 +86,32 @@ export const jsxElementSchema = z.object({
   kitComponent: z.string().nullable(),
   /** Literal prop values; `null` marks a prop whose value is an expression. */
   props: z.record(z.string(), z.string().nullable()),
+  /**
+   * Source text of the props {@link jsxElementSchema.shape.props} could not reduce to a
+   * literal.
+   *
+   * Invariant, asserted in the collector's tests: a key is present here **if and only if**
+   * `props[key] === null`. The two maps are one fact split by whether it is evaluable, not
+   * two independent records — `aria-controls={`panel-${id}`}` has to be visible to the
+   * rules as *something*, or a widget whose ARIA relations are built from a template reads
+   * as a widget with no ARIA relations at all.
+   *
+   * This is source text, deliberately not an evaluated value: relation checks compare
+   * whether two attributes are built from the same expression, which does not require
+   * knowing what it evaluates to.
+   */
+  propExpressions: z.record(z.string(), z.string()),
+  /** Event handler prop names present on the element, e.g. `['onClick', 'onKeyDown']`. */
+  eventHandlers: z.array(z.string()),
+  /**
+   * Key names named literally inside this element's inline handlers, e.g. `['ArrowRight']`.
+   *
+   * Empty means one of two different things, and the rules must not conflate them: no keys
+   * are referenced, or the handler is a bare reference (`onKeyDown={handleKey}`) whose body
+   * lives elsewhere. `eventHandlers` non-empty with `keysHandled` empty is the second case,
+   * and it belongs in `limitations[]` rather than in a finding.
+   */
+  keysHandled: z.array(z.string()),
   /** Source line of each prop, for precise finding coordinates. */
   propLines: z.record(z.string(), z.number().int().positive()),
   styleRefs: z.array(styleRefSchema),
@@ -165,8 +191,19 @@ export const declarationSchema = z.object({
   column: z.number().int().positive(),
 })
 
+/**
+ * `@2` adds `propExpressions`, `eventHandlers` and `keysHandled` to JSX elements.
+ *
+ * The version is bumped rather than the fields made optional, and that choice is the whole
+ * point: an absent optional field and an empty array are indistinguishable at the rule, so
+ * a keyboard rule reading a `@1` cache would return zero findings and the report would say
+ * "clean" about code nobody looked at. Silence that reads as a pass is the one failure mode
+ * this project refuses to ship. A version mismatch is loud; a missing field is not.
+ */
+export const OBSERVATIONS_SCHEMA_ID = 'ds-analyzer/observations@2'
+
 export const observationsSchema = z.object({
-  $schema: z.literal('ds-analyzer/observations@1'),
+  $schema: z.literal(OBSERVATIONS_SCHEMA_ID),
   styleValues: z.array(styleValueSchema),
   jsxElements: z.array(jsxElementSchema),
   imports: z.array(importSchema),

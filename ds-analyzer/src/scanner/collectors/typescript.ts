@@ -42,6 +42,62 @@ const PRESENTATIONAL_ATTRIBUTES: ReadonlySet<string> = new Set([
 ])
 
 /**
+ * `KeyboardEvent.key` values the APG patterns build their keyboard contracts from.
+ *
+ * A closed list rather than "any string literal in a handler": handlers are full of
+ * strings, and recording all of them would turn a precise signal into a haystack. These
+ * are the only names any APG keyboard requirement uses.
+ *
+ * `event.keyCode` is deliberately absent. It is deprecated, and its numeric literals are
+ * indistinguishable from every other number in a handler body — recording them would cost
+ * precision to catch code that is already legacy on a different axis.
+ */
+const KEYBOARD_EVENT_KEYS: ReadonlySet<string> = new Set([
+  'ArrowUp',
+  'ArrowDown',
+  'ArrowLeft',
+  'ArrowRight',
+  'Home',
+  'End',
+  'PageUp',
+  'PageDown',
+  'Enter',
+  'Escape',
+  'Tab',
+  'Delete',
+  'Backspace',
+  ' ',
+  'Spacebar',
+])
+
+/** `onClick`, `onKeyDown` — the React convention, which no host attribute collides with. */
+const isEventHandlerProp = (name: string): boolean => /^on[A-Z]/.test(name)
+
+/**
+ * Key names named literally anywhere inside a handler's expression.
+ *
+ * Walks the subtree rather than matching a shape, because the same requirement is written
+ * as `event.key === 'ArrowRight'`, as a `switch` case, and as `['ArrowLeft','ArrowRight']
+ * .includes(event.key)`. What matters to a conformance rule is only whether the key is
+ * named at all; which comparison form was used carries no signal.
+ */
+const keysNamedIn = (node: Node): string[] => {
+  const found = new Set<string>()
+
+  for (const literal of [
+    ...node.getDescendantsOfKind(SyntaxKind.StringLiteral),
+    ...node.getDescendantsOfKind(SyntaxKind.NoSubstitutionTemplateLiteral),
+  ]) {
+    const value = literal.getLiteralValue()
+    if (KEYBOARD_EVENT_KEYS.has(value)) {
+      found.add(value)
+    }
+  }
+
+  return sortStrings(found)
+}
+
+/**
  * A colour written in a plain TypeScript string.
  *
  * Six and eight digits only. Three-digit hex is legal CSS, but a bare four-character
@@ -484,7 +540,10 @@ export const collectTypeScript = (input: TypeScriptCollectionInput): TypeScriptC
     for (const element of jsxNodes) {
       const name = element.getTagNameNode().getText()
       const props: Record<string, string | null> = {}
+      const propExpressions: Record<string, string> = {}
       const propLines: Record<string, number> = {}
+      const eventHandlers: string[] = []
+      const keysHandled = new Set<string>()
       const styleRefs: StyleRef[] = []
       let hasInlineStyle = false
 
@@ -496,6 +555,16 @@ export const collectTypeScript = (input: TypeScriptCollectionInput): TypeScriptC
         const attributeName = attribute.getNameNode().getText()
         const initializer = attribute.getInitializer()
         propLines[attributeName] = attribute.getStartLineNumber()
+
+        if (isEventHandlerProp(attributeName)) {
+          eventHandlers.push(attributeName)
+
+          if (initializer !== undefined) {
+            for (const key of keysNamedIn(initializer)) {
+              keysHandled.add(key)
+            }
+          }
+        }
 
         if (initializer === undefined) {
           // A bare attribute is `true`.
@@ -528,10 +597,18 @@ export const collectTypeScript = (input: TypeScriptCollectionInput): TypeScriptC
         }
 
         const expression = Node.isJsxExpression(initializer) ? initializer.getExpression() : undefined
-        props[attributeName] =
+        const literalValue =
           expression && (Node.isStringLiteral(expression) || Node.isNoSubstitutionTemplateLiteral(expression))
             ? expression.getLiteralValue()
             : null
+
+        props[attributeName] = literalValue
+
+        if (literalValue === null) {
+          // Maintains the `props[k] === null ⇔ propExpressions[k]` invariant the schema
+          // documents: every prop that could not be reduced keeps its source text.
+          propExpressions[attributeName] = (expression ?? initializer).getText()
+        }
 
         if (attributeName === 'style' && expression) {
           hasInlineStyle = true
@@ -566,6 +643,9 @@ export const collectTypeScript = (input: TypeScriptCollectionInput): TypeScriptC
         resolvedFrom: null,
         kitComponent: null,
         props,
+        propExpressions,
+        eventHandlers: sortStrings(new Set(eventHandlers)),
+        keysHandled: sortStrings(keysHandled),
         propLines,
         styleRefs: styleRefs.map((ref) => ({ ...ref, module: styleModules.get(ref.module) ?? ref.module })),
         hasInlineStyle,

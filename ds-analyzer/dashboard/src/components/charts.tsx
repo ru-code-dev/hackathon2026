@@ -16,7 +16,7 @@ import { cx } from './ui.js'
 
 const AXIS = {
   stroke: 'var(--color-faint)',
-  fontSize: 10,
+  fontSize: 11,
   tickLine: false,
   axisLine: false,
 } as const
@@ -37,7 +37,7 @@ const TooltipBox = ({
   }
 
   return (
-    <div className="rounded-md border border-border-strong bg-surface-2 px-2 py-1 font-mono text-[11px] shadow-lg">
+    <div className="rounded-md border border-border-strong bg-surface-2 px-2 py-1 font-mono text-[12px] shadow-lg">
       {entry.payload?.label ?? entry.name} · {String(entry.value)}
       {suffix ?? ''}
     </div>
@@ -161,14 +161,14 @@ export const ScaleHistogram = ({
             }}
             className="group flex w-6 shrink-0 flex-col items-center gap-1"
           >
-            <span className="text-[9px] tabular-nums text-faint opacity-0 transition-opacity group-hover:opacity-100">
+            <span className="text-[10px] tabular-nums text-faint opacity-0 transition-opacity group-hover:opacity-100">
               {entry.count}
             </span>
             <span
               className={cx('w-full rounded-t-sm transition-opacity', onScale ? 'bg-ok/70' : 'bg-warning/70')}
-              style={{ height: `${String(Math.max(3, (entry.count / max) * 68))}px` }}
+              style={{ height: `${String(Math.max(3, (entry.count / max) * 76))}px` }}
             />
-            <span className="font-mono text-[9px] tabular-nums text-faint">{entry.px}</span>
+            <span className="font-mono text-[10px] tabular-nums text-faint">{entry.px}</span>
           </button>
         )
       })}

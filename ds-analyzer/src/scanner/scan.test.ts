@@ -174,6 +174,35 @@ describe('scanProject on demo-app', () => {
     expect(spinner?.hasInlineSvg).toBe(true)
   })
 
+  it('keeps ARIA relations built from a template visible to the rules', () => {
+    // `SettingsTabs` wires its panels with `aria-controls={`panel-${item.id}`}`. Recorded
+    // only as `props['aria-controls'] === null`, a hand-rolled tabs widget would look like
+    // one with no ARIA relations at all — indistinguishable from the case worth reporting.
+    const tabpanel = result.observations.jsxElements.find(
+      (element) => element.file.endsWith('SettingsTabs.tsx') && element.props['role'] === 'tabpanel',
+    )
+
+    expect(tabpanel?.props['id']).toBeNull()
+    expect(tabpanel?.propExpressions['id']).toBe('`panel-${item.id}`')
+
+    const tab = result.observations.jsxElements.find(
+      (element) => element.file.endsWith('SettingsTabs.tsx') && element.props['role'] === 'tab',
+    )
+
+    expect(tab?.propExpressions['aria-controls']).toBe('`panel-${item.id}`')
+  })
+
+  it('records that the hand-rolled tabs listen for no keyboard at all', () => {
+    // The fixture handles `onClick` and nothing else, which is precisely the APG failure
+    // neither a JSX linter nor a DOM checker can see.
+    const tab = result.observations.jsxElements.find(
+      (element) => element.file.endsWith('SettingsTabs.tsx') && element.props['role'] === 'tab',
+    )
+
+    expect(tab?.eventHandlers).toStrictEqual(['onClick'])
+    expect(tab?.keysHandled).toStrictEqual([])
+  })
+
   it('is deterministic', () => {
     const second = scanProject({ path: DEMO_APP })
 

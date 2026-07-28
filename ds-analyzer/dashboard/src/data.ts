@@ -1,98 +1,26 @@
 /**
- * The payload the generator injects, and the types the screens read it through.
+ * Reading the injected payload, and the display vocabulary for it.
  *
- * Deliberately hand-written rather than shared with the analyzer's zod schemas: the
- * dashboard is a separate build with no dependency on the analyzer, which is what lets it
- * be built once and reused for every project. The shapes are kept in step by the
- * generator, which is the only thing that writes this payload.
+ * The shapes themselves live in `contract.ts` and are re-exported here, so every screen
+ * keeps importing from one place. Everything the reader sees is Russian; the analyzer's
+ * machine identifiers (rule ids, subkinds, limitation reasons) are translated here rather
+ * than in the artifact, so the JSON stays diffable and the UI stays readable.
  */
 
-export type Severity = 'error' | 'warning' | 'info' | 'candidate'
+export type {
+  A11yFacet,
+  CustomComponent,
+  Expected,
+  Finding,
+  FindingCategory,
+  Payload,
+  Severity,
+  Snippet,
+  Summary,
+  Usage,
+} from './contract.js'
 
-export type FindingCategory = 'token' | 'typography' | 'font' | 'api' | 'override' | 'component' | 'icon'
-
-export interface Expected {
-  token: string | null
-  cssVar: string | null
-  component: string | null
-  value: string
-}
-
-export interface Snippet {
-  before: string
-  after: string | null
-  highlightLine: number
-  startLine: number
-  /** Pre-rendered by Shiki at generation time; zero highlighting cost in the browser. */
-  beforeHtml: string
-  afterHtml: string | null
-}
-
-export interface Finding {
-  id: string
-  rule: string
-  subkind: string | null
-  category: FindingCategory
-  severity: Severity
-  confidence: number
-  file: string
-  line: number
-  column: number
-  snippet: Snippet
-  actual: string
-  expected: Expected | null
-  why: string
-  note: string | null
-  rootCause: { file: string; line: number; name: string } | null
-  appliedTo: { component: string; slot: string | null } | null
-  autoFixable: boolean
-  needsAgent: boolean
-  candidates: { component: string; score: number; reasons: string[] }[]
-  impact: { occurrences: number; files: number }
-}
-
-export interface Usage {
-  components: {
-    name: string
-    usages: number
-    files: number
-    findings: number
-    overrides: number
-    props: Record<string, Record<string, number>>
-  }[]
-  unusedComponents: string[]
-  foreignComponents: { name: string; usages: number }[]
-  tokenUsage: Record<string, number>
-}
-
-export interface Summary {
-  healthScore: number
-  healthFormula: string
-  adoption: number
-  tokenCoverage: number
-  files: { scanned: number; clean: number }
-  findings: {
-    total: number
-    bySeverity: Record<Severity, number>
-    byRule: Record<string, number>
-    byCategory: Record<FindingCategory, number>
-    autoFixable: number
-    needsAgent: number
-  }
-  positives: { label: string; detail: string }[]
-  kitGaps: { value: string; token: string; role: string; occurrences: number }[]
-  limitations: { file: string; line: number | null; reason: string; detail: string }[]
-}
-
-export interface Payload {
-  project: { name: string | null; root: string; kitVersion: string | null; usesKit: boolean }
-  generatedAt: string
-  summary: Summary
-  usage: Usage
-  findings: Finding[]
-  /** Rule id → one-line description, for the filter panel. */
-  ruleDescriptions: Record<string, string>
-}
+import type { FindingCategory, Payload, Severity } from './contract.js'
 
 /**
  * Reads the injected payload.
@@ -126,6 +54,14 @@ export const SEVERITY_LABEL: Record<Severity, string> = {
   candidate: 'Кандидат',
 }
 
+/** What each severity actually means for the reader, shown next to the counters. */
+export const SEVERITY_HINT: Record<Severity, string> = {
+  error: 'уже сломано или сломается при обновлении кита',
+  warning: 'разойдётся при смене темы или версии',
+  info: 'сегодня выглядит правильно, но записано мимо системы',
+  candidate: 'вход для команды дизайн-системы, а не долг продукта',
+}
+
 export const CATEGORY_LABEL: Record<FindingCategory, string> = {
   token: 'Токены',
   typography: 'Типографика',
@@ -134,4 +70,77 @@ export const CATEGORY_LABEL: Record<FindingCategory, string> = {
   override: 'Переопределения',
   component: 'Компоненты',
   icon: 'Иконки',
+  a11y: 'Доступность',
+}
+
+/**
+ * Human names for rule ids.
+ *
+ * The id stays visible in expanded views — it is what people grep for and put in
+ * `ds.config.json` — but a list of dotted identifiers is not a report.
+ */
+export const RULE_LABEL: Record<string, string> = {
+  'token.literal.color': 'Цвет литералом вместо токена',
+  'token.literal.dimension': 'Размер литералом вместо токена',
+  'token.typography.partial': 'Типографика набрана вручную',
+  'token.tier.violation': 'ref-переменная вместо sys-роли',
+  'font.foreign': 'Гарнитура не из кита',
+  'import.bypass': 'Импорт в обход кита',
+  'import.internal': 'Импорт внутренним путём',
+  'api.dnu': 'Импорт запрещённого модуля',
+  'prop.invalid': 'Несуществующее значение пропа',
+  'api.deprecated': 'Устаревший API',
+  'style.override.repaint': 'Перекраска компонента кита',
+  'style.override.size': 'Изменение внутренних отступов кита',
+  'style.override.inner': 'Стилизация приватного слота',
+  'style.override.important': '!important поверх стилей кита',
+  'a11y.focus.suppressed': 'Кольцо фокуса убрано без замены',
+  'a11y.pattern.keyboard': 'Виджет недоступен с клавиатуры',
+}
+
+export const ruleLabel = (rule: string): string => RULE_LABEL[rule] ?? rule
+
+export const SUBKIND_LABEL: Record<string, string> = {
+  exact: 'точно токен',
+  near: 'почти токен',
+  shade: 'оттенок токена',
+  foreign: 'чужой цвет',
+  onScale: 'значение есть на шкале',
+  offScale: 'мимо шкалы',
+  noScale: 'шкалы нет — магическое число',
+  blanket: 'сброс без замены',
+  onFocus: 'убрано прямо на :focus',
+  noHandler: 'обработчика клавиш нет',
+  handlerUnreadable: 'обработчик объявлен отдельно',
+}
+
+export const subkindLabel = (subkind: string): string => SUBKIND_LABEL[subkind] ?? subkind
+
+export const LIMITATION_LABEL: Record<string, string> = {
+  'dynamic-styles': 'динамические стили',
+  'parse-error': 'ошибка разбора',
+  'unreadable-config': 'нечитаемый конфиг',
+  'unresolved-import': 'неразрешённый импорт',
+}
+
+export const limitationLabel = (reason: string): string => LIMITATION_LABEL[reason] ?? reason
+
+/** Mirror of the analyzer's health weights; used only for ordering, never recomputed into a score. */
+export const SEVERITY_WEIGHT: Record<Severity, number> = {
+  error: 3,
+  warning: 1,
+  info: 0.25,
+  candidate: 0,
+}
+
+export const VERDICT_LABEL: Record<'kit-like' | 'kit-candidate' | 'local', string> = {
+  'kit-like': 'похож на компонент кита',
+  'kit-candidate': 'кандидат в дизайн-систему',
+  local: 'локальный',
+}
+
+export const NAME_MATCH_LABEL: Record<'exact' | 'contains' | 'similar', string> = {
+  exact: 'имя совпадает с китом',
+  contains: 'имя содержит имя компонента кита',
+  similar: 'имя почти совпадает с китом',
 }

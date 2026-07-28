@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
 import { analyzerRoot } from '../config.js'
-import type { AnalysisArtifact, Finding } from '../domain/findings.js'
+import type { AnalysisArtifact, Finding, Usage } from '../domain/findings.js'
 import type { ProjectProfile } from '../domain/profile.js'
 import { RULES } from '../rules/index.js'
 import { ExtractionError } from '../shared/errors.js'
@@ -22,6 +22,9 @@ import { createCodeHighlighter } from './highlight.js'
 export const DASHBOARD_TEMPLATE = join(analyzerRoot, 'dashboard', 'dist', 'index.html')
 
 const PLACEHOLDER = /(<script type="application\/json" id="ds-data">)[\s\S]*?(<\/script>)/
+
+/** Custom components that get Shiki-highlighted snippets; the rest render as plain text. */
+const HIGHLIGHTED_CUSTOM_COMPONENTS = 150
 
 /**
  * Escapes the payload for embedding in a `<script>` element.
@@ -63,7 +66,8 @@ export interface RenderInput {
  */
 const withHighlighting = async (
   findings: readonly Finding[],
-): Promise<{ readonly findings: unknown[]; readonly stylesheet: string }> => {
+  usage: Usage,
+): Promise<{ readonly findings: unknown[]; readonly usage: unknown; readonly stylesheet: string }> => {
   const highlighter = await createCodeHighlighter()
 
   try {
@@ -76,7 +80,22 @@ const withHighlighting = async (
       },
     }))
 
-    return { findings: highlighted, stylesheet: highlighter.stylesheet() }
+    // Auditing the kit against itself yields one custom component per kit component, and
+    // highlighted markup for all of them added five megabytes to that report. Colouring is
+    // capped; the code itself ships for every component and renders as plain text past the
+    // cap, so nothing is hidden — only decoration is bounded.
+    const highlightedUsage = {
+      ...usage,
+      customComponents: usage.customComponents.map((component, index) => ({
+        ...component,
+        snippetHtml:
+          component.snippet.length > 0 && index < HIGHLIGHTED_CUSTOM_COMPONENTS
+            ? highlighter.toHtml(component.snippet, component.file)
+            : '',
+      })),
+    }
+
+    return { findings: highlighted, usage: highlightedUsage, stylesheet: highlighter.stylesheet() }
   } finally {
     highlighter.dispose()
   }
@@ -96,7 +115,7 @@ export const renderDashboard = async (input: RenderInput): Promise<string> => {
     throw new ExtractionError('Dashboard template has no ds-data placeholder; rebuild it from dashboard/index.html.')
   }
 
-  const highlighted = await withHighlighting(input.analysis.findings)
+  const highlighted = await withHighlighting(input.analysis.findings, input.analysis.usage)
 
   const payload = {
     project: {
@@ -107,7 +126,7 @@ export const renderDashboard = async (input: RenderInput): Promise<string> => {
     },
     generatedAt: input.generatedAt,
     summary: input.analysis.summary,
-    usage: input.analysis.usage,
+    usage: highlighted.usage,
     findings: highlighted.findings,
     ruleDescriptions: {
       ...Object.fromEntries(RULES.map((rule) => [rule.id, rule.description])),

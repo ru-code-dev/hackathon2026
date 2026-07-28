@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 
 import { resolvePaths } from '../config.js'
 import type { Observations, StyleValue } from '../domain/observations.js'
+import { OBSERVATIONS_SCHEMA_ID } from '../domain/observations.js'
+import { A11ySpec } from '../kit/a11y-spec.js'
 import type { ProjectProfile } from '../domain/profile.js'
 import { KitSpec } from '../kit/spec.js'
 import { buildSpacingIndex } from './context.js'
@@ -35,7 +37,7 @@ const styleValue = (overrides: Partial<StyleValue> & Pick<StyleValue, 'property'
 })
 
 const observations = (values: readonly StyleValue[], extra: Partial<Observations> = {}): Observations => ({
-  $schema: 'ds-analyzer/observations@1',
+  $schema: OBSERVATIONS_SCHEMA_ID,
   styleValues: [...values],
   jsxElements: [],
   imports: [],
@@ -68,6 +70,7 @@ const contextFor = (values: readonly StyleValue[], extra: Partial<Observations> 
 
   return {
     kit,
+    a11y: A11ySpec.unavailable(),
     profile,
     observations: collected,
     sources: new Map(),
@@ -215,6 +218,9 @@ describe('prop.invalid suggestions', () => {
     kitComponent: 'Button',
     props,
     propLines: Object.fromEntries(Object.keys(props).map((key) => [key, 1])),
+    propExpressions: {},
+    eventHandlers: [],
+    keysHandled: [],
     styleRefs: [],
     hasInlineStyle: false,
     file: 'src/a.tsx',

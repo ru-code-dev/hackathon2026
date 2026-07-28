@@ -1,0 +1,482 @@
+import { useMemo, useState } from 'react'
+
+import { Highlighted } from '../components/FindingCard.js'
+import { ScaleHistogram } from '../components/charts.js'
+import { Badge, Card, CardHeader, CopyButton, Disclosure, EmptyState, cx } from '../components/ui.js'
+import { NAME_MATCH_LABEL, VERDICT_LABEL, subkindLabel, type CustomComponent, type Payload } from '../data.js'
+import type { ViewState } from '../lib/url-state.js'
+
+/**
+ * The kit's-eye view.
+ *
+ * The other screens answer "what is wrong in this code". This one answers the questions
+ * the design-system team asks instead: which components does the product actually use and
+ * with which variants, what has it built by hand that the kit already has, what has it
+ * built that the kit *should* have, which colours does it keep reaching for, where do its
+ * raw sizes sit against the ramps. Every row leads back into the work plan.
+ */
+
+const KIND_TONE = {
+  exact: 'error',
+  near: 'warning',
+  shade: 'info',
+  foreign: 'warning',
+} as const
+
+const swatchesFrom = (payload: Payload): { value: string; token: string | null; kind: string; count: number }[] => {
+  const byValue = new Map<string, { value: string; token: string | null; kind: string; count: number }>()
+
+  for (const finding of payload.findings) {
+    if (finding.rule !== 'token.literal.color') {
+      continue
+    }
+    const existing = byValue.get(finding.actual)
+    if (existing) {
+      existing.count += 1
+      continue
+    }
+    byValue.set(finding.actual, {
+      value: finding.actual,
+      token: finding.expected?.token ?? null,
+      kind: finding.subkind ?? 'foreign',
+      count: 1,
+    })
+  }
+
+  return [...byValue.values()].sort((left, right) => right.count - left.count)
+}
+
+const dimensionsFrom = (payload: Payload): { px: number; count: number }[] => {
+  const byPx = new Map<number, number>()
+
+  for (const finding of payload.findings) {
+    if (finding.rule !== 'token.literal.dimension') {
+      continue
+    }
+    const px = Number.parseFloat(finding.actual)
+    if (Number.isFinite(px)) {
+      byPx.set(px, (byPx.get(px) ?? 0) + 1)
+    }
+  }
+
+  return [...byPx.entries()].map(([px, count]) => ({ px, count })).sort((left, right) => left.px - right.px)
+}
+
+/**
+ * A custom component, side by side with what the kit offers.
+ *
+ * The right column is honest about its own maturity: the name-based match is labelled a
+ * heuristic, and the replacement-code block states that it arrives with the AI stage (M5)
+ * instead of pretending an empty box is content.
+ */
+const CustomComponentCard = ({
+  component,
+  navigate,
+}: {
+  component: CustomComponent
+  navigate: (patch: Partial<ViewState>) => void
+}): React.ReactElement => {
+  const [showCode, setShowCode] = useState(false)
+
+  return (
+    <article className="rounded-[var(--radius-card)] border border-border bg-surface/80">
+      <header
+        className="flex cursor-pointer flex-wrap items-center gap-2 px-4 py-2.5"
+        onClick={() => {
+          setShowCode((previous) => !previous)
+        }}
+      >
+        <span className={cx('text-[12px] text-faint transition-transform', showCode && 'rotate-90')}>›</span>
+        <span className="font-mono text-[13.5px] font-medium">{component.name}</span>
+        {component.hasInlineSvg && <Badge tone="candidate">inline-svg</Badge>}
+        {component.nameMatch !== null && (
+          <Badge tone={component.nameMatch.kind === 'exact' ? 'error' : 'warning'}>
+            ≈ {component.nameMatch.component}
+          </Badge>
+        )}
+        <span className="ml-auto flex items-center gap-2 text-[12px] text-muted">
+          <span className="tabular-nums">
+            {component.usages}× · {component.files} ф.
+          </span>
+          <span className="hidden font-mono text-[11px] text-faint md:inline">
+            {component.file}:{component.line}
+          </span>
+        </span>
+      </header>
+
+      {showCode && (
+        <div className="ds-enter border-t border-border">
+          <div className="grid grid-cols-1 lg:grid-cols-2">
+            <div className="min-w-0">
+              <div className="border-b border-border px-4 py-2 text-[12px] text-faint">
+                Текущий код · {component.file}:{component.line}
+              </div>
+              {component.snippetHtml.length > 0 ? (
+                <Highlighted html={component.snippetHtml} />
+              ) : component.snippet.length > 0 ? (
+                // Highlighting is capped generator-side on huge reports; the code still ships.
+                <pre className="overflow-x-auto px-4 py-2 font-mono text-[12.5px] leading-relaxed text-muted">
+                  {component.snippet}
+                </pre>
+              ) : (
+                <p className="px-4 py-3 text-[12.5px] text-faint">Код не был извлечён.</p>
+              )}
+            </div>
+
+            <div className="min-w-0 border-t border-border lg:border-l lg:border-t-0">
+              <div className="border-b border-border px-4 py-2 text-[12px] text-faint">Что предлагает кит</div>
+              <div className="space-y-2.5 p-4 text-[12.5px] leading-relaxed">
+                {component.nameMatch !== null ? (
+                  <>
+                    <p>
+                      <span className="font-mono text-fg">{component.nameMatch.component}</span>{' '}
+                      <span className="text-muted">— {NAME_MATCH_LABEL[component.nameMatch.kind]}.</span>
+                    </p>
+                    <p className="text-muted">
+                      Это эвристика по имени, а не доказательство дубля: сверьте пропы и поведение.
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-muted">
+                    Похожего компонента в ките нет. Если он нужен ещё где-то — это кандидат на добавление в
+                    дизайн-систему.
+                  </p>
+                )}
+
+                {component.props.length > 0 && (
+                  <p className="text-muted">
+                    <span className="text-faint">Пропы:</span>{' '}
+                    <span className="font-mono text-[12px]">{component.props.join(', ')}</span>
+                  </p>
+                )}
+                {component.kitComponentsUsed.length > 0 && (
+                  <p className="text-muted">
+                    <span className="text-faint">Собран из кита:</span>{' '}
+                    <span className="font-mono text-[12px]">{component.kitComponentsUsed.join(', ')}</span>
+                  </p>
+                )}
+
+                <div className="rounded-md border border-dashed border-border-strong px-3 py-2.5 text-faint">
+                  Код замены появится на этапе ИИ-анализа (M5): скоринг по структуре, пропам и ARIA, а не только по
+                  имени.
+                </div>
+
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  <CopyButton value={`${component.file}:${String(component.line)}`} label="Путь" />
+                  <button
+                    type="button"
+                    className="inline-flex items-center rounded-md border border-border px-2.5 py-1 text-[12px] text-muted transition-colors hover:border-border-strong hover:text-fg"
+                    onClick={() => {
+                      navigate({ screen: 'files', file: component.file })
+                    }}
+                  >
+                    Отклонения файла →
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </article>
+  )
+}
+
+export const DesignScreen = ({
+  payload,
+  state,
+  go,
+  navigate,
+}: {
+  payload: Payload
+  state: ViewState
+  go: (patch: Partial<ViewState>) => void
+  navigate: (patch: Partial<ViewState>) => void
+}): React.ReactElement => {
+  const swatches = useMemo(() => swatchesFrom(payload), [payload])
+  const dimensions = useMemo(() => dimensionsFrom(payload), [payload])
+
+  const { usage } = payload
+  const selected = usage.components.find((component) => component.name === state.component) ?? null
+
+  const kitLike = usage.customComponents.filter((component) => component.verdict === 'kit-like')
+  const candidates = usage.customComponents.filter((component) => component.verdict === 'kit-candidate')
+  const locals = usage.customComponents.filter((component) => component.verdict === 'local')
+
+  const topTokens = Object.entries(usage.tokenUsage)
+    .sort((left, right) => right[1] - left[1])
+    .slice(0, 12)
+
+  const thirdParty = usage.foreignComponents.filter((component) => !component.local)
+
+  return (
+    <div className="ds-enter h-full overflow-y-auto">
+      <div className="mx-auto max-w-6xl space-y-4 p-5">
+        <p className="text-[13px] leading-relaxed text-muted">
+          Взгляд со стороны дизайн-системы: что из кита проект использует и как, что собрал руками вместо кита, и что
+          кит мог бы забрать себе. Каждая строка ведёт в план работ или в файл.
+        </p>
+
+        {/* Custom components — the part the ds team scrolls to first. */}
+        <Card>
+          <CardHeader
+            title="Кастомные компоненты"
+            hint="написаны в проекте руками. «≈ Имя» — похоже, кит это уже умеет; без пары и с повторным использованием — кандидат в дизайн-систему."
+          />
+          {usage.customComponents.length === 0 ? (
+            <EmptyState>Заметных кастомных компонентов не найдено.</EmptyState>
+          ) : (
+            <div className="space-y-3 p-4">
+              {kitLike.length > 0 && (
+                <div className="space-y-1.5">
+                  <h3 className="text-[12px] font-medium tracking-wide text-warning">
+                    Похожи на компоненты кита — проверить на дубль ({kitLike.length})
+                  </h3>
+                  {kitLike.map((component) => (
+                    <CustomComponentCard key={component.name} component={component} navigate={navigate} />
+                  ))}
+                </div>
+              )}
+
+              {candidates.length > 0 && (
+                <div className="space-y-1.5">
+                  <h3 className="text-[12px] font-medium tracking-wide text-candidate">
+                    Кандидаты на добавление в дизайн-систему ({candidates.length})
+                  </h3>
+                  {candidates.map((component) => (
+                    <CustomComponentCard key={component.name} component={component} navigate={navigate} />
+                  ))}
+                </div>
+              )}
+
+              {locals.length > 0 && (
+                <div className="space-y-1.5">
+                  <h3 className="text-[12px] font-medium tracking-wide text-faint">
+                    {VERDICT_LABEL.local} ({locals.length})
+                  </h3>
+                  {locals.map((component) => (
+                    <CustomComponentCard key={component.name} component={component} navigate={navigate} />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </Card>
+
+        <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1fr_420px]">
+          <div className="min-w-0 space-y-3">
+            <Card>
+              <CardHeader
+                title="Палитра мимо токенов"
+                hint="цвета, написанные литералом, и токен, которым их надо было записать; клик — все места в плане"
+              />
+              {swatches.length === 0 ? (
+                <EmptyState>Сырых цветов нет — палитра целиком на токенах.</EmptyState>
+              ) : (
+                <div className="grid grid-cols-1 gap-1.5 p-3 sm:grid-cols-2">
+                  {swatches.map((swatch) => (
+                    <button
+                      key={swatch.value}
+                      type="button"
+                      onClick={() => {
+                        navigate({ screen: 'problems', rule: 'token.literal.color', value: swatch.value })
+                      }}
+                      className="flex items-center gap-2.5 rounded-md border border-border bg-surface-2/50 px-2.5 py-2 text-left transition-colors hover:border-border-strong"
+                    >
+                      <span
+                        className="size-9 shrink-0 rounded-md border border-border-strong"
+                        style={{ background: swatch.value }}
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate font-mono text-[12px]">{swatch.value}</span>
+                        <span className="block truncate font-mono text-[11px] text-faint">
+                          {swatch.token ?? 'близкого токена нет'}
+                        </span>
+                      </span>
+                      <Badge tone={KIND_TONE[swatch.kind as keyof typeof KIND_TONE] ?? 'neutral'}>
+                        {subkindLabel(swatch.kind)}
+                      </Badge>
+                      <span className="shrink-0 tabular-nums text-[12px] text-muted">{swatch.count}×</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </Card>
+
+            <Card>
+              <CardHeader
+                title="Размеры против шкалы кита"
+                hint="зелёное — значение есть на шкале, жёлтое — нет; клик показывает все места"
+              />
+              {dimensions.length === 0 ? (
+                <EmptyState>Сырых размеров не найдено.</EmptyState>
+              ) : (
+                <ScaleHistogram
+                  values={dimensions}
+                  scale={[0, 2, 4, 8, 10, 12, 14, 16, 18, 20, 24, 30, 32, 36, 38, 46, 48]}
+                  onSelect={(px) => {
+                    navigate({ screen: 'problems', rule: 'token.literal.dimension', query: `${String(px)}px` })
+                  }}
+                />
+              )}
+            </Card>
+
+            <Card>
+              <CardHeader
+                title="Самые используемые токены"
+                hint="обращения через var(--…) — то, что уже делается правильно"
+              />
+              {topTokens.length === 0 ? (
+                <EmptyState>Ни одного обращения к токенам через CSS-переменные.</EmptyState>
+              ) : (
+                <ul className="p-3">
+                  {topTokens.map(([token, count]) => {
+                    const max = topTokens[0]?.[1] ?? 1
+
+                    return (
+                      <li key={token} className="flex items-center gap-2.5 px-1 py-1">
+                        <span className="min-w-0 flex-1 truncate font-mono text-[12px]">{token}</span>
+                        <span className="h-1.5 w-28 shrink-0 overflow-hidden rounded-full bg-surface-2">
+                          <span
+                            className="block h-full rounded-full bg-ok/70"
+                            style={{ width: `${String(Math.max(4, (count / max) * 100))}%` }}
+                          />
+                        </span>
+                        <span className="w-10 shrink-0 text-right tabular-nums text-[12px] text-muted">{count}×</span>
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+            </Card>
+          </div>
+
+          <div className="min-w-0 space-y-3">
+            <Card>
+              <CardHeader
+                title="Компоненты кита в проекте"
+                hint={`${String(usage.components.length)} используется · ${String(usage.unusedComponents.length)} ни разу; клик — какие пропы и варианты реально нужны`}
+              />
+              <ul className="max-h-[420px] overflow-y-auto">
+                {usage.components.map((component) => (
+                  <li key={component.name} className="border-t border-border/60 first:border-t-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        go({ component: state.component === component.name ? null : component.name })
+                      }}
+                      className={cx(
+                        'flex w-full items-center gap-2 px-3.5 py-2 text-left transition-colors',
+                        state.component === component.name ? 'bg-surface-2' : 'hover:bg-surface-2/50',
+                      )}
+                    >
+                      <span className="min-w-0 flex-1 truncate text-[13px]">{component.name}</span>
+                      <span className="shrink-0 font-mono text-[11px] text-faint">{component.files} ф.</span>
+                      <span className="w-10 shrink-0 text-right tabular-nums text-[12.5px]">{component.usages}×</span>
+                      {component.overrides > 0 && <Badge tone="warning">{component.overrides} перекр.</Badge>}
+                      {component.findings === 0 ? (
+                        <Badge tone="ok">чисто</Badge>
+                      ) : (
+                        <Badge tone="warning">{component.findings}</Badge>
+                      )}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+
+            {selected !== null && (
+              <Card className="ds-enter">
+                <CardHeader
+                  title={selected.name}
+                  hint={`${String(selected.usages)} использований в ${String(selected.files)} файлах`}
+                  right={
+                    <button
+                      type="button"
+                      className="shrink-0 text-[13px] text-accent transition-colors hover:text-fg"
+                      onClick={() => {
+                        navigate({ screen: 'problems', component: selected.name })
+                      }}
+                    >
+                      отклонения →
+                    </button>
+                  }
+                />
+                <div className="space-y-3 p-4">
+                  {Object.entries(selected.props).length === 0 ? (
+                    <p className="text-[12.5px] text-faint">Пропы с вариантами не использовались.</p>
+                  ) : (
+                    Object.entries(selected.props).map(([prop, values]) => {
+                      const total = Object.values(values).reduce((sum, count) => sum + count, 0)
+
+                      return (
+                        <div key={prop}>
+                          <div className="mb-1 font-mono text-[12px] text-muted">{prop}</div>
+                          <div className="space-y-1">
+                            {Object.entries(values)
+                              .sort((left, right) => right[1] - left[1])
+                              .map(([value, count]) => (
+                                <div key={value} className="flex items-center gap-2">
+                                  <span className="w-24 shrink-0 truncate font-mono text-[12px]">{value}</span>
+                                  <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-2">
+                                    <span
+                                      className="block h-full rounded-full bg-info"
+                                      style={{ width: `${String((count / total) * 100)}%` }}
+                                    />
+                                  </span>
+                                  <span className="w-8 shrink-0 text-right tabular-nums text-[12px] text-faint">
+                                    {count}
+                                  </span>
+                                </div>
+                              ))}
+                          </div>
+                        </div>
+                      )
+                    })
+                  )}
+                </div>
+              </Card>
+            )}
+
+            {thirdParty.length > 0 && (
+              <Card>
+                <CardHeader
+                  title="Сторонние компоненты"
+                  hint="импортированы из чужих пакетов — каждый из них конкурирует с китом"
+                />
+                <ul className="p-3">
+                  {thirdParty.slice(0, 20).map((component) => (
+                    <li key={component.name} className="flex items-center gap-2 px-1 py-1 text-[12.5px]">
+                      <span className="min-w-0 flex-1 truncate font-mono">{component.name}</span>
+                      {component.source !== null && (
+                        <span className="min-w-0 truncate font-mono text-[11px] text-faint">{component.source}</span>
+                      )}
+                      <span className="w-9 shrink-0 text-right tabular-nums text-muted">{component.usages}×</span>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            )}
+
+            {usage.unusedComponents.length > 0 && (
+              <Disclosure
+                summary={
+                  <>
+                    Компоненты кита, не использованные ни разу{' '}
+                    <span className="tabular-nums text-faint">({usage.unusedComponents.length})</span>
+                  </>
+                }
+              >
+                <div className="flex flex-wrap gap-1.5 border-t border-border p-4">
+                  {usage.unusedComponents.map((name) => (
+                    <Badge key={name}>{name}</Badge>
+                  ))}
+                </div>
+              </Disclosure>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

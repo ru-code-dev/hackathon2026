@@ -1,6 +1,7 @@
 import type { AnalysisArtifact } from './domain/findings.js'
 import type { Observations } from './domain/observations.js'
 import type { ProjectProfile } from './domain/profile.js'
+import type { A11ySpec } from './kit/a11y-spec.js'
 import type { KitSpec } from './kit/spec.js'
 import { buildSummary } from './metrics/health.js'
 import { buildUsage } from './metrics/usage.js'
@@ -18,6 +19,8 @@ export interface AnalyzeInput {
   readonly kit: KitSpec
   readonly profile: ProjectProfile
   readonly observations: Observations
+  /** Kit accessibility evidence; omitted when `kit-a11y.json` has not been built. */
+  readonly a11y?: A11ySpec
   /** Rule ids switched off in `ds.config.json`. */
   readonly disabledRules?: ReadonlySet<string>
   /** Finding ids the project has decided to live with. */
@@ -31,7 +34,7 @@ export const analyze = (input: AnalyzeInput): AnalysisArtifact => {
     (finding) => !(input.ignoredFindings?.has(finding.id) ?? false),
   )
 
-  const usage = buildUsage(input.observations, findings, input.kit)
+  const usage = buildUsage(input.observations, findings, input.kit, context.sources)
   const summary = buildSummary({ profile: input.profile, observations: input.observations, findings, usage })
 
   return { $schema: 'ds-analyzer/analysis@1', findings, usage, summary }

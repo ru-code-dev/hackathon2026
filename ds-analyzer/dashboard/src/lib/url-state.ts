@@ -3,27 +3,41 @@ import { useCallback, useEffect, useState } from 'react'
 /**
  * Navigation state lives in the URL.
  *
- * Every level of drill-down — screen, rule, subkind, file, finding, token — is a query
+ * Every level of drill-down — screen, filter, selected problem, file — is a query
  * parameter, so any view can be pasted into a ticket and opened by somebody else at
- * exactly the same place. That is the whole reason for the indirection: a dashboard where
- * "look at this" means "click these six things" does not get used in review.
+ * exactly the same place. The back button works for free, because each transition is a
+ * `pushState`.
  *
- * The back button works for free, because each transition is a `pushState`.
+ * Two ways to move, and the distinction is the whole UX fix:
+ *
+ *  - `go` merges a patch — used for toggling filters *within* the current screen.
+ *  - `navigate` resets everything first — used for every click that *opens* a view
+ *    (a chart segment, a stat card, a swatch). The old dashboard merged those too, which
+ *    let a search query from one screen silently empty a list on another. A filter the
+ *    user cannot see is a bug, not a feature.
  */
 
-export type Screen = 'overview' | 'findings' | 'tokens'
+export type Screen = 'overview' | 'problems' | 'files' | 'design'
 
 export interface ViewState {
   screen: Screen
+  /** Problems screen: `flat` shows every occurrence as its own row instead of folding. */
+  mode: 'flat' | null
   /** Filter by rule id, e.g. `token.literal.color`. */
   rule: string | null
   /** Filter by subkind within a rule, e.g. `near`. */
   subkind: string | null
   severity: string | null
+  category: string | null
+  /** Exact match on the raw value, e.g. `#2969e3` — set by palette and histogram clicks. */
+  value: string | null
+  /** Selected file on the files screen. */
   file: string | null
-  /** Selected finding id; opens its card expanded. */
+  /** Selected problem group (impactKey); opens expanded and scrolled into view. */
+  group: string | null
+  /** Selected finding id within a file. */
   finding: string | null
-  /** Selected kit component on the tokens screen. */
+  /** Selected kit component on the design screen. */
   component: string | null
   /** Free-text search across file, value and explanation. */
   query: string
@@ -33,15 +47,21 @@ export interface ViewState {
 
 const EMPTY: ViewState = {
   screen: 'overview',
+  mode: null,
   rule: null,
   subkind: null,
   severity: null,
+  category: null,
+  value: null,
   file: null,
+  group: null,
   finding: null,
   component: null,
   query: '',
   autoFixableOnly: false,
 }
+
+const SCREENS: readonly Screen[] = ['overview', 'problems', 'files', 'design']
 
 const parse = (search: string): ViewState => {
   const params = new URLSearchParams(search)
@@ -53,11 +73,15 @@ const parse = (search: string): ViewState => {
   const screen = read('screen')
 
   return {
-    screen: screen === 'findings' || screen === 'tokens' ? screen : 'overview',
+    screen: SCREENS.includes(screen as Screen) ? (screen as Screen) : 'overview',
+    mode: read('mode') === 'flat' ? 'flat' : null,
     rule: read('rule'),
     subkind: read('subkind'),
     severity: read('severity'),
+    category: read('category'),
+    value: read('value'),
     file: read('file'),
+    group: read('group'),
     finding: read('finding'),
     component: read('component'),
     query: read('q') ?? '',
@@ -75,10 +99,14 @@ const serialise = (state: ViewState): string => {
 
   // `overview` is the default, so it is left out to keep shared links short.
   write('screen', state.screen === 'overview' ? null : state.screen)
+  write('mode', state.mode)
   write('rule', state.rule)
   write('subkind', state.subkind)
   write('severity', state.severity)
+  write('category', state.category)
+  write('value', state.value)
   write('file', state.file)
+  write('group', state.group)
   write('finding', state.finding)
   write('component', state.component)
   write('q', state.query)
@@ -93,7 +121,10 @@ const serialise = (state: ViewState): string => {
 
 export const useViewState = (): {
   state: ViewState
+  /** Merge a patch into the current state — filter toggles within a screen. */
   go: (patch: Partial<ViewState>) => void
+  /** Reset everything, then apply the patch — every click that opens a view. */
+  navigate: (patch: Partial<ViewState>) => void
   reset: (screen?: Screen) => void
 } => {
   const [state, setState] = useState<ViewState>(() => parse(window.location.search))
@@ -108,34 +139,52 @@ export const useViewState = (): {
     }
   }, [])
 
-  const go = useCallback((patch: Partial<ViewState>): void => {
-    setState((previous) => {
-      const next = { ...previous, ...patch }
-      window.history.pushState(null, '', serialise(next))
-      return next
-    })
-  }, [])
-
-  const reset = useCallback((screen: Screen = 'overview'): void => {
-    const next = { ...EMPTY, screen }
+  const apply = useCallback((next: ViewState): void => {
     window.history.pushState(null, '', serialise(next))
     setState(next)
   }, [])
 
-  return { state, go, reset }
+  const go = useCallback(
+    (patch: Partial<ViewState>): void => {
+      setState((previous) => {
+        const next = { ...previous, ...patch }
+        window.history.pushState(null, '', serialise(next))
+        return next
+      })
+    },
+    [setState],
+  )
+
+  const navigate = useCallback(
+    (patch: Partial<ViewState>): void => {
+      apply({ ...EMPTY, ...patch })
+    },
+    [apply],
+  )
+
+  const reset = useCallback(
+    (screen: Screen = 'overview'): void => {
+      apply({ ...EMPTY, screen })
+    },
+    [apply],
+  )
+
+  return { state, go, navigate, reset }
 }
 
-/** Non-default filters, for the breadcrumb trail. */
+/** Non-default filters, for the always-visible chip row. */
 export const activeFilters = (state: ViewState): { key: keyof ViewState; label: string; value: string }[] => {
   const crumbs: { key: keyof ViewState; label: string; value: string }[] = []
 
-  if (state.severity !== null) crumbs.push({ key: 'severity', label: 'severity', value: state.severity })
+  if (state.severity !== null) crumbs.push({ key: 'severity', label: 'серьёзность', value: state.severity })
+  if (state.category !== null) crumbs.push({ key: 'category', label: 'категория', value: state.category })
   if (state.rule !== null) crumbs.push({ key: 'rule', label: 'правило', value: state.rule })
   if (state.subkind !== null) crumbs.push({ key: 'subkind', label: 'подвид', value: state.subkind })
+  if (state.value !== null) crumbs.push({ key: 'value', label: 'значение', value: state.value })
   if (state.file !== null) crumbs.push({ key: 'file', label: 'файл', value: state.file })
   if (state.component !== null) crumbs.push({ key: 'component', label: 'компонент', value: state.component })
   if (state.query.length > 0) crumbs.push({ key: 'query', label: 'поиск', value: state.query })
-  if (state.autoFixableOnly) crumbs.push({ key: 'autoFixableOnly', label: 'фильтр', value: 'авто-фикс' })
+  if (state.autoFixableOnly) crumbs.push({ key: 'autoFixableOnly', label: 'только', value: 'авто-фикс' })
 
   return crumbs
 }

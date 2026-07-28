@@ -5,6 +5,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import { analyze } from '../analyze.js'
 import { analyzerRoot, resolvePaths } from '../config.js'
 import type { AnalysisArtifact } from '../domain/findings.js'
+import { A11ySpec } from '../kit/a11y-spec.js'
 import { KitSpec } from '../kit/spec.js'
 import { scanProject } from '../scanner/scan.js'
 import { formatMismatches, loadOracle, scoreAgainstOracle, type Oracle } from '../testing/oracle.js'
@@ -28,10 +29,15 @@ describe('deviation detection against the demo-app oracle', () => {
   beforeAll(() => {
     oracle = loadOracle(join(DEMO_APP, 'fixtures', 'expected-findings.json'))
 
-    const kit = KitSpec.load(resolvePaths().artifactsDir)
+    const artifactsDir = resolvePaths().artifactsDir
+    const kit = KitSpec.load(artifactsDir)
+    // Loaded here rather than defaulted away: the accessibility rules only speak when there
+    // is upstream evidence behind them, so an oracle run without it would score rules that
+    // had been silently switched off.
+    const a11y = A11ySpec.load(artifactsDir)
     const { profile, observations } = scanProject({ path: DEMO_APP })
 
-    analysis = analyze({ kit, profile, observations })
+    analysis = analyze({ kit, a11y, profile, observations })
   })
 
   it('reaches the agreed precision and recall on the token and API rules', () => {
@@ -88,9 +94,11 @@ describe('deviation detection against the demo-app oracle', () => {
   })
 
   it('is deterministic', () => {
-    const kit = KitSpec.load(resolvePaths().artifactsDir)
+    const artifactsDir = resolvePaths().artifactsDir
+    const kit = KitSpec.load(artifactsDir)
+    const a11y = A11ySpec.load(artifactsDir)
     const { profile, observations } = scanProject({ path: DEMO_APP })
 
-    expect(JSON.stringify(analyze({ kit, profile, observations }))).toBe(JSON.stringify(analysis))
+    expect(JSON.stringify(analyze({ kit, a11y, profile, observations }))).toBe(JSON.stringify(analysis))
   })
 })

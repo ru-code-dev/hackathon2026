@@ -4,6 +4,7 @@ import { basename } from 'node:path'
 import { Project, ts } from 'ts-morph'
 
 import type { Declaration, JsxElement, Observations, StyleValue } from '../domain/observations.js'
+import { OBSERVATIONS_SCHEMA_ID } from '../domain/observations.js'
 import type { Alias, Limitation, ProjectProfile, StyleSyntax } from '../domain/profile.js'
 import { fromProjectPath } from '../shared/path.js'
 import { compareStrings, sortStrings } from '../shared/sort.js'
@@ -365,7 +366,7 @@ export const scanProject = (options: ScanOptions): ScanResult => {
   }
 
   const observations: Observations = {
-    $schema: 'ds-analyzer/observations@1',
+    $schema: OBSERVATIONS_SCHEMA_ID,
     styleValues: linkedStyleValues,
     jsxElements: classifiedElements,
     imports,

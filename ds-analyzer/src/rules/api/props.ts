@@ -1,3 +1,4 @@
+import { editDistance } from '../../shared/edit-distance.js'
 import { compareStrings } from '../../shared/sort.js'
 import type { RawFinding, Rule, RuleContext } from '../types.js'
 
@@ -14,28 +15,6 @@ import type { RawFinding, Rule, RuleContext } from '../types.js'
  * are loose — spread props, `any`, a wrapper that widens the type. Those are exactly the
  * places nobody is looking, and the component silently falls back to its default variant.
  */
-
-/** Levenshtein distance, capped: only used to suggest the value the developer meant. */
-const editDistance = (left: string, right: string): number => {
-  const previous = Array.from({ length: right.length + 1 }, (_, index) => index)
-
-  for (let i = 1; i <= left.length; i += 1) {
-    let diagonal = previous[0] ?? 0
-    previous[0] = i
-
-    for (let j = 1; j <= right.length; j += 1) {
-      const current = previous[j] ?? 0
-      previous[j] = Math.min(
-        (previous[j] ?? 0) + 1,
-        (previous[j - 1] ?? 0) + 1,
-        diagonal + (left[i - 1] === right[j - 1] ? 0 : 1),
-      )
-      diagonal = current
-    }
-  }
-
-  return previous[right.length] ?? 0
-}
 
 /**
  * Values that mean exactly what a kit value means, spelled differently.

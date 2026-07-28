@@ -54,3 +54,10 @@
   justify-content: flex-end;
   gap: v.$gap-tight;
 }
+
+// FIXTURE: the focus ring is removed and nothing replaces it. The button stays operable
+// but becomes invisible to anyone navigating by keyboard — WCAG 2.4.7.
+// Appended at the end of the file on purpose: the oracle pins line numbers above.
+.close-legacy {
+  outline: none;
+}

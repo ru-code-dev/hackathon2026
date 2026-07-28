@@ -1,7 +1,8 @@
 import { extractValueLiterals } from '../css/value.js'
 import type { Finding, Usage } from '../domain/findings.js'
-import type { Observations } from '../domain/observations.js'
+import type { Declaration, Observations } from '../domain/observations.js'
 import type { KitSpec } from '../kit/spec.js'
+import { editDistance } from '../shared/edit-distance.js'
 import { compareStrings, sortStrings } from '../shared/sort.js'
 
 /**
@@ -45,16 +46,96 @@ const toRecord = (props: ReadonlyMap<string, Map<string, number>>): Record<strin
   return result
 }
 
-export const buildUsage = (observations: Observations, findings: readonly Finding[], kit: KitSpec): Usage => {
+/** How many lines of a declaration the report shows side by side with the kit candidate. */
+const SNIPPET_LINES = 24
+
+/** Reuse thresholds for promoting a local component to a design-system candidate. */
+const CANDIDATE_MIN_USAGES = 3
+const CANDIDATE_MIN_FILES = 2
+
+/** Below this length, `contains` and small edit distances match by accident. */
+const MIN_NAME_LENGTH_FOR_FUZZY = 4
+const MAX_NAME_EDIT_DISTANCE = 2
+
+/**
+ * Does this local component's name point at a kit component?
+ *
+ * Deliberately conservative: `exact` and `contains` are the renames people actually make
+ * (`Spinner`, `MyButton`, `OldCard`); the edit-distance rung only catches typo-grade
+ * differences. Anything smarter than names belongs to the M5 scorer, not here.
+ */
+const matchName = (
+  name: string,
+  kitNames: readonly string[],
+): { component: string; kind: 'exact' | 'contains' | 'similar' } | null => {
+  const lower = name.toLowerCase()
+
+  for (const kitName of kitNames) {
+    if (kitName.toLowerCase() === lower) {
+      return { component: kitName, kind: 'exact' }
+    }
+  }
+
+  for (const kitName of kitNames) {
+    if (kitName.length >= MIN_NAME_LENGTH_FOR_FUZZY && lower.includes(kitName.toLowerCase())) {
+      return { component: kitName, kind: 'contains' }
+    }
+  }
+
+  for (const kitName of kitNames) {
+    if (
+      kitName.length >= MIN_NAME_LENGTH_FOR_FUZZY &&
+      name.length >= MIN_NAME_LENGTH_FOR_FUZZY &&
+      editDistance(lower, kitName.toLowerCase()) <= MAX_NAME_EDIT_DISTANCE
+    ) {
+      return { component: kitName, kind: 'similar' }
+    }
+  }
+
+  return null
+}
+
+const snippetOf = (declaration: Declaration, sources: ReadonlyMap<string, readonly string[]>): string => {
+  const lines = sources.get(declaration.file)
+  if (lines === undefined) {
+    return ''
+  }
+  const slice = lines.slice(declaration.line - 1, declaration.line - 1 + SNIPPET_LINES)
+  return slice.join('\n')
+}
+
+interface ForeignUse {
+  usages: number
+  /** Import specifier → how often, to name the package a third-party component comes from. */
+  readonly sources: Map<string, number>
+  readonly files: Set<string>
+}
+
+export const buildUsage = (
+  observations: Observations,
+  findings: readonly Finding[],
+  kit: KitSpec,
+  sources: ReadonlyMap<string, readonly string[]> = new Map(),
+): Usage => {
   const components = new Map<string, ComponentStats>()
-  const foreign = new Map<string, number>()
+  const foreign = new Map<string, ForeignUse>()
 
   for (const element of observations.jsxElements) {
     if (element.kitComponent === null) {
       // Host elements are not components in the sense that matters here; a `<div>` is not
       // a missed opportunity to use the design system.
       if (/^[A-Z]/.test(element.name)) {
-        foreign.set(element.name, (foreign.get(element.name) ?? 0) + 1)
+        const use = foreign.get(element.name) ?? {
+          usages: 0,
+          sources: new Map<string, number>(),
+          files: new Set<string>(),
+        }
+        use.usages += 1
+        use.files.add(element.file)
+        if (element.resolvedFrom !== null) {
+          use.sources.set(element.resolvedFrom, (use.sources.get(element.resolvedFrom) ?? 0) + 1)
+        }
+        foreign.set(element.name, use)
       }
       continue
     }
@@ -105,6 +186,50 @@ export const buildUsage = (observations: Observations, findings: readonly Findin
   }
 
   const used = new Set(components.keys())
+  const kitNames = kit.componentNames()
+
+  // One declaration per name: with a name collision the larger body is the one someone
+  // would actually mistake for a kit component.
+  const declarationByName = new Map<string, Declaration>()
+  for (const declaration of observations.declarations) {
+    if (declaration.kind !== 'component' && declaration.kind !== 'styled-component') {
+      continue
+    }
+    const existing = declarationByName.get(declaration.name)
+    if (existing === undefined || declaration.elementCount > existing.elementCount) {
+      declarationByName.set(declaration.name, declaration)
+    }
+  }
+
+  const customComponents: Usage['customComponents'] = []
+  for (const [name, declaration] of declarationByName.entries()) {
+    const use = foreign.get(name)
+    const usages = use?.usages ?? 0
+    const filesCount = use?.files.size ?? 0
+    const nameMatch = matchName(name, kitNames)
+    const reused = usages >= CANDIDATE_MIN_USAGES && filesCount >= CANDIDATE_MIN_FILES
+
+    // Feature screens rendered once are not design-system material; without this cut the
+    // list is every component in the product and nobody reads it.
+    if (nameMatch === null && !reused && !declaration.hasInlineSvg) {
+      continue
+    }
+
+    customComponents.push({
+      name,
+      file: declaration.file,
+      line: declaration.line,
+      usages,
+      files: filesCount,
+      props: declaration.props,
+      kitComponentsUsed: declaration.kitComponentsUsed,
+      hasInlineSvg: declaration.hasInlineSvg,
+      snippet: snippetOf(declaration, sources),
+      verdict: nameMatch !== null ? 'kit-like' : reused ? 'kit-candidate' : 'local',
+      nameMatch,
+    })
+  }
+  customComponents.sort((left, right) => right.usages - left.usages || compareStrings(left.name, right.name))
 
   return {
     components: [...components.entries()]
@@ -117,10 +242,18 @@ export const buildUsage = (observations: Observations, findings: readonly Findin
         overrides: stats.overrides,
         props: toRecord(stats.props),
       })),
-    unusedComponents: kit.componentNames().filter((name) => !used.has(name)),
+    unusedComponents: kitNames.filter((name) => !used.has(name)),
     foreignComponents: [...foreign.entries()]
-      .map(([name, usages]) => ({ name, usages }))
+      .map(([name, use]) => {
+        const local = declarationByName.has(name)
+        const topSource = [...use.sources.entries()].sort(
+          (left, right) => right[1] - left[1] || compareStrings(left[0], right[0]),
+        )[0]
+
+        return { name, usages: use.usages, local, source: local ? null : (topSource?.[0] ?? null) }
+      })
       .sort((left, right) => right.usages - left.usages || compareStrings(left.name, right.name)),
+    customComponents,
     tokenUsage: Object.fromEntries(sortStrings(Object.keys(tokenUsage)).map((id) => [id, tokenUsage[id] ?? 0])),
   }
 }

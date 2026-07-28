@@ -51,4 +51,6 @@ export const testPaths: AnalyzerPaths = {
   componentsBarrel: `${BASE_SRC}/components/index.ts`,
   baseBarrel: `${BASE_SRC}/index.ts`,
   artifactsDir: '/analyzer/artifacts',
+  // The fixture has no upstream checkout; `null` is the documented degraded mode.
+  upstreamDir: null,
 }

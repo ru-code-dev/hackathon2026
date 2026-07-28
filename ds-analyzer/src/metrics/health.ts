@@ -1,5 +1,6 @@
 import { extractValueLiterals } from '../css/value.js'
-import type { Finding, Severity, Summary, Usage } from '../domain/findings.js'
+import type { FindingCategory, Finding, Severity, Summary, Usage } from '../domain/findings.js'
+import { findingCategorySchema, severitySchema } from '../domain/findings.js'
 import type { Observations } from '../domain/observations.js'
 import type { ProjectProfile } from '../domain/profile.js'
 import { compareStrings } from '../shared/sort.js'
@@ -98,17 +99,18 @@ const countBy = <T extends string>(
   return counts
 }
 
-const ALL_SEVERITIES: readonly Severity[] = ['error', 'warning', 'info', 'candidate']
+/**
+ * Read off the schemas, never restated.
+ *
+ * `byCategory` is a `z.record` keyed by the enum, and zod requires every key to be
+ * present — so a category added to the schema but forgotten here produces an artifact that
+ * fails its own validation at runtime. A hand-written list typed as `Severity[]` cannot
+ * catch that, because a subset satisfies the type. Deriving removes the failure mode
+ * instead of documenting it.
+ */
+const ALL_SEVERITIES: readonly Severity[] = severitySchema.options
 
-const ALL_CATEGORIES: readonly Finding['category'][] = [
-  'token',
-  'typography',
-  'font',
-  'api',
-  'override',
-  'component',
-  'icon',
-]
+const ALL_CATEGORIES: readonly FindingCategory[] = findingCategorySchema.options
 
 const buildPositives = (
   observations: Observations,

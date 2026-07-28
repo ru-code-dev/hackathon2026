@@ -1,25 +1,22 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 
-import { Badge, Button, cx } from './components/ui.js'
+import { Badge, cx } from './components/ui.js'
 import { readPayload, type Payload } from './data.js'
+import { buildFileGroups, buildProblems } from './lib/model.js'
 import { activeFilters, useViewState, type Screen } from './lib/url-state.js'
-import { FindingsScreen } from './screens/Findings.js'
+import { DesignScreen } from './screens/Design.js'
+import { FilesScreen } from './screens/Files.js'
 import { OverviewScreen } from './screens/Overview.js'
-import { TokensScreen } from './screens/Tokens.js'
+import { ProblemsScreen } from './screens/Problems.js'
 
 /**
- * Shell: navigation, breadcrumbs, keyboard.
+ * Shell: the left rail, the filter chips, the keyboard.
  *
- * The breadcrumb row is the visible half of the URL state — every active filter is a chip
- * you can drop, so it is always obvious why the list is showing what it shows. Getting
- * stuck behind an invisible filter is the classic way a dashboard loses a reader.
+ * The chip row is the visible half of the URL state — every active filter can be dropped
+ * with one click, so it is always obvious why a list shows what it shows. Getting stuck
+ * behind an invisible filter is the classic way a dashboard loses a reader, and it is the
+ * single complaint this layout exists to kill.
  */
-
-const SCREENS: { key: Screen; label: string }[] = [
-  { key: 'overview', label: 'Сводка' },
-  { key: 'findings', label: 'Находки' },
-  { key: 'tokens', label: 'Токены и компоненты' },
-]
 
 let payload: Payload | null = null
 let payloadError: string | null = null
@@ -31,23 +28,34 @@ try {
 }
 
 export const App = (): React.ReactElement => {
-  const { state, go, reset } = useViewState()
+  const { state, go, navigate, reset } = useViewState()
+
+  const counts = useMemo(() => {
+    if (payload === null) {
+      return { problems: 0, files: 0 }
+    }
+    return {
+      problems: buildProblems(payload.findings).length,
+      files: buildFileGroups(payload.findings).length,
+    }
+  }, [])
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent): void => {
       const target = event.target
-      // Never steal a keystroke from the search box.
+      // Never steal a keystroke from a search box.
       if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
         return
       }
 
       if (event.key === '1') reset('overview')
-      if (event.key === '2') reset('findings')
-      if (event.key === '3') reset('tokens')
+      if (event.key === '2') reset('problems')
+      if (event.key === '3') reset('files')
+      if (event.key === '4') reset('design')
       if (event.key === 'Escape') reset(state.screen)
       if (event.key === '/') {
         event.preventDefault()
-        go({ screen: 'findings' })
+        navigate({ screen: 'problems' })
         window.setTimeout(() => {
           document.querySelector('input')?.focus()
         }, 0)
@@ -58,83 +66,113 @@ export const App = (): React.ReactElement => {
     return () => {
       window.removeEventListener('keydown', onKey)
     }
-  }, [go, reset, state.screen])
+  }, [navigate, reset, state.screen])
 
   if (payload === null) {
     return (
       <div className="flex h-full items-center justify-center p-8 text-center">
         <div className="max-w-md space-y-2">
           <h1 className="text-lg font-semibold text-error">Нет данных анализа</h1>
-          <p className="text-[12px] text-muted">{payloadError}</p>
-          <p className="font-mono text-[11px] text-faint">npm run analyze -- /path/to/project</p>
+          <p className="text-[13px] text-muted">{payloadError}</p>
+          <p className="font-mono text-[12px] text-faint">npm run analyze -- /путь/к/проекту</p>
         </div>
       </div>
     )
   }
 
+  const data = payload
   const crumbs = activeFilters(state)
 
-  return (
-    <div className="flex h-full flex-col">
-      <header className="flex shrink-0 items-center gap-3 border-b border-border bg-surface/60 px-4 py-2.5">
-        <h1 className="text-[13px] font-semibold tracking-tight">
-          Design System Audit
-          <span className="ml-2 font-normal text-faint">{payload.project.name ?? payload.project.root}</span>
-        </h1>
+  const NAV: { key: Screen; label: string; count?: number; hint: string }[] = [
+    { key: 'overview', label: 'Сводка', hint: 'вердикт и с чего начать' },
+    { key: 'problems', label: 'План работ', count: counts.problems, hint: 'решения по приоритету' },
+    { key: 'files', label: 'По файлам', count: counts.files, hint: 'правки файла сверху вниз' },
+    { key: 'design', label: 'Дизайн-система', hint: 'кастомы, палитра, компоненты' },
+  ]
 
-        <nav className="flex gap-1">
-          {SCREENS.map((screen) => (
+  return (
+    <div className="flex h-full">
+      <aside className="flex w-52 shrink-0 flex-col border-r border-border bg-surface/50">
+        <div className="border-b border-border px-4 py-4">
+          <div className="text-[14px] font-semibold tracking-tight">Аудит дизайн-системы</div>
+          <div className="mt-1 truncate text-[12px] text-muted" title={data.project.root}>
+            {data.project.name ?? data.project.root}
+          </div>
+          <div className="mt-1.5 flex flex-wrap items-center gap-1">
+            {data.project.kitVersion !== null && <Badge>sds-eng {data.project.kitVersion}</Badge>}
+            <span className="text-[11px] text-faint">{data.generatedAt}</span>
+          </div>
+        </div>
+
+        <nav className="flex-1 space-y-0.5 overflow-y-auto p-2">
+          {NAV.map((item, index) => (
             <button
-              key={screen.key}
+              key={item.key}
               type="button"
               onClick={() => {
-                go({ screen: screen.key })
+                navigate({ screen: item.key })
               }}
               className={cx(
-                'rounded-md px-2.5 py-1 text-[12px] transition-colors',
-                state.screen === screen.key ? 'bg-surface-2 text-fg' : 'text-muted hover:text-fg',
+                'flex w-full flex-col gap-0.5 rounded-lg px-3 py-2 text-left transition-colors',
+                state.screen === item.key ? 'bg-surface-2 text-fg' : 'text-muted hover:bg-surface-2/60 hover:text-fg',
               )}
             >
-              {screen.label}
+              <span className="flex items-center gap-2 text-[13.5px] font-medium">
+                <span className="w-3 text-[11px] tabular-nums text-faint">{index + 1}</span>
+                {item.label}
+                {item.count !== undefined && (
+                  <span className="ml-auto tabular-nums text-[12px] text-faint">{item.count}</span>
+                )}
+              </span>
+              <span className="pl-5 text-[11px] leading-tight text-faint">{item.hint}</span>
             </button>
           ))}
         </nav>
 
-        <div className="ml-auto flex items-center gap-2 text-[11px] text-faint">
-          {payload.project.kitVersion !== null && <Badge>sds-eng {payload.project.kitVersion}</Badge>}
-          <span title="1 · 2 · 3 — экраны, / — поиск, Esc — сбросить фильтры">{payload.generatedAt}</span>
+        <div className="border-t border-border px-4 py-3 text-[11px] leading-relaxed text-faint">
+          1–4 — экраны · / — поиск
+          <br />
+          Esc — сбросить фильтры
         </div>
-      </header>
+      </aside>
 
-      {crumbs.length > 0 && (
-        <div className="flex shrink-0 flex-wrap items-center gap-1.5 border-b border-border bg-bg px-4 py-1.5">
-          <span className="text-[10px] uppercase tracking-wider text-faint">фильтры</span>
-          {crumbs.map((crumb) => (
-            <Button
-              key={crumb.key}
+      <div className="flex min-w-0 flex-1 flex-col">
+        {crumbs.length > 0 && (
+          <div className="flex shrink-0 flex-wrap items-center gap-1.5 border-b border-border bg-bg/70 px-5 py-2 backdrop-blur">
+            <span className="text-[11px] uppercase tracking-wider text-faint">фильтры</span>
+            {crumbs.map((crumb) => (
+              <button
+                key={crumb.key}
+                type="button"
+                onClick={() => {
+                  go({ [crumb.key]: crumb.key === 'query' ? '' : crumb.key === 'autoFixableOnly' ? false : null })
+                }}
+                className="inline-flex items-center gap-1.5 rounded-full border border-accent/50 bg-accent/10 px-2.5 py-0.5 text-[12px] text-fg transition-colors hover:border-accent"
+              >
+                <span className="text-faint">{crumb.label}:</span>
+                <span className="max-w-48 truncate font-mono">{crumb.value}</span>
+                <span className="text-faint">×</span>
+              </button>
+            ))}
+            <button
+              type="button"
               onClick={() => {
-                go({ [crumb.key]: crumb.key === 'query' ? '' : crumb.key === 'autoFixableOnly' ? false : null })
+                reset(state.screen)
               }}
-              active
+              className="ml-1 text-[12px] text-muted underline-offset-2 transition-colors hover:text-fg hover:underline"
             >
-              <span className="text-faint">{crumb.label}:</span> {crumb.value} <span className="text-faint">×</span>
-            </Button>
-          ))}
-          <Button
-            onClick={() => {
-              reset(state.screen)
-            }}
-          >
-            сбросить всё
-          </Button>
-        </div>
-      )}
+              сбросить всё
+            </button>
+          </div>
+        )}
 
-      <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        {state.screen === 'overview' && <OverviewScreen payload={payload} go={go} />}
-        {state.screen === 'findings' && <FindingsScreen payload={payload} state={state} go={go} />}
-        {state.screen === 'tokens' && <TokensScreen payload={payload} state={state} go={go} />}
-      </main>
+        <main className="min-h-0 flex-1 overflow-hidden">
+          {state.screen === 'overview' && <OverviewScreen payload={data} navigate={navigate} />}
+          {state.screen === 'problems' && <ProblemsScreen payload={data} state={state} go={go} reset={reset} />}
+          {state.screen === 'files' && <FilesScreen payload={data} state={state} go={go} />}
+          {state.screen === 'design' && <DesignScreen payload={data} state={state} go={go} navigate={navigate} />}
+        </main>
+      </div>
     </div>
   )
 }

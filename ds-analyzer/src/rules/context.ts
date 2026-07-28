@@ -4,6 +4,7 @@ import { dimensionScaleOf } from '../css/properties.js'
 import { extractValueLiterals } from '../css/value.js'
 import type { JsxElement, Observations, StyleValue } from '../domain/observations.js'
 import type { ProjectProfile } from '../domain/profile.js'
+import { A11ySpec } from '../kit/a11y-spec.js'
 import type { KitSpec } from '../kit/spec.js'
 import { fromProjectPath } from '../shared/path.js'
 import { parseDimension } from '../tokens/dimension.js'
@@ -110,8 +111,11 @@ export const buildRuleContext = (input: {
   readonly kit: KitSpec
   readonly profile: ProjectProfile
   readonly observations: Observations
+  /** Omitted by callers that have not built `kit-a11y.json`; degrades, never throws. */
+  readonly a11y?: A11ySpec
 }): RuleContext => ({
   kit: input.kit,
+  a11y: input.a11y ?? A11ySpec.unavailable(),
   profile: input.profile,
   observations: input.observations,
   sources: readSources(input.profile.root, input.observations.files),
