@@ -37,98 +37,6 @@ const TOP_PROBLEMS = 7
 const TOP_FILES = 8
 const LIMITATIONS_SHOWN = 30
 
-/**
- * Composition of the interface on one scale.
- *
- * Every rendered component element lands in exactly one bucket, so the segments always
- * close to 100% — the previous pair of percentages had different denominators and read
- * as broken arithmetic.
- */
-const BreakdownCard = ({
-  breakdown,
-  onOpen,
-}: {
-  breakdown: Payload['usage']['elementBreakdown']
-  onOpen: () => void
-}): React.ReactElement => {
-  const total = Math.max(1, breakdown.total)
-  const rows = [
-    {
-      key: 'kit',
-      label: 'из дизайн-системы',
-      count: breakdown.kit,
-      color: 'var(--color-ok)',
-      sub:
-        breakdown.kit > 0
-          ? `из них без нарушений ${String(Math.round((breakdown.kitClean / Math.max(1, breakdown.kit)) * 100))}%`
-          : null,
-    },
-    {
-      key: 'tokens',
-      label: 'кастомные на токенах ДС',
-      count: breakdown.customTokens,
-      color: 'var(--color-info)',
-      sub: null,
-    },
-    {
-      key: 'mixed',
-      label: 'кастомные: токены + хардкод',
-      count: breakdown.customMixed,
-      color: 'var(--color-warning)',
-      sub: null,
-    },
-    {
-      key: 'hardcode',
-      label: 'кастомные с хардкодом',
-      count: breakdown.customHardcode,
-      color: 'var(--color-error)',
-      sub: null,
-    },
-    {
-      key: 'unstyled',
-      label: 'кастомные без стилей',
-      count: breakdown.customUnstyled,
-      color: 'var(--color-faint)',
-      sub: null,
-    },
-    { key: 'foreign', label: 'сторонние', count: breakdown.foreign, color: 'var(--color-candidate)', sub: null },
-  ].filter((row) => row.count > 0)
-
-  return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="col-span-2 flex min-w-0 flex-col gap-2 rounded-[var(--radius-card)] border border-border bg-surface/80 px-4 py-3 text-left transition-colors hover:border-border-strong hover:bg-surface-2/60 sm:col-span-3 xl:col-span-2"
-    >
-      <span className="flex items-baseline justify-between gap-2">
-        <span className="text-[12px] font-medium tracking-wide text-muted">Состав компонентов интерфейса</span>
-        <span className="text-[11px] tabular-nums text-faint">100% = {breakdown.total}</span>
-      </span>
-
-      <span className="flex h-2.5 w-full overflow-hidden rounded-full bg-surface-2">
-        {rows.map((row) => (
-          <span
-            key={row.key}
-            style={{ width: `${String((row.count / total) * 100)}%`, background: row.color }}
-            title={`${row.label} — ${String(row.count)}`}
-          />
-        ))}
-      </span>
-
-      <span className="grid grid-cols-1 gap-x-4 gap-y-0.5 sm:grid-cols-2">
-        {rows.map((row) => (
-          <span key={row.key} className="flex items-baseline gap-1.5 text-[11.5px] leading-snug">
-            <span className="size-2 shrink-0 translate-y-px rounded-full" style={{ background: row.color }} />
-            <span className="min-w-0 truncate text-muted">{row.label}</span>
-            <span className="ml-auto shrink-0 tabular-nums text-fg">{Math.round((row.count / total) * 100)}%</span>
-            {row.sub !== null && <span className="shrink-0 text-faint">· {row.sub}</span>}
-          </span>
-        ))}
-      </span>
-    </button>
-  )
-}
-
 export const OverviewScreen = ({
   payload,
   navigate,
@@ -162,63 +70,89 @@ export const OverviewScreen = ({
 
   const cleanShare = summary.files.clean / Math.max(1, summary.files.scanned)
 
+  const breakdown = payload.usage.elementBreakdown
+  const totalElements = Math.max(1, breakdown.total)
+
   return (
     <div className="ds-enter h-full overflow-y-auto">
       <div className="mx-auto max-w-6xl space-y-4 p-5">
-        {/* Verdict strip: the ring plus five numbers, each explaining its own makeup. */}
-        <div className="grid grid-cols-1 gap-3 lg:grid-cols-[auto_1fr]">
-          <Card className="flex items-center gap-5 px-6 py-4">
-            <HealthRing score={summary.healthScore} />
-            <div className="max-w-[200px]">
-              <div className="text-[15px] font-semibold tracking-tight">Здоровье</div>
-              <p className="mt-1 text-[12px] leading-snug text-faint" title={summary.healthFormula}>
-                50% чистота кода, 30% внедрение кита, 20% покрытие токенами. Наведите — формула целиком.
-              </p>
+        {/* Verdict strip: eight uniform cards, 4×2, no holes. All shares of components use
+            one denominator — every rendered component element — so the numbers agree. */}
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div
+            className="flex min-w-0 items-center gap-4 rounded-[var(--radius-card)] border border-border bg-surface/80 px-4 py-3"
+            title={summary.healthFormula}
+          >
+            <HealthRing score={summary.healthScore} size={76} />
+            <div className="min-w-0">
+              <div className="text-[12px] font-medium tracking-wide text-muted">Здоровье</div>
+              <p className="mt-0.5 text-[12px] leading-snug text-faint">50% чистота, 30% внедрение, 20% токены</p>
             </div>
-          </Card>
-
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
-            <MetricCard
-              label="Отклонения"
-              value={summary.findings.total}
-              detail={`${String(summary.findings.bySeverity.error)} ошибок · ${String(summary.findings.bySeverity.warning)} предупреждений`}
-              onClick={() => {
-                navigate({ screen: 'problems' })
-              }}
-            />
-            <MetricCard
-              label="Решений"
-              value={problems.length}
-              detail="уникальных проблем после группировки повторов"
-              onClick={() => {
-                navigate({ screen: 'problems' })
-              }}
-            />
-            <MetricCard
-              label="Авто-фикс"
-              value={summary.findings.autoFixable}
-              detail={`${String(Math.round((summary.findings.autoFixable / Math.max(1, summary.findings.total)) * 100))}% вхождений правятся заменой строки`}
-              onClick={() => {
-                navigate({ screen: 'problems', autoFixableOnly: true })
-              }}
-            />
-            <MetricCard
-              label="Покрытие токенами"
-              value={`${String(Math.round(summary.tokenCoverage * 100))}%`}
-              meter={summary.tokenCoverage}
-              tone="info"
-              detail="доля стилевых значений через var(--токен), остальное — сырые литералы"
-              onClick={() => {
-                navigate({ screen: 'design' })
-              }}
-            />
-            <BreakdownCard
-              breakdown={payload.usage.elementBreakdown}
-              onOpen={() => {
-                navigate({ screen: 'design' })
-              }}
-            />
           </div>
+          <MetricCard
+            label="Отклонения"
+            value={summary.findings.total}
+            detail={`${String(summary.findings.bySeverity.error)} ошибок · ${String(summary.findings.bySeverity.warning)} предупреждений`}
+            onClick={() => {
+              navigate({ screen: 'problems' })
+            }}
+          />
+          <MetricCard
+            label="Решений"
+            value={problems.length}
+            detail="уникальных проблем после группировки повторов"
+            onClick={() => {
+              navigate({ screen: 'problems' })
+            }}
+          />
+          <MetricCard
+            label="Авто-фикс"
+            value={summary.findings.autoFixable}
+            detail={`${String(Math.round((summary.findings.autoFixable / Math.max(1, summary.findings.total)) * 100))}% вхождений правятся заменой строки`}
+            onClick={() => {
+              navigate({ screen: 'problems', autoFixableOnly: true })
+            }}
+          />
+          <MetricCard
+            label="Компоненты из ДС"
+            value={`${String(Math.round((breakdown.kit / totalElements) * 100))}%`}
+            meter={breakdown.kit / totalElements}
+            tone="ok"
+            detail={`${String(breakdown.kit)} из ${String(breakdown.total)} · из них без нарушений ${String(Math.round((breakdown.kitClean / Math.max(1, breakdown.kit)) * 100))}%`}
+            onClick={() => {
+              navigate({ screen: 'design' })
+            }}
+          />
+          <MetricCard
+            label="Кастомные на токенах ДС"
+            value={`${String(Math.round((breakdown.customTokens / totalElements) * 100))}%`}
+            meter={breakdown.customTokens / totalElements}
+            tone="info"
+            detail={`${String(breakdown.customTokens)} из ${String(breakdown.total)} компонентов — кастомные, стилизованные только токенами`}
+            onClick={() => {
+              navigate({ screen: 'design' })
+            }}
+          />
+          <MetricCard
+            label="Кастомные без токенов ДС"
+            value={breakdown.customHardcode}
+            meter={breakdown.customHardcode / totalElements}
+            tone="error"
+            detail={`${String(Math.round((breakdown.customHardcode / totalElements) * 100))}% компонентов на хардкоде${breakdown.customMixed > 0 ? ` · ещё ${String(breakdown.customMixed)} смешанных` : ''}`}
+            onClick={() => {
+              navigate({ screen: 'design' })
+            }}
+          />
+          <MetricCard
+            label="Покрытие токенами"
+            value={`${String(Math.round(summary.tokenCoverage * 100))}%`}
+            meter={summary.tokenCoverage}
+            tone="info"
+            detail="доля стилевых значений через var(--токен), остальное — сырые литералы"
+            onClick={() => {
+              navigate({ screen: 'design' })
+            }}
+          />
         </div>
 
         {/* The action plan preview — the reason the report exists. */}
