@@ -71,8 +71,19 @@ const findingsFor = (styleValue: StyleValue, kit: KitSpec): RawFinding[] => {
     }
 
     const replacement = replacementFor(match)
-    const note =
-      match.roleGap && match.token !== null
+
+    // The property names no role (box-shadow, TS literal), yet the value also exists as a
+    // sys token. Which token is right depends on intent the analyzer cannot see — a ring
+    // that must follow the theme wants the role, a literal white wants the paint. Named
+    // replacement stays (ref: visually safe, claims nothing), but it must not ride into a
+    // PR silently, and the AI stage gets it flagged for judgement.
+    const sysTwins =
+      role === null && match.kind === 'exact' ? match.alternatives.filter((id) => id.startsWith('sys.')) : []
+    const ambiguousRole = sysTwins.length > 0
+
+    const note = ambiguousRole
+      ? `Роль свойства неизвестна, а значение совпадает и с ${sysTwins.join(', ')}. Если цвет должен следовать за темой — выберите роль; ref-замена безопасна визуально, но семантики не несёт.`
+      : match.roleGap && match.token !== null
         ? `В ките нет sys-роли «${role ?? '—'}» с этим цветом — подставлен ref-токен. Значение не переключится в тёмной теме; это пробел кита, а не ошибка проекта.`
         : match.kind === 'near'
           ? 'Цвет похож на токен, но им не является — скорее всего, пипетка из макета вместо переменной.'
@@ -83,7 +94,7 @@ const findingsFor = (styleValue: StyleValue, kit: KitSpec): RawFinding[] => {
       subkind: match.kind,
       category: 'token',
       severity: SEVERITY_BY_KIND[match.kind],
-      confidence: match.kind === 'exact' ? 1 : match.kind === 'foreign' ? 0.9 : 0.85,
+      confidence: ambiguousRole ? 0.7 : match.kind === 'exact' ? 1 : match.kind === 'foreign' ? 0.9 : 0.85,
       file: styleValue.file,
       line: styleValue.line,
       column: literalColumn(styleValue, literal.offset),
@@ -104,9 +115,11 @@ const findingsFor = (styleValue: StyleValue, kit: KitSpec): RawFinding[] => {
         styleValue.appliedTo?.kind === 'kit-component' && styleValue.appliedTo.name !== null
           ? { component: styleValue.appliedTo.name, slot: styleValue.appliedTo.slot }
           : null,
-      // An exact match is a pure substitution: the rendered colour does not change.
-      autoFixable: match.kind === 'exact' && replacement !== null,
-      needsAgent: false,
+      // An exact match is a pure substitution: the rendered colour does not change. The
+      // ambiguous-role case is excluded — visually safe, but the tier choice needs a human
+      // or the AI stage, so it must not ride into a PR silently.
+      autoFixable: match.kind === 'exact' && replacement !== null && !ambiguousRole,
+      needsAgent: ambiguousRole,
       candidates: [],
       impactKey: `token.literal.color:${literal.raw.toLowerCase()}`,
       replaceWith: replacement === null ? null : `var(${replacement.cssVar})`,

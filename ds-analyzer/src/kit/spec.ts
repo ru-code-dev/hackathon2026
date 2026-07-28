@@ -111,12 +111,23 @@ const isThemeInvariantGroup = (token: TokenDto): boolean => (token.path[0] ?? ''
  * Preference when the property carries no role: semantic, then palette, then the
  * theme-invariant tokens, then anything else.
  */
+/**
+ * Ranking when the property gives no role away (`box-shadow`, TS string literals).
+ *
+ * `ref` wins over `sys` here — the opposite of the known-role order. A role token is a
+ * semantic claim ("this shadow is a page background"), and with no role context the
+ * analyzer cannot back that claim; the palette twin is the same paint with nothing
+ * asserted. The sys candidates still reach the reader through `alternatives`.
+ */
 const rankWithoutRole = (token: TokenDto): number => {
+  if (token.tier === 'ref') {
+    return 0
+  }
   if (token.tier === 'sys') {
-    return isThemeInvariantGroup(token) ? 2 : 0
+    return isThemeInvariantGroup(token) ? 2 : 1
   }
 
-  return token.tier === 'ref' ? 1 : 3
+  return 3
 }
 
 export class KitSpec {

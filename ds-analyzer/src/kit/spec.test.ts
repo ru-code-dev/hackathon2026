@@ -40,8 +40,14 @@ describe('matchColor — exact matches', () => {
     expect(match?.token?.cssVariable).not.toBeNull()
   })
 
-  it('prefers a semantic token over the palette when there is no role to match', () => {
-    expect(kit.matchColor('#e31227', null)?.token?.id).toBe('sys.Background.backNegative')
+  it('prefers the palette over semantic tokens when there is no role to match', () => {
+    // A role token is a semantic claim ("this shadow is a background") the analyzer cannot
+    // back without role context. The paint twin asserts nothing; the sys candidates stay
+    // reachable through `alternatives` and the rule surfaces them in its note.
+    const match = kit.matchColor('#e31227', null)
+
+    expect(match?.token?.id).toBe('ref.palette.red.red700')
+    expect(match?.alternatives).toContain('sys.Background.backNegative')
   })
 
   it('demotes theme-invariant Const tokens when the role is unknown', () => {
