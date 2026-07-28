@@ -75,11 +75,9 @@ export const OverviewScreen = ({
   // Largest-remainder shares: the six buckets sum to exactly 100%, so the strip survives
   // a reader with a calculator. The ledger tooltip spells out the whole denominator.
   const shares = useMemo(() => breakdownShares(breakdown), [breakdown])
-  const restParts = [
-    breakdown.customMixed > 0 && `смешанные — ${String(breakdown.customMixed)}`,
-    breakdown.customUnstyled > 0 && `без стилей — ${String(breakdown.customUnstyled)}`,
-    breakdown.foreign > 0 && `внешние — ${String(breakdown.foreign)}`,
-  ].filter((part): part is string => part !== false)
+  // Whatever the three cards don't claim, one cumulative number claims — so the visible
+  // percentages sum to exactly 100. The tooltip ledger itemises it.
+  const restShare = shares.customMixed + shares.customUnstyled + shares.foreign
 
   return (
     <div className="ds-enter h-full overflow-y-auto">
@@ -154,7 +152,7 @@ export const OverviewScreen = ({
               meter={shares.customHardcode / 100}
               tone="error"
               title={shares.ledger}
-              detail={`на хардкоде — ${String(breakdown.customHardcode)} из ${String(breakdown.total)}${restParts.length > 0 ? ` · ${restParts.join(' · ')}` : ''}`}
+              detail={`на хардкоде — ${String(breakdown.customHardcode)} из ${String(breakdown.total)}${restShare > 0 ? ` · остальное — ${String(restShare)}%` : ''}`}
               onClick={() => {
                 navigate({ screen: 'design' })
               }}
