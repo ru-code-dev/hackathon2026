@@ -234,6 +234,7 @@ export const declarationSchema = z.object({
  * `@3` adds `hasTextChild` to elements and lifts the handler aggregation to declarations.
  * `@4` replaces `hasTextChild` with `content` + `hasLabelAncestor`, so that the accessible
  *      name of an element can be decided rather than guessed at.
+ * `@5` adds `lintMessages` — the canonical JSX accessibility rules, run rather than rewritten.
  *
  * The version is bumped rather than the fields made optional, and that choice is the whole
  * point: an absent optional field and an empty array are indistinguishable at the rule, so
@@ -241,7 +242,23 @@ export const declarationSchema = z.object({
  * "clean" about code nobody looked at. Silence that reads as a pass is the one failure mode
  * this project refuses to ship. A version mismatch is loud; a missing field is not.
  */
-export const OBSERVATIONS_SCHEMA_ID = 'ds-analyzer/observations@4'
+export const OBSERVATIONS_SCHEMA_ID = 'ds-analyzer/observations@5'
+
+/**
+ * One report from the canonical JSX accessibility linter.
+ *
+ * A fact, not a verdict: the rule fired at this position. What it means for the report —
+ * severity, WCAG criterion, whether it is worth showing at all — is decided in the rules
+ * stage, like every other observation.
+ */
+export const lintMessageSchema = z.object({
+  /** Plugin rule name without its prefix, e.g. `alt-text`. */
+  rule: z.string().min(1),
+  message: z.string().min(1),
+  file: z.string(),
+  line: z.number().int().positive(),
+  column: z.number().int().positive(),
+})
 
 export const observationsSchema = z.object({
   $schema: z.literal(OBSERVATIONS_SCHEMA_ID),
@@ -250,6 +267,8 @@ export const observationsSchema = z.object({
   imports: z.array(importSchema),
   reExports: z.array(reExportSchema),
   declarations: z.array(declarationSchema),
+  /** Reports from the canonical JSX accessibility linter; see `collectors/jsx-a11y-lint.ts`. */
+  lintMessages: z.array(lintMessageSchema),
   /** Files walked without error, project-relative, sorted. Used for "clean file" metrics. */
   files: z.array(z.string()),
   limitations: z.array(limitationSchema),
@@ -262,4 +281,5 @@ export type JsxElement = z.infer<typeof jsxElementSchema>
 export type ImportRecord = z.infer<typeof importSchema>
 export type ReExportRecord = z.infer<typeof reExportSchema>
 export type Declaration = z.infer<typeof declarationSchema>
+export type LintMessage = z.infer<typeof lintMessageSchema>
 export type Observations = z.infer<typeof observationsSchema>

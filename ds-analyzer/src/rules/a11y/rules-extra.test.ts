@@ -6,6 +6,7 @@ import { OBSERVATIONS_SCHEMA_ID } from '../../domain/observations.js'
 import type { KitA11yArtifact } from '../../domain/kit-a11y.js'
 import type { ProjectProfile } from '../../domain/profile.js'
 import { A11ySpec } from '../../kit/a11y-spec.js'
+import { IconSpec } from '../../kit/icon-spec.js'
 import { KitSpec } from '../../kit/spec.js'
 import { buildSpacingIndex } from '../context.js'
 import type { Rule, RuleContext } from '../types.js'
@@ -14,6 +15,7 @@ import { textContrastRule } from './contrast.js'
 import { dialogFocusRule } from './dialog.js'
 import { missingAccessibleNameRule } from './name.js'
 import { ariaRelationsRule } from './relations.js'
+import { jsxA11yLintRule } from './lint.js'
 
 /**
  * The remaining accessibility rules.
@@ -121,6 +123,7 @@ const runRule = (rule: Rule, extra: Partial<Observations>, a11y: A11ySpec = dial
     imports: [],
     reExports: [],
     declarations: [],
+    lintMessages: [],
     files: ['src/Widget.tsx'],
     limitations: [],
     ...extra,
@@ -128,6 +131,8 @@ const runRule = (rule: Rule, extra: Partial<Observations>, a11y: A11ySpec = dial
 
   const context: RuleContext = {
     kit,
+    icons: IconSpec.unavailable(),
+    svg: () => null,
     a11y,
     profile,
     observations,
@@ -267,6 +272,17 @@ describe('a11y.pattern.relations', () => {
         element({ name: 'span', props: { id: 'a' } }),
       ]),
     ).toHaveLength(1)
+  })
+
+  it('accepts an id handed to a component through a prop object', () => {
+    // `<Popover dropdownProps={{ id: 'popover-1' }}>` renders the id inside the component.
+    // It is plainly in the file, so claiming the reference dangles would be wrong.
+    expect(
+      run([
+        element({ name: 'Popover', propExpressions: { dropdownProps: "{ id: 'popover-1', action }" } }),
+        element({ name: 'button', props: { 'aria-describedby': 'popover-1' } }),
+      ]),
+    ).toHaveLength(0)
   })
 
   it('leaves kit components alone, since they wire ids internally', () => {
@@ -501,5 +517,63 @@ describe('a11y.contrast.text', () => {
         styleValue({ property: 'background', value: '#00d4aa' }),
       ]),
     ).toHaveLength(0)
+  })
+})
+
+describe('a11y.lint', () => {
+  const run = (messages: { rule: string; message: string; line?: number }[]) =>
+    runRule(jsxA11yLintRule, {
+      lintMessages: messages.map((entry) => ({
+        rule: entry.rule,
+        message: entry.message,
+        file: 'src/Widget.tsx',
+        line: entry.line ?? 3,
+        column: 5,
+      })),
+    })
+
+  it('carries the plugin’s rule name as the subkind, so it can be looked up', () => {
+    const findings = run([{ rule: 'alt-text', message: 'img elements must have an alt prop' }])
+
+    expect(findings).toHaveLength(1)
+    expect(findings[0]?.rule).toBe('a11y.lint')
+    expect(findings[0]?.subkind).toBe('alt-text')
+  })
+
+  it('grades by rule rather than taking the linter’s single level', () => {
+    // A missing `alt` is a certainty; a click handler on a div is sometimes deliberate.
+    // One severity for both is how a report earns the reputation that gets it switched off.
+    const [alt] = run([{ rule: 'alt-text', message: 'x' }])
+    const [click] = run([{ rule: 'click-events-have-key-events', message: 'x' }])
+    const [prefer] = run([{ rule: 'prefer-tag-over-role', message: 'x' }])
+
+    expect(alt?.severity).toBe('error')
+    expect(click?.severity).toBe('warning')
+    expect(prefer?.severity).toBe('info')
+  })
+
+  it('attaches the WCAG criterion and a consequence', () => {
+    const [finding] = run([{ rule: 'alt-text', message: 'x' }])
+
+    expect(finding?.a11y?.wcag).toStrictEqual(['1.1.1'])
+    expect(finding?.a11y?.impact.length ?? 0).toBeGreaterThan(0)
+  })
+
+  it('still reports a rule it has not classified yet', () => {
+    // A plugin upgrade adding a rule must not make it vanish silently.
+    const [finding] = run([{ rule: 'some-future-rule', message: 'x' }])
+
+    expect(finding).toBeDefined()
+    expect(finding?.severity).toBe('info')
+    expect(finding?.a11y?.wcag).toStrictEqual([])
+  })
+
+  it('groups occurrences of one rule together', () => {
+    const findings = run([
+      { rule: 'alt-text', message: 'x', line: 3 },
+      { rule: 'alt-text', message: 'x', line: 9 },
+    ])
+
+    expect(new Set(findings.map((finding) => finding.impactKey)).size).toBe(1)
   })
 })

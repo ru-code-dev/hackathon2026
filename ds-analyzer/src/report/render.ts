@@ -67,6 +67,8 @@ export interface RenderInput {
     repositoryUrl?: string | undefined
     targetBranch?: string | undefined
   } | null
+  /** Kit icon name → drawing data, for icons the findings reference. */
+  readonly iconPreviews?: Readonly<Record<string, { viewBox: string | null; shapes: readonly string[] }>>
 }
 
 /**
@@ -138,6 +140,7 @@ export const renderDashboard = async (input: RenderInput): Promise<string> => {
     },
     generatedAt: input.generatedAt,
     ci: input.ci ?? null,
+    iconPreviews: input.iconPreviews ?? {},
     summary: input.analysis.summary,
     usage: highlighted.usage,
     findings: highlighted.findings,

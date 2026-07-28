@@ -6,11 +6,13 @@ import { bypassImportRule, doNotUseImportRule, internalImportRule } from './api/
 import { styleOverrideRule } from './api/overrides.js'
 import { suppressedFocusRule } from './a11y/focus.js'
 import { patternKeyboardRule } from './a11y/pattern-keyboard.js'
+import { foreignIconPackRule, foreignSvgFileRule, inlineSvgRule } from './icons/icons.js'
 import { invalidAriaRule, redundantRoleRule, requiredAriaRule } from './a11y/aria.js'
 import { ariaRelationsRule } from './a11y/relations.js'
 import { dialogFocusRule } from './a11y/dialog.js'
 import { missingAccessibleNameRule } from './a11y/name.js'
 import { textContrastRule } from './a11y/contrast.js'
+import { jsxA11yLintRule } from './a11y/lint.js'
 import { buildSnippet } from './snippet.js'
 import { colorLiteralRule } from './tokens/color.js'
 import { dimensionLiteralRule } from './tokens/dimension.js'
@@ -32,6 +34,7 @@ import type { RawFinding, Rule, RuleContext } from './types.js'
  */
 
 export const RULES: readonly Rule[] = [
+  jsxA11yLintRule,
   colorLiteralRule,
   dimensionLiteralRule,
   partialTypographyRule,
@@ -52,6 +55,9 @@ export const RULES: readonly Rule[] = [
   dialogFocusRule,
   missingAccessibleNameRule,
   textContrastRule,
+  inlineSvgRule,
+  foreignSvgFileRule,
+  foreignIconPackRule,
 ]
 
 /** Stable, zero-padded so that lexical order matches numeric order in the dashboard. */

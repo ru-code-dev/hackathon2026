@@ -1,11 +1,12 @@
 {
   "$schema": "ds-analyzer/summary@1",
-  "generatedAt": "2026-07-28T11:24:30.883Z",
+  "generatedAt": "2026-07-28T20:09:36.906Z",
   "uiKitRoot": "/home/zach/WORKSPACE/hackathon/ui-kit-eds-ce",
   "durationsMs": {
-    "tokens": 150,
-    "components": 1365,
-    "total": 1558
+    "tokens": 363,
+    "components": 2320,
+    "icons": 93,
+    "total": 2827
   },
   "artifacts": {
     "tokens.json": {
@@ -50,6 +51,11 @@
       "publicSymbols": 462,
       "externalReExports": 25,
       "deprecatedSymbols": 9
+    },
+    "kit-icons.json": {
+      "icons": 233,
+      "files": 466,
+      "unreadable": 0
     }
   },
   "diagnostics": {

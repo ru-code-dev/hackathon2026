@@ -69,19 +69,9 @@
     }
   ],
   "expectedProfile": {
-    "kitSources": [
-      "@sds-eng/base",
-      "@/shared/ui",
-      "@v-uik/button"
-    ],
-    "styleSyntaxes": [
-      "scss-modules",
-      "styled-components",
-      "inline-style"
-    ],
-    "aliases": [
-      "@/*"
-    ],
+    "kitSources": ["@sds-eng/base", "@/shared/ui", "@v-uik/button"],
+    "styleSyntaxes": ["scss-modules", "styled-components", "inline-style"],
+    "aliases": ["@/*"],
     "note": [
       "`@/shared/ui` is only reachable through the transitive re-export closure of §3bis.4;",
       "a scanner that only looks for @sds-eng/* specifiers will miss the Button in App.tsx."
@@ -1059,13 +1049,26 @@
       "note": "name collides exactly with a kit component"
     },
     {
+      "id": "e206",
+      "stage": "M3",
+      "file": "src/shared/ui/InfoGlyph.tsx",
+      "line": 11,
+      "rule": "icon.inline-svg",
+      "subkind": "kit-icon",
+      "actual": "<svg>",
+      "expect": "Default",
+      "note": "вставка экспорта io16-Default целиком; геометрия совпадает точно, «Default» и «idea» в ките — дубли"
+    },
+    {
       "id": "e204",
-      "stage": "M5",
+      "stage": "M3",
       "file": "src/shared/ui/Spinner.tsx",
       "line": 14,
       "rule": "icon.inline-svg",
+      "subkind": "no-match",
       "actual": "<svg>",
-      "expect": null
+      "expect": null,
+      "note": "две окружности спиннера не совпадают ни с одной из 233 иконок кита — кандидат, не ошибка"
     },
     {
       "id": "e205",

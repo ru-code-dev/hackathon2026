@@ -4,6 +4,7 @@ import { resolvePaths } from '../config.js'
 import type { Observations, StyleValue } from '../domain/observations.js'
 import { OBSERVATIONS_SCHEMA_ID } from '../domain/observations.js'
 import { A11ySpec } from '../kit/a11y-spec.js'
+import { IconSpec } from '../kit/icon-spec.js'
 import type { ProjectProfile } from '../domain/profile.js'
 import { KitSpec } from '../kit/spec.js'
 import { buildSpacingIndex } from './context.js'
@@ -43,6 +44,7 @@ const observations = (values: readonly StyleValue[], extra: Partial<Observations
   imports: [],
   reExports: [],
   declarations: [],
+  lintMessages: [],
   files: ['src/a.scss'],
   limitations: [],
   ...extra,
@@ -70,6 +72,8 @@ const contextFor = (values: readonly StyleValue[], extra: Partial<Observations> 
 
   return {
     kit,
+    icons: IconSpec.unavailable(),
+    svg: () => null,
     a11y: A11ySpec.unavailable(),
     profile,
     observations: collected,

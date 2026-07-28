@@ -96,6 +96,9 @@ export const RULE_LABEL: Record<string, string> = {
   'style.override.important': '!important поверх стилей кита',
   'a11y.focus.suppressed': 'Кольцо фокуса убрано без замены',
   'a11y.pattern.keyboard': 'Виджет недоступен с клавиатуры',
+  'icon.inline-svg': 'Инлайновый SVG вместо иконки кита',
+  'icon.foreign-file': 'SVG-файл мимо набора иконок',
+  'icon.foreign-pack': 'Сторонний пакет иконок',
   'a11y.pattern.focus': 'Диалог не отпускает и не удерживает фокус',
   'a11y.pattern.relations': 'ARIA-связь ведёт в никуда',
   'a11y.aria.invalid': 'Несуществующая роль или ARIA-атрибут',
@@ -133,6 +136,8 @@ export const SUBKIND_LABEL: Record<string, string> = {
   empty: 'ни текста, ни метки',
   normalText: 'обычный текст, порог 4.5:1',
   largeText: 'крупный текст, порог 3:1',
+  'kit-icon': 'ровно эта иконка есть в ките',
+  'no-match': 'нет в ките — кандидат в набор',
 }
 
 export const subkindLabel = (subkind: string): string => SUBKIND_LABEL[subkind] ?? subkind

@@ -61,6 +61,7 @@ const observations = (partial: Partial<Observations>): Observations => ({
   imports: [],
   reExports: [],
   declarations: [],
+  lintMessages: [],
   files: [],
   limitations: [],
   ...partial,

@@ -6,6 +6,7 @@ import { OBSERVATIONS_SCHEMA_ID } from '../../domain/observations.js'
 import type { KitA11yArtifact } from '../../domain/kit-a11y.js'
 import type { ProjectProfile } from '../../domain/profile.js'
 import { A11ySpec } from '../../kit/a11y-spec.js'
+import { IconSpec } from '../../kit/icon-spec.js'
 import { KitSpec } from '../../kit/spec.js'
 import { buildSpacingIndex } from '../context.js'
 import type { RuleContext } from '../types.js'
@@ -103,6 +104,7 @@ const contextFor = (extra: Partial<Observations>, a11y: A11ySpec = A11ySpec.from
     imports: [],
     reExports: [],
     declarations: [],
+    lintMessages: [],
     files: ['src/a.scss'],
     limitations: [],
     ...extra,
@@ -110,6 +112,8 @@ const contextFor = (extra: Partial<Observations>, a11y: A11ySpec = A11ySpec.from
 
   return {
     kit,
+    icons: IconSpec.unavailable(),
+    svg: () => null,
     a11y,
     profile,
     observations,
@@ -150,6 +154,35 @@ describe('a11y.focus.suppressed', () => {
     expect(findings[0]?.subkind).toBe('onFocus')
   })
 
+  it('accepts a JSS state class drawing its own indicator', () => {
+    // The kit styles focus as `&$focused`, not `:focus`. Recognising only the pseudo-class
+    // reported nine of the kit's own components.
+    const findings = run([
+      styleValue({ property: 'outline', value: 'none', selector: '& input' }),
+      styleValue({ property: 'box-shadow', value: '0 0 0 2px #2969e3', selector: '&$focused' }),
+    ])
+
+    expect(findings).toHaveLength(0)
+  })
+
+  it('accepts a data attribute or utility class naming the state', () => {
+    for (const selector of ['[data-focused]', '.is-focused', '&:focus-within']) {
+      expect(
+        run([
+          styleValue({ property: 'outline', value: 'none' }),
+          styleValue({ property: 'border-color', value: '#2969e3', selector }),
+        ]),
+      ).toHaveLength(0)
+    }
+  })
+
+  it('still reports a focus block that removes the ring and draws nothing', () => {
+    const findings = run([styleValue({ property: 'outline', value: 'none', selector: '&$focused' })])
+
+    expect(findings).toHaveLength(1)
+    expect(findings[0]?.subkind).toBe('onFocus')
+  })
+
   it('says nothing about an outline that is actually drawn', () => {
     expect(run([styleValue({ property: 'outline', value: '2px solid #2969e3' })])).toHaveLength(0)
     expect(run([styleValue({ property: 'outline-color', value: '#00d4aa' })])).toHaveLength(0)
@@ -157,6 +190,37 @@ describe('a11y.focus.suppressed', () => {
 
   it('skips values it could not read', () => {
     expect(run([styleValue({ property: 'outline', value: 'none', dynamic: true })])).toHaveLength(0)
+  })
+
+  it('judges every stylesheet dialect, modules included', () => {
+    // The project's target stack is `scss-modules`, and an inclusion list that named only
+    // `scss` silenced the rule on exactly the code it was written for.
+    for (const source of [
+      'css',
+      'css-modules',
+      'scss',
+      'scss-modules',
+      'less',
+      'styled-components',
+      'emotion',
+    ] as const) {
+      expect(run([styleValue({ property: 'outline', value: 'none', source })])).toHaveLength(1)
+    }
+  })
+
+  it('refuses to judge an object style, where nesting is flattened away', () => {
+    // JSS states arrive as `selector: 'useStyles'` with the `focused` key gone, so absence
+    // of focus styling cannot be established. Silence here is a declared gap, not a pass.
+    for (const source of ['inline-style', 'jss', 'ts-literal'] as const) {
+      expect(run([styleValue({ property: 'outline', value: 'none', source, selector: 'useStyles' })])).toHaveLength(0)
+    }
+
+    const values = [styleValue({ property: 'outline', value: 'none', source: 'inline-style', selector: 'useStyles' })]
+
+    const limitations = suppressedFocusRule.limitations?.(contextFor({ styleValues: values }))
+
+    expect(limitations).toHaveLength(1)
+    expect(limitations?.[0]?.reason).toBe('unsupported-syntax')
   })
 })
 
@@ -232,12 +296,15 @@ describe('a11y.pattern.keyboard', () => {
       imports: [],
       reExports: [],
       declarations: [],
+      lintMessages: [],
       files: ['src/Widget.tsx'],
       limitations: [],
     }
 
     const limitations = patternKeyboardRule.limitations?.({
       kit,
+      icons: IconSpec.unavailable(),
+      svg: () => null,
       a11y: A11ySpec.unavailable(),
       profile,
       observations,

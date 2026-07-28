@@ -130,6 +130,11 @@ export interface Payload {
   generatedAt: string
   /** CI coordinates from `ds.config.json`; `null` when the project declares none. */
   ci: { webhookUrl?: string; repositoryUrl?: string; targetBranch?: string } | null
+  /**
+   * Kit icon name → drawing data (normalized shapes, `kind:data`), for every kit icon the
+   * findings reference. Lets the gallery render the icon itself instead of naming it.
+   */
+  iconPreviews: Record<string, { viewBox: string | null; shapes: string[] }>
   summary: Summary
   usage: Usage
   findings: Finding[]

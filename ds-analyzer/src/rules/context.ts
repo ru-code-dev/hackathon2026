@@ -5,6 +5,7 @@ import { extractValueLiterals } from '../css/value.js'
 import type { JsxElement, Observations, StyleValue } from '../domain/observations.js'
 import type { ProjectProfile } from '../domain/profile.js'
 import { A11ySpec } from '../kit/a11y-spec.js'
+import { IconSpec } from '../kit/icon-spec.js'
 import type { KitSpec } from '../kit/spec.js'
 import { fromProjectPath } from '../shared/path.js'
 import { parseDimension } from '../tokens/dimension.js'
@@ -92,6 +93,78 @@ export const buildSpacingIndex = (styleValues: readonly StyleValue[]): Frequency
   }
 }
 
+/** `./x.svg?url` and `#fragment` suffixes are bundler syntax, not part of the path. */
+const stripReferenceSuffix = (reference: string): string => reference.split(/[?#]/)[0] ?? reference
+
+/** Pure POSIX path resolution over project-relative paths; no filesystem involved. */
+const resolveReference = (fromFile: string, reference: string): string | null => {
+  const cleaned = stripReferenceSuffix(reference)
+
+  if (cleaned.startsWith('/')) {
+    return cleaned.slice(1)
+  }
+  if (!cleaned.startsWith('.')) {
+    // A package or alias specifier: not resolvable from here, and guessing would read the
+    // wrong file. The rule still reports, it just cannot match geometry.
+    return null
+  }
+
+  const segments = fromFile.split('/').slice(0, -1)
+  for (const part of cleaned.split('/')) {
+    if (part === '' || part === '.') {
+      continue
+    }
+    if (part === '..') {
+      if (segments.length === 0) {
+        return null
+      }
+      segments.pop()
+      continue
+    }
+    segments.push(part)
+  }
+
+  return segments.join('/')
+}
+
+/**
+ * Cached reader for `.svg` files referenced from source or styles.
+ *
+ * Lives here for the same reason as {@link readSources}: rules receive answers, not file
+ * handles. The cache is keyed by the resolved path, so ten imports of one icon cost one
+ * read.
+ */
+const buildSvgReader = (root: string): ((fromFile: string, reference: string) => string | null) => {
+  const cache = new Map<string, string | null>()
+
+  return (fromFile, reference) => {
+    const cleaned = stripReferenceSuffix(reference)
+    if (!cleaned.endsWith('.svg')) {
+      return null
+    }
+
+    const resolved = resolveReference(fromFile, cleaned)
+    if (resolved === null) {
+      return null
+    }
+
+    const cached = cache.get(resolved)
+    if (cached !== undefined) {
+      return cached
+    }
+
+    let content: string | null
+    try {
+      content = readFileSync(fromProjectPath(root, resolved), 'utf8')
+    } catch {
+      content = null
+    }
+    cache.set(resolved, content)
+
+    return content
+  }
+}
+
 const groupElementsByFile = (elements: readonly JsxElement[]): Map<string, JsxElement[]> => {
   const byFile = new Map<string, JsxElement[]>()
 
@@ -113,12 +186,16 @@ export const buildRuleContext = (input: {
   readonly observations: Observations
   /** Omitted by callers that have not built `kit-a11y.json`; degrades, never throws. */
   readonly a11y?: A11ySpec
+  /** Omitted by callers that have not built `kit-icons.json`; degrades, never throws. */
+  readonly icons?: IconSpec
 }): RuleContext => ({
   kit: input.kit,
   a11y: input.a11y ?? A11ySpec.unavailable(),
+  icons: input.icons ?? IconSpec.unavailable(),
   profile: input.profile,
   observations: input.observations,
   sources: readSources(input.profile.root, input.observations.files),
   spacing: buildSpacingIndex(input.observations.styleValues),
   elementsByFile: groupElementsByFile(input.observations.jsxElements),
+  svg: buildSvgReader(input.profile.root),
 })

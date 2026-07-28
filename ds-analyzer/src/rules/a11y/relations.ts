@@ -29,11 +29,22 @@ const normaliseExpression = (text: string): string => text.replace(/\s+/g, '')
 interface IdIndex {
   readonly literals: ReadonlySet<string>
   readonly expressions: ReadonlySet<string>
+  /**
+   * Every prop expression written anywhere in the file, as text.
+   *
+   * An id frequently reaches its element through a prop rather than a JSX attribute —
+   * `<Popover dropdownProps={{ id: 'popover-1' }}>` renders that id inside the component,
+   * where no static reader can see it. The id is nonetheless plainly present in the file,
+   * so a rule claiming it points at nothing would be wrong. Searching the text is crude,
+   * but it errs towards silence, which is the only direction this rule may err in.
+   */
+  readonly propText: string
 }
 
 const indexIdsByFile = (elements: readonly JsxElement[]): ReadonlyMap<string, IdIndex> => {
   const literals = new Map<string, Set<string>>()
   const expressions = new Map<string, Set<string>>()
+  const propText = new Map<string, string[]>()
 
   for (const element of elements) {
     const literal = element.props['id']
@@ -49,14 +60,22 @@ const indexIdsByFile = (elements: readonly JsxElement[]): ReadonlyMap<string, Id
       bucket.add(normaliseExpression(expression))
       expressions.set(element.file, bucket)
     }
+
+    const texts = propText.get(element.file) ?? []
+    texts.push(...Object.values(element.propExpressions))
+    propText.set(element.file, texts)
   }
 
-  const files = new Set([...literals.keys(), ...expressions.keys()])
+  const files = new Set([...literals.keys(), ...expressions.keys(), ...propText.keys()])
 
   return new Map(
     [...files].map((file) => [
       file,
-      { literals: literals.get(file) ?? new Set<string>(), expressions: expressions.get(file) ?? new Set<string>() },
+      {
+        literals: literals.get(file) ?? new Set<string>(),
+        expressions: expressions.get(file) ?? new Set<string>(),
+        propText: (propText.get(file) ?? []).join('\n'),
+      },
     ]),
   )
 }
@@ -76,7 +95,11 @@ export const ariaRelationsRule: Rule = {
         continue
       }
 
-      const index = idsByFile.get(element.file) ?? { literals: new Set<string>(), expressions: new Set<string>() }
+      const index = idsByFile.get(element.file) ?? {
+        literals: new Set<string>(),
+        expressions: new Set<string>(),
+        propText: '',
+      }
 
       for (const attribute of REFERENCE_ATTRIBUTES) {
         const literal = element.props[attribute]
@@ -87,7 +110,7 @@ export const ariaRelationsRule: Rule = {
           const missing = literal
             .trim()
             .split(/\s+/)
-            .filter((id) => id.length > 0 && !index.literals.has(id))
+            .filter((id) => id.length > 0 && !index.literals.has(id) && !index.propText.includes(id))
 
           if (missing.length === 0) {
             continue

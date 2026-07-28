@@ -3,8 +3,9 @@ import { basename } from 'node:path'
 
 import { Project, ts } from 'ts-morph'
 
-import type { Declaration, JsxElement, Observations, StyleValue } from '../domain/observations.js'
+import type { Declaration, JsxElement, LintMessage, Observations, StyleValue } from '../domain/observations.js'
 import { OBSERVATIONS_SCHEMA_ID } from '../domain/observations.js'
+import { collectJsxA11yLint } from './collectors/jsx-a11y-lint.js'
 import type { Alias, Limitation, ProjectProfile, StyleSyntax } from '../domain/profile.js'
 import { fromProjectPath } from '../shared/path.js'
 import { compareStrings, sortStrings } from '../shared/sort.js'
@@ -229,6 +230,7 @@ export const scanProject = (options: ScanOptions): ScanResult => {
   const imports: Observations['imports'] = []
   const reExports: Observations['reExports'] = []
   const declarations: Declaration[] = []
+  const lintMessages: LintMessage[] = []
   const scannedFiles: string[] = []
   const byExtension: Record<string, number> = {}
   const syntaxes = new Set<StyleSyntax>()
@@ -279,6 +281,12 @@ export const scanProject = (options: ScanOptions): ScanResult => {
       project,
       resolveModule: (specifier) => resolveSpecifier(resolverContext, specifier, file),
     })
+
+    // The canonical JSX accessibility rules, run on the same content the collectors just
+    // read. Kept here rather than in a rule so that syntax stays confined to this stage.
+    const lint = collectJsxA11yLint({ file, content })
+    lintMessages.push(...lint.messages)
+    limitations.push(...lint.limitations)
 
     styleValues.push(...result.styleValues)
     jsxElements.push(...result.jsxElements)
@@ -372,6 +380,13 @@ export const scanProject = (options: ScanOptions): ScanResult => {
     imports,
     reExports,
     declarations: linkedDeclarations,
+    lintMessages: lintMessages.sort(
+      (left, right) =>
+        compareStrings(left.file, right.file) ||
+        left.line - right.line ||
+        left.column - right.column ||
+        compareStrings(left.rule, right.rule),
+    ),
     files: sortStrings(scannedFiles),
     limitations: profile.limitations,
   }

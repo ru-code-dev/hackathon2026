@@ -2,6 +2,7 @@ import type { A11yFacet, Expected, FindingCategory, Severity } from '../domain/f
 import type { Declaration, ImportRecord, JsxElement, Observations, StyleValue } from '../domain/observations.js'
 import type { Limitation, ProjectProfile } from '../domain/profile.js'
 import type { A11ySpec } from '../kit/a11y-spec.js'
+import type { IconSpec } from '../kit/icon-spec.js'
 import type { KitSpec } from '../kit/spec.js'
 
 /**
@@ -78,6 +79,14 @@ export interface FrequencyIndex {
 
 export interface RuleContext {
   readonly kit: KitSpec
+  /** Kit icon geometry index; `available === false` when `kit-icons.json` is not built. */
+  readonly icons: IconSpec
+  /**
+   * Contents of an `.svg` file referenced from `fromFile` by a relative or root-absolute
+   * path; `null` when unresolvable. Reading happens in the context builder — rules stay
+   * pure and never open files.
+   */
+  readonly svg: (fromFile: string, reference: string) => string | null
   /**
    * What the kit's own components do about accessibility.
    *

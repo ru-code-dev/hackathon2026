@@ -19,6 +19,7 @@
     "extract:tokens": "tsx src/cli/extract-tokens.ts",
     "extract:components": "tsx src/cli/extract-components.ts",
     "extract:kit-a11y": "tsx src/cli/extract-kit-a11y.ts",
+    "extract:icons": "tsx src/cli/extract-icons.ts",
     "extract": "tsx src/cli/extract-all.ts",
     "scan": "tsx src/cli/scan.ts",
     "analyze": "tsx src/cli/analyze.ts",
@@ -28,6 +29,7 @@
   "dependencies": {
     "aria-query": "^5.3.2",
     "esbuild": "^0.25.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
     "ignore": "^7.0.6",
     "postcss": "^8.5.24",
     "postcss-scss": "^4.0.9",

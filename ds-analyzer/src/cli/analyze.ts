@@ -7,6 +7,7 @@ import { observationsSchema } from '../domain/observations.js'
 import { projectProfileSchema } from '../domain/profile.js'
 import { validateArtifact } from '../domain/validate.js'
 import { A11ySpec } from '../kit/a11y-spec.js'
+import { IconSpec } from '../kit/icon-spec.js'
 import { KitSpec } from '../kit/spec.js'
 import { defaultArtifactsDir } from '../config.js'
 import { scanProject } from '../scanner/scan.js'
@@ -86,6 +87,7 @@ const main = async (): Promise<void> => {
   const artifactsDir = args.artifactsDir ?? defaultArtifactsDir
   const kit = KitSpec.load(artifactsDir)
   const a11y = A11ySpec.load(artifactsDir)
+  const icons = IconSpec.load(artifactsDir)
 
   const { profile, observations } = scanProject({
     path: args.path,
@@ -103,6 +105,7 @@ const main = async (): Promise<void> => {
   const analysis = analyze({
     kit,
     a11y,
+    icons,
     profile,
     observations,
     disabledRules,
@@ -127,6 +130,24 @@ const main = async (): Promise<void> => {
     try {
       // The PR target is the analyzed repository itself: remote and branch are read off
       // its checkout, with `ds.config.json` as an explicit override for the odd setup.
+      // Drawing data for every kit icon the findings point at, so the gallery renders the
+      // icon itself rather than naming it.
+      const iconPreviews = Object.fromEntries(
+        [
+          ...new Set(
+            analysis.findings
+              .filter((finding) => finding.category === 'icon')
+              .map((finding) => finding.expected?.component)
+              .filter((name): name is string => typeof name === 'string'),
+          ),
+        ]
+          .sort()
+          .flatMap((name) => {
+            const preview = icons.preview(name)
+            return preview === null ? [] : [[name, preview] as const]
+          }),
+      )
+
       const html = await renderDashboard({
         profile,
         analysis,
@@ -136,6 +157,7 @@ const main = async (): Promise<void> => {
           repositoryUrl: dsConfig.ci?.repositoryUrl ?? detectGitRemote(profile.root) ?? undefined,
           targetBranch: dsConfig.ci?.targetBranch ?? detectGitBranch(profile.root) ?? undefined,
         },
+        iconPreviews,
       })
       dashboardPath = join(outputDirectory, 'dashboard.html')
       await mkdir(outputDirectory, { recursive: true })

@@ -1,93 +1,175 @@
-import { isAnalysableStyleValue, type Rule, type RuleContext, type RawFinding } from '../types.js'
+import type { StyleValue } from '../../domain/observations.js'
+import type { Limitation } from '../../domain/profile.js'
+import { isAnalysableStyleValue, type RawFinding, type Rule, type RuleContext } from '../types.js'
 
 /**
  * `outline: none` with nothing put back in its place.
  *
- * The cheapest accessibility rule worth having, and probably the most frequently violated
- * thing in any real codebase. Removing the focus ring costs a keyboard user the ability to
- * see where they are on the page — the control still works, it is just invisible, which is
- * why the bug survives review by everyone who navigates with a mouse.
+ * Removing the focus ring costs a keyboard user the ability to see where they are: the
+ * control still works, it is simply invisible. The bug survives review by everyone who
+ * navigates with a mouse, which is most reviewers.
  *
- * Deliberately not reported when the same file also styles `:focus-visible`: that is the
- * modern, correct way to replace the default ring with a designed one, and flagging it
- * would punish exactly the teams that did the work. File granularity is the right scope
- * here because the replacement is conventionally written as a sibling rule, not on the same
- * declaration.
+ * The whole difficulty is telling that apart from the *correct* thing, which looks
+ * identical at the declaration: resetting the default ring and drawing a better one.
+ * Focus is styled in at least three idioms and the rule has to recognise all of them —
+ * `:focus-visible` in stylesheets, `&:focus` in CSS-in-JS, and a state class such as
+ * `&$focused` in JSS, which is how the kit itself does it. A first version recognised only
+ * the pseudo-class and reported nine of the kit's own components.
  */
+
+/** Properties that can draw a visible focus indicator. */
+const INDICATOR_PROPERTIES: ReadonlySet<string> = new Set([
+  'outline',
+  'outline-color',
+  'outline-style',
+  'outline-width',
+  'outline-offset',
+  'box-shadow',
+  'border',
+  'border-color',
+  'border-width',
+  'border-bottom',
+  'border-bottom-color',
+  'background',
+  'background-color',
+])
 
 const SUPPRESSING_VALUES: ReadonlySet<string> = new Set(['none', '0', '0px'])
 
-const isOutlineSuppression = (property: string, value: string): boolean => {
-  const normalised = value.trim().toLowerCase()
+/**
+ * Sources whose selectors survive collection intact.
+ *
+ * A blanket `outline: none` is only reportable when the file's focus styling — or its
+ * absence — is visible, and that depends on the dialect. A JSS style object nests its
+ * states as plain keys (`focused: { … }`), and the collector flattens them into the
+ * enclosing function name, so nothing distinguishes a file that draws a focus ring from one
+ * that does not. Reporting there means guessing, and guessing wrong reported four of the
+ * kit's own components.
+ *
+ * `onFocus` findings are exempt from this: seeing a focus selector at all is positive
+ * evidence, and positive evidence is trustworthy in any dialect.
+ */
+const FLATTENED_SOURCES: ReadonlySet<StyleValue['source']> = new Set(['inline-style', 'jss', 'ts-literal'])
 
-  if (property === 'outline' || property === 'outline-style') {
+/**
+ * Listed by exclusion rather than inclusion, and deliberately so.
+ *
+ * The first version enumerated the dialects that keep their selectors and forgot
+ * `scss-modules` — which is the project's own target stack — so the rule went silent on the
+ * one case it was written for. Naming the three that lose nesting is a shorter list, and a
+ * new stylesheet dialect then defaults to being judged rather than to being ignored.
+ */
+const keepsSelectors = (source: StyleValue['source']): boolean => !FLATTENED_SOURCES.has(source)
+
+const isOutlineSuppression = (styleValue: StyleValue): boolean => {
+  const normalised = styleValue.value.trim().toLowerCase()
+
+  if (styleValue.property === 'outline' || styleValue.property === 'outline-style') {
     return SUPPRESSING_VALUES.has(normalised) || normalised.split(/\s+/).includes('none')
   }
 
-  return property === 'outline-width' && SUPPRESSING_VALUES.has(normalised)
+  return styleValue.property === 'outline-width' && SUPPRESSING_VALUES.has(normalised)
 }
 
 /**
- * Files that define a focus-visible treatment somewhere.
+ * `true` when a selector addresses the focused state, in any of the idioms in use.
  *
- * Built from selectors rather than from properties: what matters is that the codebase has
- * an intentional focus style, not which properties it uses to draw it.
+ * Matching the word rather than the pseudo-class is deliberate: `&$focused`, `.is-focused`
+ * and `[data-focused]` all mean the same thing to the reader and to the user, and only the
+ * spelling differs.
  */
-const filesWithFocusVisible = (context: RuleContext): ReadonlySet<string> => {
-  const files = new Set<string>()
+const addressesFocus = (selector: string | null): boolean => selector !== null && /focus/i.test(selector)
 
-  for (const styleValue of context.observations.styleValues) {
-    const selector = styleValue.selector ?? ''
-    if (selector.includes(':focus-visible') || selector.includes(':focus-within')) {
-      files.add(styleValue.file)
-    }
-  }
-
-  return files
-}
+/** Draws something the eye can see, as opposed to removing something. */
+const drawsIndicator = (styleValue: StyleValue): boolean =>
+  INDICATOR_PROPERTIES.has(styleValue.property) && !isOutlineSuppression(styleValue) && styleValue.value.trim() !== '0'
 
 export const suppressedFocusRule: Rule = {
   id: 'a11y.focus.suppressed',
   category: 'a11y',
-  description: 'Фокус скрыт через outline: none без замены на :focus-visible',
+  description: 'Фокус скрыт через outline: none, и замена не нарисована',
+  limitations: (context: RuleContext): Limitation[] =>
+    context.observations.styleValues
+      .filter(
+        (styleValue) =>
+          isOutlineSuppression(styleValue) &&
+          !styleValue.dynamic &&
+          !addressesFocus(styleValue.selector) &&
+          !keepsSelectors(styleValue.source),
+      )
+      .map((styleValue) => ({
+        file: styleValue.file,
+        line: styleValue.line,
+        reason: 'unsupported-syntax' as const,
+        detail:
+          'Кольцо фокуса убрано в объектном стиле, где состояния не различимы после сбора: ' +
+          'проверить, нарисована ли замена, невозможно. Требует ручной проверки.',
+      })),
   run: (context: RuleContext): RawFinding[] => {
-    const excused = filesWithFocusVisible(context)
+    const analysable = context.observations.styleValues.filter(
+      (styleValue) => isAnalysableStyleValue(styleValue) && !styleValue.dynamic,
+    )
+
+    // Files that style focus at all, and blocks that draw an indicator while doing so.
+    const filesStylingFocus = new Set<string>()
+    const blocksDrawingIndicator = new Set<string>()
+
+    for (const styleValue of analysable) {
+      if (!addressesFocus(styleValue.selector)) {
+        continue
+      }
+
+      filesStylingFocus.add(styleValue.file)
+
+      if (drawsIndicator(styleValue)) {
+        blocksDrawingIndicator.add(`${styleValue.file} ${styleValue.selector ?? ''}`)
+      }
+    }
+
     const findings: RawFinding[] = []
 
-    for (const styleValue of context.observations.styleValues) {
-      if (!isAnalysableStyleValue(styleValue) || styleValue.dynamic) {
+    for (const styleValue of analysable) {
+      if (!isOutlineSuppression(styleValue)) {
         continue
       }
 
-      if (!isOutlineSuppression(styleValue.property, styleValue.value)) {
+      const onFocusSelector = addressesFocus(styleValue.selector)
+
+      // Removing the ring inside a focus block is fine when that same block draws its own
+      // indicator — the ordinary way to replace a default ring with a designed one.
+      if (onFocusSelector && blocksDrawingIndicator.has(`${styleValue.file} ${styleValue.selector ?? ''}`)) {
         continue
       }
 
-      const selector = styleValue.selector ?? ''
+      if (!onFocusSelector) {
+        // A blanket reset in a file that styles focus somewhere is the standard pattern, and
+        // reporting it would punish exactly the teams that did the work.
+        if (filesStylingFocus.has(styleValue.file)) {
+          continue
+        }
 
-      // A rule that only targets `:focus` and removes the outline there is the same bug
-      // whether or not the file defines `:focus-visible` elsewhere — but a blanket
-      // `outline: none` in a file that also draws a focus-visible ring is the standard
-      // reset, and reporting it would be noise.
-      if (excused.has(styleValue.file) && !selector.includes(':focus')) {
-        continue
+        if (!keepsSelectors(styleValue.source)) {
+          continue
+        }
       }
 
       findings.push({
         rule: 'a11y.focus.suppressed',
-        subkind: selector.includes(':focus') ? 'onFocus' : 'blanket',
+        subkind: onFocusSelector ? 'onFocus' : 'blanket',
         category: 'a11y',
         severity: 'error',
-        confidence: excused.has(styleValue.file) ? 0.8 : 1,
+        confidence: onFocusSelector ? 0.95 : 0.85,
         file: styleValue.file,
         line: styleValue.line,
         column: styleValue.column,
         actual: `${styleValue.property}: ${styleValue.value}`,
         expected: null,
-        why:
-          'Кольцо фокуса убрано, а замена через :focus-visible в этом файле не найдена. ' +
-          'Пользователь клавиатуры перестаёт видеть, где он находится: элемент работает, но невидим.',
-        note: 'Если фокус оформлен в другом файле или через глобальный стиль, отметьте правило в ds.config.json.',
+        why: onFocusSelector
+          ? 'Кольцо фокуса убрано прямо в блоке про фокус, и ничего видимого взамен не нарисовано. ' +
+            'Пользователь клавиатуры перестаёт видеть, где он находится.'
+          : 'Кольцо фокуса убрано, а оформления фокуса в этом файле нет вообще. ' +
+            'Элемент останется рабочим, но невидимым при навигации с клавиатуры.',
+        note: 'Если фокус оформлен в другом файле или глобально, отключите правило в ds.config.json.',
         rootCause: styleValue.rootCause,
         appliedTo:
           styleValue.appliedTo?.kind === 'kit-component' && styleValue.appliedTo.name !== null

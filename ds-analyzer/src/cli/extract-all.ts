@@ -1,6 +1,7 @@
 import { join } from 'node:path'
 
 import { extractComponents } from '../components/extract.js'
+import { extractIcons } from '../icons/extract.js'
 import { writeJsonFile } from '../shared/fs.js'
 import { extractTokens } from '../tokens/extract.js'
 
@@ -23,19 +24,30 @@ const main = async (): Promise<void> => {
   const components = await extractComponents()
   const componentsMs = Math.round(performance.now() - componentsStarted)
 
+  const iconsStarted = performance.now()
+  const icons = extractIcons(tokens.paths)
+  const iconsMs = Math.round(performance.now() - iconsStarted)
+
   const { artifactsDir, uiKitRoot } = tokens.paths
 
   await writeJsonFile(join(artifactsDir, 'tokens.json'), tokens.artifact)
   await writeJsonFile(join(artifactsDir, 'components.json'), components.artifact)
+  await writeJsonFile(join(artifactsDir, 'kit-icons.json'), icons)
 
   const summary = {
     $schema: 'ds-analyzer/summary@1',
     generatedAt: new Date().toISOString(),
     uiKitRoot,
-    durationsMs: { tokens: tokensMs, components: componentsMs, total: Math.round(performance.now() - started) },
+    durationsMs: {
+      tokens: tokensMs,
+      components: componentsMs,
+      icons: iconsMs,
+      total: Math.round(performance.now() - started),
+    },
     artifacts: {
       'tokens.json': tokens.artifact.meta.counts,
       'components.json': components.artifact.meta.counts,
+      'kit-icons.json': icons.meta.counts,
     },
     diagnostics: {
       tokens: tokens.artifact.diagnostics.map(({ code, severity, count }) => ({ code, severity, count })),
@@ -50,6 +62,7 @@ const main = async (): Promise<void> => {
     `✔ components.json            ${components.artifact.meta.counts.componentDirectories} components, ` +
       `${components.artifact.meta.counts.publicSymbols} public symbols (${componentsMs}ms)`,
   )
+  console.log(`✔ kit-icons.json             ${icons.meta.counts.icons} icons (${iconsMs}ms)`)
   console.log(`✔ extraction-summary.json`)
   console.log(`  → ${artifactsDir}`)
 }
