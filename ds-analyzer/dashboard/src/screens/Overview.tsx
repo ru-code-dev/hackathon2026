@@ -75,9 +75,9 @@ export const OverviewScreen = ({
   // Largest-remainder shares: the six buckets sum to exactly 100%, so the strip survives
   // a reader with a calculator. The ledger tooltip spells out the whole denominator.
   const shares = useMemo(() => breakdownShares(breakdown), [breakdown])
-  // Whatever the three cards don't claim, one cumulative number claims — so the visible
+  // The third card claims every share the first two don't, so the three visible
   // percentages sum to exactly 100. The tooltip ledger itemises it.
-  const restShare = shares.customMixed + shares.customUnstyled + shares.foreign
+  const withoutTokensShare = shares.customHardcode + shares.customMixed + shares.customUnstyled + shares.foreign
 
   return (
     <div className="ds-enter h-full overflow-y-auto">
@@ -148,11 +148,11 @@ export const OverviewScreen = ({
             />
             <MetricCard
               label="Кастомные без токенов ДС"
-              value={`${String(shares.customHardcode)}%`}
-              meter={shares.customHardcode / 100}
+              value={`${String(withoutTokensShare)}%`}
+              meter={withoutTokensShare / 100}
               tone="error"
               title={shares.ledger}
-              detail={`на хардкоде — ${String(breakdown.customHardcode)} из ${String(breakdown.total)}${restShare > 0 ? ` · остальное — ${String(restShare)}%` : ''}`}
+              detail={`${String(breakdown.customHardcode)} из ${String(breakdown.total)} компонентов на хардкоде${breakdown.customMixed > 0 ? ` · ещё ${String(breakdown.customMixed)} смешанных` : ''}`}
               onClick={() => {
                 navigate({ screen: 'design' })
               }}
