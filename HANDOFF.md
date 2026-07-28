@@ -10,7 +10,6 @@
 ```bash
 cd ds-analyzer
 npm install
-npm run dashboard:build            # один раз: шаблон дашборда
 npm run analyze -- /path/to/your-project
 ```
 
@@ -21,7 +20,7 @@ npm run analyze -- /path/to/your-project
 | `--kit-package @company/ds` | кит опубликован под своим именем |
 | `--exclude 'src/legacy/**'` | добавить исключения (синтаксис .gitignore) |
 | `--out <dir>` | писать не в проект |
-| `--kit <path>` | другой чекаут `ui-kit-eds-ce` |
+| `--artifacts <dir>` | другая версия спеки кита |
 
 `npm run verify` — typecheck + lint + 500 тестов. `npm run scan` — только стадии B0+B, без правил.
 

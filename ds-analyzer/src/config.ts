@@ -79,6 +79,16 @@ export const resolvePaths = (explicitUiKitRoot?: string): AnalyzerPaths => {
   }
 }
 
+/**
+ * Where the extracted kit specification lives.
+ *
+ * Deliberately independent of {@link resolvePaths}: analysing a consumer project needs the
+ * artifacts and nothing else. Requiring a checkout of the UI kit as well would mean every
+ * team that wants an audit first has to clone a repository they do not otherwise need —
+ * and the artifacts are committed precisely so they do not have to.
+ */
+export const defaultArtifactsDir = join(analyzerRoot, 'artifacts')
+
 /** Path relative to the UI kit root, with POSIX separators, for stable artifact fields. */
 export const toKitRelativePath = (paths: AnalyzerPaths, absolutePath: string): string =>
   relative(paths.uiKitRoot, absolutePath).split(/[\\/]/).join('/')

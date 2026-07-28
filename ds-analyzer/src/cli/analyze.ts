@@ -7,14 +7,16 @@ import { observationsSchema } from '../domain/observations.js'
 import { projectProfileSchema } from '../domain/profile.js'
 import { validateArtifact } from '../domain/validate.js'
 import { KitSpec } from '../kit/spec.js'
-import { resolvePaths } from '../config.js'
+import { defaultArtifactsDir } from '../config.js'
 import { scanProject } from '../scanner/scan.js'
 import { loadDsConfig } from '../scanner/ds-config.js'
 import { renderDashboard } from '../report/render.js'
 import { writeJsonFile } from '../shared/fs.js'
 
 /**
- * `tsx src/cli/analyze.ts <path> [--kit <uiKitRoot>] [--out <dir>] [--exclude <glob>]… [--no-dashboard]`
+ * `tsx src/cli/analyze.ts <path> [--out <dir>] [--exclude <glob>]… [--no-dashboard]`
+ *
+ * Needs the committed artifacts and nothing else — no checkout of the UI kit.
  *
  * Runs the whole non-visual pipeline — profile, collect, analyse — and writes the three
  * artifacts the dashboard renders.
@@ -22,7 +24,7 @@ import { writeJsonFile } from '../shared/fs.js'
 
 interface CliArguments {
   readonly path: string
-  readonly kitRoot: string | undefined
+  readonly artifactsDir: string | undefined
   readonly outputDirectory: string | null
   readonly exclude: string[]
   readonly kitPackages: string[]
@@ -33,7 +35,7 @@ const parseArguments = (argv: readonly string[]): CliArguments => {
   const positional: string[] = []
   const exclude: string[] = []
   const kitPackages: string[] = []
-  let kitRoot: string | undefined
+  let artifactsDir: string | undefined
   let outputDirectory: string | null = null
   let skipDashboard = false
 
@@ -42,8 +44,8 @@ const parseArguments = (argv: readonly string[]): CliArguments => {
     const value = argv[index + 1]
 
     switch (argument) {
-      case '--kit':
-        kitRoot = value
+      case '--artifacts':
+        artifactsDir = value
         index += 1
         break
       case '--out':
@@ -70,7 +72,7 @@ const parseArguments = (argv: readonly string[]): CliArguments => {
     }
   }
 
-  return { path: positional[0] ?? process.cwd(), kitRoot, outputDirectory, exclude, kitPackages, skipDashboard }
+  return { path: positional[0] ?? process.cwd(), artifactsDir, outputDirectory, exclude, kitPackages, skipDashboard }
 }
 
 const percent = (value: number): string => `${String(Math.round(value * 100))}%`
@@ -79,8 +81,7 @@ const main = async (): Promise<void> => {
   const args = parseArguments(process.argv.slice(2))
   const started = Date.now()
 
-  const paths = resolvePaths(args.kitRoot)
-  const kit = KitSpec.load(paths.artifactsDir)
+  const kit = KitSpec.load(args.artifactsDir ?? defaultArtifactsDir)
 
   const { profile, observations } = scanProject({
     path: args.path,

@@ -1,4 +1,10 @@
 node_modules/
 coverage/
 dist/
+
+# …except the built dashboard template, which is committed so that analysing a project
+# needs no front-end toolchain. Git cannot re-include a file under an excluded directory,
+# so the directory itself has to be un-excluded first.
+!dashboard/dist/
+!dashboard/dist/**
 *.log

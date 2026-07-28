@@ -38,13 +38,13 @@
 ```bash
 cd ds-analyzer
 npm install
-npm run dashboard:build                      # один раз: собрать шаблон дашборда
 npm run analyze -- /path/to/your-project     # → <project>/ui-analyzer/dashboard.html + *.json
 npm run scan    -- /path/to/your-project     # только профиль + наблюдения
 npm run verify                               # typecheck + lint + 508 тестов
 ```
 
-Флаги: `--kit-package <name>` (кит переименован), `--exclude <glob>`, `--out <dir>`, `--kit <uiKitRoot>`.
+Флаги: `--kit-package <name>` (кит переименован), `--exclude <glob>`, `--out <dir>`, `--no-dashboard`.
+Чекаут кита для анализа **не нужен** — спека закоммичена в `artifacts/`.
 
 Артефакты: `dashboard.html`, `project-profile.json`, `.cache/observations.json`, `findings.json`, `usage.json`, `summary.json`.
 
