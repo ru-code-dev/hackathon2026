@@ -140,10 +140,10 @@ export const OverviewScreen = ({
             />
             <MetricCard
               label="Кастомные без токенов ДС"
-              value={breakdown.customHardcode}
+              value={`${String(Math.round((breakdown.customHardcode / totalElements) * 100))}%`}
               meter={breakdown.customHardcode / totalElements}
               tone="error"
-              detail={`${String(Math.round((breakdown.customHardcode / totalElements) * 100))}% компонентов на хардкоде${breakdown.customMixed > 0 ? ` · ещё ${String(breakdown.customMixed)} смешанных` : ''}`}
+              detail={`${String(breakdown.customHardcode)} из ${String(breakdown.total)} компонентов на хардкоде${breakdown.customMixed > 0 ? ` · ещё ${String(breakdown.customMixed)} смешанных` : ''}`}
               onClick={() => {
                 navigate({ screen: 'design' })
               }}
