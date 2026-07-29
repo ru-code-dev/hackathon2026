@@ -41,12 +41,20 @@ const MIN_SAMPLE = 12
 /** Occurrences at or below this count are outliers regardless of project size. */
 const ALWAYS_MAGIC_AT_OR_BELOW = 2
 
-const readSources = (root: string, files: readonly string[]): Map<string, string[]> => {
+export const readSources = (root: string, files: readonly string[]): Map<string, string[]> => {
   const sources = new Map<string, string[]>()
 
   for (const file of files) {
     try {
-      sources.set(file, readFileSync(fromProjectPath(root, file), 'utf8').split(/\r?\n/))
+      const lines = readFileSync(fromProjectPath(root, file), 'utf8').split(/\r?\n/)
+      // A newline-terminated file splits into a phantom empty final element that no editor
+      // or `git` counts as a line. Keeping it lets a snippet window near EOF claim one line
+      // more than the file has — and a unified diff built from that window is rejected by
+      // `git apply` with «patch does not apply».
+      if (lines.length > 1 && lines[lines.length - 1] === '') {
+        lines.pop()
+      }
+      sources.set(file, lines)
     } catch {
       // A file that vanished between scanning and analysis costs a snippet, not the run.
     }

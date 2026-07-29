@@ -1,4 +1,12 @@
-import { createHighlighter, type Highlighter } from 'shiki'
+import { createHighlighterCore, type HighlighterCore } from 'shiki/core'
+import { createJavaScriptRegexEngine } from 'shiki/engine/javascript'
+import css from '@shikijs/langs/css'
+import javascript from '@shikijs/langs/javascript'
+import less from '@shikijs/langs/less'
+import scss from '@shikijs/langs/scss'
+import tsx from '@shikijs/langs/tsx'
+import typescript from '@shikijs/langs/typescript'
+import githubDarkDefault from '@shikijs/themes/github-dark-default'
 
 import { extensionOf } from '../shared/path.js'
 
@@ -10,13 +18,15 @@ import { extensionOf } from '../shared/path.js'
  * highlighting is static — the code never changes after the report is written — so it runs
  * here, in Node, and the dashboard receives finished HTML.
  *
- * The result is VS Code-grade accuracy at zero runtime cost, which is the whole trade.
+ * Fine-grained core with the pure-JS regex engine, not the default oniguruma build: the
+ * default engine is a WASM binary loaded from disk at runtime, which dies inside the
+ * single-file Qwen-skill bundle. Static imports of exactly our grammars and one theme make
+ * the whole highlighter data, so esbuild carries it wherever the code goes — highlighting
+ * is guaranteed, not best-effort, in every deployment shape.
  */
 
-/** Grammars actually needed. Loading the full set would cost seconds per run. */
-const LANGUAGES = ['tsx', 'typescript', 'javascript', 'scss', 'css', 'less'] as const
-
-type Language = (typeof LANGUAGES)[number]
+/** Grammars actually needed — statically imported above; the full set would cost seconds. */
+type Language = 'tsx' | 'typescript' | 'javascript' | 'scss' | 'css' | 'less'
 
 const LANGUAGE_BY_EXTENSION: Readonly<Record<string, Language>> = {
   '.tsx': 'tsx',
@@ -82,10 +92,14 @@ const escapeHtml = (value: string): string => value.replace(/&/g, '&amp;').repla
  * the surrounding surface makes code harder to read, not easier.
  */
 export const createCodeHighlighter = async (): Promise<CodeHighlighter> => {
-  let highlighter: Highlighter | null = null
+  let highlighter: HighlighterCore | null = null
 
   try {
-    highlighter = await createHighlighter({ themes: ['github-dark-default'], langs: [...LANGUAGES] })
+    highlighter = await createHighlighterCore({
+      themes: [githubDarkDefault],
+      langs: [tsx, typescript, javascript, scss, css, less],
+      engine: createJavaScriptRegexEngine(),
+    })
   } catch {
     // Highlighting is a nicety. A report with plain code beats no report at all.
     highlighter = null

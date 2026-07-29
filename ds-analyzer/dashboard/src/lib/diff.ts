@@ -1,5 +1,3 @@
-import type { Finding } from '../contract.js'
-
 /**
  * Builds one unified diff from a set of auto-fixable findings.
  *
@@ -14,9 +12,24 @@ import type { Finding } from '../contract.js'
  *    shared line. Overlapping windows that agree are merged; genuine disagreements are
  *    returned as `skipped`, never silently dropped — a patch that quietly leaves fixes out
  *    reads as "applied everything" to the person who clicked.
+ *
+ * Structurally typed on purpose: the same builder runs in the dashboard (on the contract's
+ * `Finding`) and in the Qwen-skill bundle (on the domain finding read from findings.json).
+ * Both satisfy this shape; neither has to import the other's type.
  */
 
-export interface DiffResult {
+export interface DiffableFinding {
+  file: string
+  line: number
+  autoFixable: boolean
+  snippet: {
+    before: string
+    after: string | null
+    startLine: number
+  }
+}
+
+export interface DiffResult<T extends DiffableFinding = DiffableFinding> {
   /** `git apply`-compatible unified diff; empty string when nothing was buildable. */
   diff: string
   /** Files touched by the diff. */
@@ -24,7 +37,7 @@ export interface DiffResult {
   /** Changed-line count (one per replaced line). */
   changedLines: number
   /** Findings left out of the diff, with the reason a human can act on. */
-  skipped: { finding: Finding; reason: string }[]
+  skipped: { finding: T; reason: string }[]
 }
 
 interface Hunk {
@@ -32,7 +45,7 @@ interface Hunk {
   start: number
   before: string[]
   after: string[]
-  findings: Finding[]
+  findings: DiffableFinding[]
 }
 
 const overlaps = (left: Hunk, right: Hunk): boolean =>
@@ -131,8 +144,8 @@ const toInterleavedHunkText = (hunk: Hunk): string => {
   return lines.join('\n')
 }
 
-export const buildUnifiedDiff = (findings: readonly Finding[]): DiffResult => {
-  const skipped: DiffResult['skipped'] = []
+export const buildUnifiedDiff = <T extends DiffableFinding>(findings: readonly T[]): DiffResult<T> => {
+  const skipped: DiffResult<T>['skipped'] = []
   const byFile = new Map<string, Hunk[]>()
 
   const eligible = [...findings]

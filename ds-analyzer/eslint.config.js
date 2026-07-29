@@ -32,7 +32,8 @@ export default defineConfig([
     },
   },
   {
-    files: ['src/cli/**/*.ts'],
+    // Entry points whose stdout IS the product: the CLI and the skill-distribution build.
+    files: ['src/cli/**/*.ts', 'scripts/**/*.ts'],
     rules: {
       'no-console': 'off',
     },

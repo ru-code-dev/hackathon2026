@@ -36,7 +36,7 @@
 | **M3 · Правила и метрики** | ✅ готово | **precision 1.000 · recall 1.000** против оракула; 0 ложных срабатываний API-правил на 684 примерах кита |
 | **M4 · Дашборд** | ✅ готово | один HTML без сети; 8 тестов генератора; прогон на 98 и на 1591 находке |
 | **M5 · Кастомы и кандидаты** | ✅ готово | скоринг noisy-OR по kit-signatures; **M5 precision 1.000 · recall 1.000** (custom/fork/novel/duplicate); kit-cards.json под ИИ-бюджет |
-| **M6 · Агентная обёртка** | ⬜ следующая | вход готов: needsAgent-находки, component.ambiguous, kit-cards.json |
+| **M6 · Агентная обёртка (Qwen)** | ✅ готово | скиллы ds-audit/ds-deep/ds-fix; самодостаточный бандл ds.mjs (0 зависимостей); дымовой тест build:skills — от analyze до git apply |
 
 **Сейчас работает:**
 
@@ -45,7 +45,8 @@ cd ds-analyzer
 npm install
 npm run analyze -- /path/to/your-project     # → <project>/ui-analyzer/dashboard.html + *.json
 npm run scan    -- /path/to/your-project     # только профиль + наблюдения
-npm run verify                               # typecheck + lint + 508 тестов
+npm run verify                               # typecheck + lint + 785 тестов
+npm run build:skills                         # → dist/qwen-skills/ + дымовой тест бандла
 ```
 
 Флаги: `--kit-package <name>` (кит переименован), `--exclude <glob>`, `--out <dir>`, `--no-dashboard`.
@@ -199,25 +200,24 @@ dashboard/src/screens/
 
 ---
 
-### M6 · Агентная обёртка `~1.5 дня` — шаги 13–16 ⬅ следующая
+### M6 · Агентная обёртка `~1.5 дня` — шаги 13–16 ✅ готово (реализована под Qwen Code)
+
+По решению команды целевой хост — **Qwen Code** (скиллы = папки с инструкциями и скриптами).
 
 ```
-.claude/
-├── skills/
-│   ├── ds-audit/SKILL.md    B0 → B → C → D, инкрементальность по хешам
-│   ├── ds-deep/SKILL.md     fan-out по needsAgent → E → D'
-│   └── ds-fix/SKILL.md      .patch из autoFixable
-└── agents/
-    └── ds-matcher.md        сниппет + T0 + T1 → код замены
+ds-analyzer/qwen-skills/           исходники скиллов (по-русски, для «глупой» модели)
+├── ds-audit/SKILL.md              среда → цель (pwd/clone) → analyze/patches/brief → отчёт → ask_user_question
+├── ds-deep/SKILL.md               deep-pack → вердикты по шаблону (2 из 3 линз) → verdicts.md
+├── ds-fix/SKILL.md                select-patch → ветка → git apply → коммит → пуш → PR (MCP → gh → Jenkins)
+└── install-skills.sh              копирование в ~/.qwen/skills
 
-ds-analyzer/src/enrich/
-├── prompt.ts                сборка ~8k токенов
-├── verify.ts                3 линзы, правило 2 из 3
-└── synthesize.ts            темы, паттерны, план миграции
+npm run build:skills → dist/qwen-skills/
+└── ds-audit/scripts/ds.mjs        ЕДИНЫЙ бандл (esbuild, ~14 МБ): analyze | brief | patches | deep-pack | select-patch
+    ds-audit/assets/               артефакты знаний + шаблон дашборда (пути скрипт находит сам)
 ```
 
-**Демо:** `/ds-audit --deep` из Claude Code → дашборд с готовым кодом замен.
-**Проверка:** сгенерированный JSX для `OrderDialog` компилируется; `git apply` патча проходит.
+**Пользователю нужны только Node ≥ 20 и git** — ни npm install, ни чекаута анализатора.
+**Проверка (встроена в сборку):** дымовой тест на копии demo-app без node_modules — analyze с подсветкой Shiki (деградация запрещена), brief с долями = 100, deep-pack с шаблоном ответа, select-patch + реальный `git apply`. Провал любого шага = провал сборки.
 
 ---
 

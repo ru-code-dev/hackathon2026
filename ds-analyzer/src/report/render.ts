@@ -69,6 +69,11 @@ export interface RenderInput {
   } | null
   /** Kit icon name → drawing data, for icons the findings reference. */
   readonly iconPreviews?: Readonly<Record<string, { viewBox: string | null; shapes: readonly string[] }>>
+  /**
+   * Dashboard template to substitute into. Defaults to the repo's `dashboard/dist` build;
+   * the Qwen-skill bundle passes its own copy, because inside the bundle there is no repo.
+   */
+  readonly templatePath?: string | undefined
 }
 
 /**
@@ -117,13 +122,14 @@ const withHighlighting = async (
 
 /** Produces the finished HTML document. */
 export const renderDashboard = async (input: RenderInput): Promise<string> => {
-  if (!existsSync(DASHBOARD_TEMPLATE)) {
+  const templatePath = input.templatePath ?? DASHBOARD_TEMPLATE
+  if (!existsSync(templatePath)) {
     throw new ExtractionError(
-      `Dashboard template not found at ${DASHBOARD_TEMPLATE}. Build it once with: cd dashboard && npm install && npm run build`,
+      `Dashboard template not found at ${templatePath}. Build it once with: cd dashboard && npm install && npm run build`,
     )
   }
 
-  const template = await readFile(DASHBOARD_TEMPLATE, 'utf8')
+  const template = await readFile(templatePath, 'utf8')
 
   if (!PLACEHOLDER.test(template)) {
     throw new ExtractionError('Dashboard template has no ds-data placeholder; rebuild it from dashboard/index.html.')
