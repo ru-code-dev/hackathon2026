@@ -67,6 +67,15 @@ export interface RawFinding {
    * the `after` snippet. `null` when the fix is not a simple in-line replacement.
    */
   readonly replaceWith: string | null
+
+  /**
+   * How {@link RawFinding.replaceWith} is applied. `value` (the default) substitutes it
+   * for `actual` inside the line — right for tokens, wrong for anything that IS a whole
+   * statement: substituting a full `import …` into the old specifier's quotes produces
+   * nested garbage (the import-rules bug this field exists to prevent). `line` replaces
+   * the entire affected line, keeping its indentation and trailing semicolon.
+   */
+  readonly replaceScope?: 'value' | 'line'
 }
 
 /** Frequency of raw pixel values across the project, for properties the kit has no scale for. */

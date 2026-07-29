@@ -197,6 +197,15 @@ const smokeTest = ({ workDir, projectDir }: Smoke): void => {
   run('git', ['apply', '--check', 'ui-analyzer/selected.patch'], projectDir)
   run('git', ['apply', 'ui-analyzer/selected.patch'], projectDir)
 
+  // Tripwire for the nested-import class of bug: a statement substituted into a
+  // specifier's quotes survives `git apply` but is garbage code. Cheap to check, was shipped once.
+  for (const file of selection.files) {
+    expect(
+      !readFileSync(join(projectDir, file), 'utf8').includes("from 'import"),
+      `автофикс испортил ${file}: вложенный import`,
+    )
+  }
+
   step('smoke · check (дифф после git apply)')
   const check = JSON.parse(run('node', [script, 'check', projectDir], workDir)) as {
     $schema: string

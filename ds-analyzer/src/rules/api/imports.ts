@@ -21,6 +21,40 @@ const DNU_MARKER = '_DNU_ST_'
 const kitPackageNames = (context: RuleContext): string[] =>
   context.profile.kitSources.filter((source) => source.kind === 'package').map((source) => source.specifier)
 
+/**
+ * `{ imported, local }` back to source text, aliases intact. Dropping an alias renames a
+ * binding the rest of the file still references — the fix would compile the import and
+ * break every use site.
+ */
+const bindingText = (name: { imported: string; local: string; typeOnly: boolean }): string => {
+  const base = name.imported === name.local ? name.imported : `${name.imported} as ${name.local}`
+  return name.typeOnly ? `type ${base}` : base
+}
+
+/**
+ * Rebuilds the import against the public barrel, or `null` when that cannot be done
+ * mechanically: a default or namespace import has no knowable barrel equivalent — the
+ * symbol's public name is not derivable from the deep path.
+ */
+const barrelImport = (
+  record: {
+    names: { imported: string; local: string; typeOnly: boolean }[]
+    defaultImport: string | null
+    namespaceImport: string | null
+    typeOnly: boolean
+  },
+  packageName: string,
+): string | null => {
+  if (record.defaultImport !== null || record.namespaceImport !== null) {
+    return null
+  }
+  if (record.names.length === 0) {
+    return `import '${packageName}'`
+  }
+  const keyword = record.typeOnly ? 'import type' : 'import'
+  return `${keyword} { ${record.names.map(bindingText).join(', ')} } from '${packageName}'`
+}
+
 export const bypassImportRule: Rule = {
   id: 'import.bypass',
   category: 'api',
@@ -40,6 +74,20 @@ export const bypassImportRule: Rule = {
       const wrapper = context.kit.componentWrapping(upstream.specifier)
       const kitPackage = kitPackageNames(context)[0] ?? '@sds-eng/base'
 
+      // Mechanically safe only when the import is exactly the wrapped component under its
+      // own name (alias allowed — it is preserved): then every use site keeps working.
+      // Extra names, default or namespace imports need a human or the AI stage.
+      const soleName = record.names.length === 1 ? record.names[0] : undefined
+      const fixable =
+        wrapper !== null &&
+        soleName?.imported === wrapper &&
+        record.defaultImport === null &&
+        record.namespaceImport === null
+      const replacement =
+        !fixable || soleName === undefined
+          ? null
+          : `${record.typeOnly || soleName.typeOnly ? 'import type' : 'import'} { ${wrapper}${soleName.local === wrapper ? '' : ` as ${soleName.local}`} } from '${kitPackage}'`
+
       findings.push({
         rule: 'import.bypass',
         subkind: null,
@@ -53,19 +101,28 @@ export const bypassImportRule: Rule = {
         expected:
           wrapper === null
             ? null
-            : { token: null, cssVar: null, component: wrapper, value: `import { ${wrapper} } from '${kitPackage}'` },
+            : {
+                token: null,
+                cssVar: null,
+                component: wrapper,
+                value: replacement ?? `import { ${wrapper} } from '${kitPackage}'`,
+              },
         why:
           wrapper === null
             ? `${record.specifier} — это библиотека, поверх которой построен кит. Импорт мимо кита теряет темизацию и правки доступности.`
             : `${record.specifier} обёрнут в ките как ${wrapper}. Прямой импорт отдаёт компонент без темы кита, без маппинга вариантов и без его правок доступности.`,
-        note: null,
+        note:
+          wrapper !== null && !fixable
+            ? 'Автозамена не предлагается: импортируется не только обёрнутый компонент — замену имён должен проверить человек.'
+            : null,
         rootCause: null,
         appliedTo: null,
-        autoFixable: wrapper !== null,
-        needsAgent: false,
+        autoFixable: fixable,
+        needsAgent: wrapper !== null && !fixable,
         candidates: [],
         impactKey: `import.bypass:${record.specifier}`,
-        replaceWith: wrapper === null ? null : `import { ${wrapper} } from '${kitPackage}'`,
+        replaceWith: replacement,
+        replaceScope: 'line',
       })
     }
 
@@ -93,7 +150,7 @@ export const internalImportRule: Rule = {
         continue
       }
 
-      const names = record.names.map((name) => name.imported).join(', ')
+      const replacement = barrelImport(record, packageName)
 
       findings.push({
         rule: 'import.internal',
@@ -109,17 +166,21 @@ export const internalImportRule: Rule = {
           token: null,
           cssVar: null,
           component: null,
-          value: names.length > 0 ? `import { ${names} } from '${packageName}'` : `import '${packageName}'`,
+          value: replacement ?? `import { … } from '${packageName}'`,
         },
         why: `${record.specifier} лезет во внутренности пакета. Публичная бочка ${packageName} существует ровно затем, чтобы раскладка файлов могла меняться между релизами.`,
-        note: null,
+        note:
+          replacement === null
+            ? 'Автозамена не предлагается: default- или namespace-импорт из внутреннего пути — публичное имя символа отсюда не выводится.'
+            : null,
         rootCause: null,
         appliedTo: null,
-        autoFixable: true,
-        needsAgent: false,
+        autoFixable: replacement !== null,
+        needsAgent: replacement === null,
         candidates: [],
         impactKey: `import.internal:${packageName}`,
-        replaceWith: names.length > 0 ? `import { ${names} } from '${packageName}'` : `import '${packageName}'`,
+        replaceWith: replacement,
+        replaceScope: 'line',
       })
     }
 

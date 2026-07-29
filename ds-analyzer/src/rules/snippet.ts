@@ -31,12 +31,19 @@ export const buildSnippet = (finding: RawFinding, lines: readonly string[] | und
   const target = window[highlightLine - 1] ?? ''
 
   const replacement = finding.replaceWith
-  const after =
+  // The `actual`-in-line guard serves both scopes: for `line` it is what proves the
+  // statement lives on this one line — a multi-line import puts the specifier elsewhere,
+  // and replacing only the first line of it would corrupt the file. No diff beats a
+  // wrong diff.
+  const replaced =
     replacement === null || !target.includes(finding.actual)
       ? null
-      : window
-          .map((line, offset) => (offset === highlightLine - 1 ? line.replace(finding.actual, replacement) : line))
-          .join('\n')
+      : (finding.replaceScope ?? 'value') === 'line'
+        ? `${/^\s*/.exec(target)?.[0] ?? ''}${replacement}${target.trimEnd().endsWith(';') ? ';' : ''}`
+        : target.replace(finding.actual, replacement)
+
+  const after =
+    replaced === null ? null : window.map((line, offset) => (offset === highlightLine - 1 ? replaced : line)).join('\n')
 
   return {
     before: window.join('\n'),
