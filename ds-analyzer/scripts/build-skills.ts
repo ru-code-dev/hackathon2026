@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process'
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, chmodSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { homedir, tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -180,6 +180,22 @@ const smokeTest = ({ workDir, projectDir }: Smoke): void => {
   )
 }
 
+/**
+ * Installs the freshly built (and smoke-proven) skills into `~/.qwen/skills` — the build
+ * IS the installation on this machine. `--no-install` skips it (CI, packaging for
+ * somebody else); other machines use `dist/qwen-skills/install-skills.sh`.
+ */
+const installSkills = (): void => {
+  step('Установка в ~/.qwen/skills (пересборка = переустановка)')
+  const target = join(homedir(), '.qwen', 'skills')
+  mkdirSync(target, { recursive: true })
+  for (const skill of ['ds-audit', 'ds-deep', 'ds-fix']) {
+    rmSync(join(target, skill), { recursive: true, force: true })
+    cpSync(join(distDir, skill), join(target, skill), { recursive: true })
+    console.log(`  ✓ ${skill} → ${join(target, skill)}`)
+  }
+}
+
 const main = async (): Promise<void> => {
   rmSync(distDir, { recursive: true, force: true })
   await bundle()
@@ -192,9 +208,18 @@ const main = async (): Promise<void> => {
     rmSync(smoke.workDir, { recursive: true, force: true })
   }
 
+  const skipInstall = process.argv.includes('--no-install')
+  if (!skipInstall) {
+    installSkills()
+  }
+
   const size = Math.round(readFileSync(join(auditDir, 'scripts', 'ds.mjs')).byteLength / 1024 / 1024)
   console.log(`\n✓ dist/qwen-skills готов · ds.mjs ≈ ${String(size)} МБ · дымовой тест пройден целиком`)
-  console.log('  Установка: dist/qwen-skills/install-skills.sh')
+  console.log(
+    skipInstall
+      ? '  Установка на этой машине пропущена (--no-install); для другой машины: dist/qwen-skills/install-skills.sh'
+      : '  Скиллы установлены в ~/.qwen/skills — перезапустите Qwen Code и наберите /ds-audit',
+  )
 }
 
 await main()
