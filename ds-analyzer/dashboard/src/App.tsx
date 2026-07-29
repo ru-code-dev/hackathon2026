@@ -52,16 +52,31 @@ export const App = (): React.ReactElement => {
     })
   }, [])
 
+  // Diff-check reports open filtered to the changed lines: the working screens receive a
+  // payload whose findings are the intersection, so every list, counter and filter reads
+  // «этот дифф», not «весь проект». One URL flag (`all=1`) restores the full view; on
+  // regular audits `diff` is null and this whole path is inert — nothing changes.
+  const diff = payload?.diff ?? null
+  const diffActive = diff !== null && !state.diffOff
+
+  const effectivePayload = useMemo(() => {
+    if (payload === null || !diffActive || diff === null) {
+      return payload
+    }
+    const wanted = new Set(diff.newFindingIds)
+    return { ...payload, findings: payload.findings.filter((finding) => wanted.has(finding.id)) }
+  }, [diff, diffActive])
+
   const counts = useMemo(() => {
-    if (payload === null) {
+    if (effectivePayload === null) {
       return { problems: 0, files: 0, a11y: 0 }
     }
     return {
-      problems: buildProblems(payload.findings).length,
-      files: buildFileGroups(payload.findings).length,
-      a11y: payload.findings.filter((finding) => finding.category === 'a11y').length,
+      problems: buildProblems(effectivePayload.findings).length,
+      files: buildFileGroups(effectivePayload.findings).length,
+      a11y: effectivePayload.findings.filter((finding) => finding.category === 'a11y').length,
     }
-  }, [])
+  }, [effectivePayload])
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent): void => {
@@ -92,7 +107,7 @@ export const App = (): React.ReactElement => {
     }
   }, [navigate, reset, state.screen])
 
-  if (payload === null) {
+  if (payload === null || effectivePayload === null) {
     return (
       <div className="flex h-full items-center justify-center p-8 text-center">
         <div className="max-w-md space-y-2">
@@ -104,9 +119,13 @@ export const App = (): React.ReactElement => {
     )
   }
 
-  const data = payload
+  // The verdict screen keeps whole-project numbers even in diff mode — health and the
+  // interface composition are project properties; the banner carries the diff's own count.
+  const data = effectivePayload
+  const fullData = payload
   const crumbs = activeFilters(state)
-  const selectedFindings = data.findings.filter((finding) => selection.has(finding.id))
+  const selectedFindings = fullData.findings.filter((finding) => selection.has(finding.id))
+  const diffAutoFixable = diff === null ? 0 : data.findings.filter((finding) => finding.autoFixable).length
 
   const NAV: { key: Screen; label: string; count?: number; hint: string }[] = [
     { key: 'overview', label: 'Сводка', hint: 'вердикт и с чего начать' },
@@ -163,6 +182,51 @@ export const App = (): React.ReactElement => {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
+        {diff !== null && (
+          <div className="flex shrink-0 flex-wrap items-center gap-2.5 border-b border-accent/40 bg-accent/10 px-5 py-2">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-accent">проверка диффа</span>
+            <code className="rounded bg-surface-2 px-1.5 py-0.5 font-mono text-[12px]">{diff.range}</code>
+            <span className="text-[12.5px] text-muted">
+              изменено {diff.changedFiles} ф. · {diff.changedLines} строк —{' '}
+              <span className={cx('font-semibold', diff.newFindingIds.length > 0 ? 'text-warning' : 'text-ok')}>
+                {diff.newFindingIds.length > 0
+                  ? `внесено отклонений: ${String(diff.newFindingIds.length)}`
+                  : 'отклонений не внесено'}
+              </span>
+              {diffAutoFixable > 0 && ` · авто-фикс: ${String(diffAutoFixable)}`}
+            </span>
+            <div className="ml-auto flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => {
+                  go({ diffOff: false })
+                }}
+                className={cx(
+                  'rounded-md border px-2.5 py-1 text-[12px] transition-colors',
+                  diffActive
+                    ? 'border-accent/50 bg-accent/15 text-fg'
+                    : 'border-border text-muted hover:border-border-strong hover:text-fg',
+                )}
+              >
+                Только изменения
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  go({ diffOff: true })
+                }}
+                className={cx(
+                  'rounded-md border px-2.5 py-1 text-[12px] transition-colors',
+                  !diffActive
+                    ? 'border-accent/50 bg-accent/15 text-fg'
+                    : 'border-border text-muted hover:border-border-strong hover:text-fg',
+                )}
+              >
+                Весь проект
+              </button>
+            </div>
+          </div>
+        )}
         {crumbs.length > 0 && (
           <div className="flex shrink-0 flex-wrap items-center gap-1.5 border-b border-border bg-bg/70 px-5 py-2 backdrop-blur">
             <span className="text-[11px] uppercase tracking-wider text-faint">фильтры</span>
@@ -193,7 +257,7 @@ export const App = (): React.ReactElement => {
         )}
 
         <main className="relative min-h-0 flex-1 overflow-hidden">
-          {state.screen === 'overview' && <OverviewScreen payload={data} navigate={navigate} />}
+          {state.screen === 'overview' && <OverviewScreen payload={fullData} navigate={navigate} />}
           {state.screen === 'problems' && (
             <ProblemsScreen
               payload={data}
@@ -207,7 +271,7 @@ export const App = (): React.ReactElement => {
           {state.screen === 'files' && (
             <FilesScreen payload={data} state={state} go={go} selection={selection} onSelectToggle={toggleSelection} />
           )}
-          {state.screen === 'design' && <DesignScreen payload={data} state={state} go={go} navigate={navigate} />}
+          {state.screen === 'design' && <DesignScreen payload={fullData} state={state} go={go} navigate={navigate} />}
           {state.screen === 'a11y' && (
             <A11yScreen
               payload={data}
@@ -220,7 +284,7 @@ export const App = (): React.ReactElement => {
           )}
 
           <PrFlow
-            payload={data}
+            payload={fullData}
             selected={selectedFindings}
             onClear={() => {
               setSelection(new Set())

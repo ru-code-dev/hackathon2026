@@ -45,6 +45,11 @@ export interface ViewState {
   query: string
   /** Only findings that can be patched without a human. */
   autoFixableOnly: boolean
+  /**
+   * Diff-check reports open filtered to the changed lines; this flag (`all=1` in the URL)
+   * switches back to the whole project. Meaningless when the payload carries no diff.
+   */
+  diffOff: boolean
 }
 
 const EMPTY: ViewState = {
@@ -62,6 +67,7 @@ const EMPTY: ViewState = {
   wcag: null,
   query: '',
   autoFixableOnly: false,
+  diffOff: false,
 }
 
 const SCREENS: readonly Screen[] = ['overview', 'problems', 'files', 'design', 'a11y']
@@ -90,6 +96,7 @@ const parse = (search: string): ViewState => {
     wcag: read('wcag'),
     query: read('q') ?? '',
     autoFixableOnly: params.get('fix') === '1',
+    diffOff: params.get('all') === '1',
   }
 }
 
@@ -117,6 +124,9 @@ const serialise = (state: ViewState): string => {
   write('q', state.query)
   if (state.autoFixableOnly) {
     params.set('fix', '1')
+  }
+  if (state.diffOff) {
+    params.set('all', '1')
   }
 
   const query = params.toString()

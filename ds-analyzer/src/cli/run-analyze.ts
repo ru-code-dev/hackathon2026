@@ -13,6 +13,7 @@ import { KitSpec } from '../kit/spec.js'
 import { scanProject } from '../scanner/scan.js'
 import { loadDsConfig } from '../scanner/ds-config.js'
 import { renderDashboard } from '../report/render.js'
+import { intersectFindings, type ChangedLines } from '../skill/check.js'
 import { writeJsonFile } from '../shared/fs.js'
 import { detectGitBranch, detectGitRemote } from '../shared/git.js'
 
@@ -32,6 +33,12 @@ export interface RunAnalyzeOptions {
   readonly skipDashboard: boolean
   /** Bundle passes its own template copy; `undefined` means the repo default. */
   readonly templatePath?: string | undefined
+  /**
+   * Diff-check mode (`ds.mjs check`): changed lines of the working tree. The analysis
+   * still covers the whole project; the diff only decorates the dashboard so it opens in
+   * «только изменения» mode with the intersected findings pre-selected.
+   */
+  readonly diff?: { readonly range: string; readonly changedLines: ChangedLines } | undefined
 }
 
 export interface RunAnalyzeResult {
@@ -111,10 +118,23 @@ export const runAnalyze = async (options: RunAnalyzeOptions): Promise<RunAnalyze
           }),
       )
 
+      const diff =
+        options.diff === undefined
+          ? null
+          : {
+              range: options.diff.range,
+              changedFiles: options.diff.changedLines.size,
+              changedLines: [...options.diff.changedLines.values()].reduce((sum, lines) => sum + lines.size, 0),
+              newFindingIds: intersectFindings(analysis.findings, options.diff.changedLines).map(
+                (finding) => finding.id,
+              ),
+            }
+
       const html = await renderDashboard({
         profile,
         analysis,
         generatedAt: new Date().toISOString().slice(0, 10),
+        diff,
         ci: {
           ...(dsConfig.ci ?? {}),
           repositoryUrl: dsConfig.ci?.repositoryUrl ?? detectGitRemote(profile.root) ?? undefined,

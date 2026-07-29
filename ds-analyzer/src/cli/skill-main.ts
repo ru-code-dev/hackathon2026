@@ -5,12 +5,15 @@ import { fileURLToPath } from 'node:url'
 
 import { z } from 'zod'
 
+import { execFileSync } from 'node:child_process'
+
 import { defaultArtifactsDir } from '../config.js'
 import { findingSchema, usageSchema, summarySchema, type Finding } from '../domain/findings.js'
 import { kitCardsArtifactSchema } from '../domain/kit-knowledge.js'
 import { projectProfileSchema } from '../domain/profile.js'
 import { DASHBOARD_TEMPLATE } from '../report/render.js'
 import { buildBrief } from '../skill/brief.js'
+import { buildCheckVerdict, parseChangedLines } from '../skill/check.js'
 import { buildDeepPackMarkdown, packNameFor, rankForDeepAnalysis } from '../skill/deep-pack.js'
 import { buildPatches, buildSelection } from '../skill/patches.js'
 import { writeJsonFile } from '../shared/fs.js'
@@ -229,8 +232,97 @@ const commandSelectPatch = async (args: ParsedArguments): Promise<void> => {
   })
 }
 
+/**
+ * Diff-check: full analysis, verdict filtered to the lines this change touches.
+ *
+ * Default comparison is the working tree (staged + unstaged) against `HEAD` — the
+ * pre-commit question. `--staged` narrows to the index; `--range A..B` serves CI and
+ * merge-request gates. Exit code stays 0 so the skill's «ошибка = стоп» rule holds;
+ * `--gate` flips it to 1 when errors land on changed lines, which is what a pipeline
+ * wants to fail on.
+ */
+const commandCheck = async (args: ParsedArguments): Promise<void> => {
+  const projectDir = projectDirOf(args)
+  const assets = resolveAssets()
+
+  const rangeFlag = args.flags.get('--range')
+  const staged = args.flags.get('--staged') === true
+  if (typeof rangeFlag === 'string' && staged) {
+    throw new Error('Флаги --range и --staged несовместимы: выберите один.')
+  }
+  // --relative: when the project is a subdirectory of a bigger repository, plain git diff
+  // returns repo-root paths while findings are project-relative — the intersection would
+  // silently be empty. Relative paths keep both sides in one coordinate system.
+  const gitArguments = [
+    'diff',
+    '-U0',
+    '--relative',
+    ...(staged ? ['--cached'] : typeof rangeFlag === 'string' ? [rangeFlag] : ['HEAD']),
+  ]
+  const range = staged ? '--staged' : typeof rangeFlag === 'string' ? rangeFlag : 'HEAD'
+
+  let diffText: string
+  try {
+    diffText = execFileSync('git', ['-C', projectDir, ...gitArguments], {
+      encoding: 'utf8',
+      maxBuffer: 64 * 1024 * 1024,
+    })
+  } catch (error) {
+    throw new Error(
+      `git diff не выполнился (${range}). Проверьте, что каталог — git-репозиторий, а диапазон существует. ${error instanceof Error ? (error.message.split('\n')[0] ?? '') : ''}`,
+    )
+  }
+
+  const changed = parseChangedLines(diffText)
+  const checkPath = join(reportsDir(projectDir), 'check.json')
+
+  if (changed.size === 0) {
+    const verdict = buildCheckVerdict({ findings: [], changed, range, dashboardPath: null, checkPath })
+    await writeJsonFile(checkPath, verdict)
+    emit(verdict)
+    return
+  }
+
+  // stdout of this command is ONE JSON document — the analyzer's human progress report
+  // goes to stderr for the duration, where the model and CI logs still see it.
+  const consoleLog = console.log
+  console.log = (...parts: unknown[]) => {
+    console.error(...parts)
+  }
+  let result
+  try {
+    result = await runAnalyze({
+      path: projectDir,
+      artifactsDir: assets.artifactsDir,
+      outputDirectory: null,
+      exclude: [],
+      kitPackages: [],
+      skipDashboard: false,
+      templatePath: assets.templatePath,
+      diff: { range, changedLines: changed },
+    })
+  } finally {
+    console.log = consoleLog
+  }
+
+  const verdict = buildCheckVerdict({
+    findings: result.analysis.findings,
+    changed,
+    range,
+    dashboardPath: result.dashboardPath,
+    checkPath,
+  })
+  await writeJsonFile(checkPath, verdict)
+  emit(verdict)
+
+  if (args.flags.get('--gate') === true && verdict.gate === 'fail') {
+    process.exitCode = 1
+  }
+}
+
 const COMMANDS: Readonly<Record<string, (args: ParsedArguments) => Promise<void>>> = {
   analyze: commandAnalyze,
+  check: commandCheck,
   brief: commandBrief,
   patches: commandPatches,
   'deep-pack': commandDeepPack,

@@ -74,6 +74,16 @@ export interface RenderInput {
    * the Qwen-skill bundle passes its own copy, because inside the bundle there is no repo.
    */
   readonly templatePath?: string | undefined
+  /**
+   * Diff-check context (`ds.mjs check`): what was compared and which findings sit on the
+   * changed lines. Absent on regular audits — the dashboard shows nothing extra then.
+   */
+  readonly diff?: {
+    readonly range: string
+    readonly changedFiles: number
+    readonly changedLines: number
+    readonly newFindingIds: readonly string[]
+  } | null
 }
 
 /**
@@ -146,6 +156,7 @@ export const renderDashboard = async (input: RenderInput): Promise<string> => {
     },
     generatedAt: input.generatedAt,
     ci: input.ci ?? null,
+    diff: input.diff ?? null,
     iconPreviews: input.iconPreviews ?? {},
     summary: input.analysis.summary,
     usage: highlighted.usage,

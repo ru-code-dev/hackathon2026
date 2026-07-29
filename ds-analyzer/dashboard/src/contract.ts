@@ -149,6 +149,11 @@ export interface Payload {
   /** CI coordinates from `ds.config.json`; `null` when the project declares none. */
   ci: { webhookUrl?: string; repositoryUrl?: string; targetBranch?: string } | null
   /**
+   * Diff-check context (`ds.mjs check`): compared range and the findings sitting on
+   * changed lines. `null` on regular audits — the dashboard then shows nothing extra.
+   */
+  diff: { range: string; changedFiles: number; changedLines: number; newFindingIds: string[] } | null
+  /**
    * Kit icon name → drawing data (normalized shapes, `kind:data`), for every kit icon the
    * findings reference. Lets the gallery render the icon itself instead of naming it.
    */

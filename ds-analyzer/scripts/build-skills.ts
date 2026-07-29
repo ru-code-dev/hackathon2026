@@ -107,7 +107,7 @@ const copyAssets = (): void => {
   cpSync(template, join(auditDir, 'assets', 'dashboard.html'))
 
   const skillsSource = join(analyzerRoot, 'qwen-skills')
-  for (const skill of ['ds-audit', 'ds-deep', 'ds-fix']) {
+  for (const skill of ['ds-audit', 'ds-check', 'ds-deep', 'ds-fix']) {
     cpSync(join(skillsSource, skill, 'SKILL.md'), join(distDir, skill, 'SKILL.md'))
   }
   const installer = join(distDir, 'install-skills.sh')
@@ -196,6 +196,17 @@ const smokeTest = ({ workDir, projectDir }: Smoke): void => {
 
   run('git', ['apply', '--check', 'ui-analyzer/selected.patch'], projectDir)
   run('git', ['apply', 'ui-analyzer/selected.patch'], projectDir)
+
+  step('smoke · check (дифф после git apply)')
+  const check = JSON.parse(run('node', [script, 'check', projectDir], workDir)) as {
+    $schema: string
+    changed: { files: number }
+    totals: { findings: number }
+  }
+  expect(check.$schema === 'ds-analyzer/check@1', 'check вернул не тот $schema')
+  expect(check.changed.files > 0, 'check не увидел изменённых файлов после apply')
+  const checkedDashboard = readFileSync(join(projectDir, 'ui-analyzer', 'dashboard.html'), 'utf8')
+  expect(checkedDashboard.includes('"diff":{"range":"HEAD"'), 'в дашборде нет diff-блока после check')
   const status = run('git', ['status', '--porcelain'], projectDir)
   expect(
     selection.files.every((file) => status.includes(file)),

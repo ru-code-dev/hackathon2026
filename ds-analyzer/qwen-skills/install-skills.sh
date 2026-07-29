@@ -26,7 +26,7 @@ case "$CONFIG_DIR" in
   *) TARGET="$HOME/$CONFIG_DIR/skills"; SKILL_REF="\$HOME/$CONFIG_DIR/skills" ;;
 esac
 
-for skill in ds-audit ds-deep ds-fix; do
+for skill in ds-audit ds-check ds-deep ds-fix; do
   if [ ! -f "$HERE/$skill/SKILL.md" ]; then
     echo "Ошибка: в $HERE нет $skill/SKILL.md — запускайте скрипт из dist/qwen-skills." >&2
     exit 1
@@ -34,7 +34,7 @@ for skill in ds-audit ds-deep ds-fix; do
 done
 
 mkdir -p "$TARGET"
-for skill in ds-audit ds-deep ds-fix; do
+for skill in ds-audit ds-check ds-deep ds-fix; do
   rm -rf "$TARGET/$skill"
   cp -R "$HERE/$skill" "$TARGET/$skill"
   # sed -i несовместим между GNU и BSD — пишем во временный файл.
