@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process'
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, chmodSync } from 'node:fs'
-import { homedir, tmpdir } from 'node:os'
+import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -181,19 +181,16 @@ const smokeTest = ({ workDir, projectDir }: Smoke): void => {
 }
 
 /**
- * Installs the freshly built (and smoke-proven) skills into `~/.qwen/skills` — the build
- * IS the installation on this machine. `--no-install` skips it (CI, packaging for
- * somebody else); other machines use `dist/qwen-skills/install-skills.sh`.
+ * Installs the freshly built (and smoke-proven) skills by running the SAME
+ * `install-skills.sh` a user runs — the installer is the single place that decides where
+ * skills live (`--dir` for forks whose config folder is not `.qwen`) and that rewrites the
+ * hardcoded `$HOME/.qwen/skills/...` paths inside SKILL.md. The build merely forwards the
+ * flag; there is no second install implementation to drift.
  */
-const installSkills = (): void => {
-  step('Установка в ~/.qwen/skills (пересборка = переустановка)')
-  const target = join(homedir(), '.qwen', 'skills')
-  mkdirSync(target, { recursive: true })
-  for (const skill of ['ds-audit', 'ds-deep', 'ds-fix']) {
-    rmSync(join(target, skill), { recursive: true, force: true })
-    cpSync(join(distDir, skill), join(target, skill), { recursive: true })
-    console.log(`  ✓ ${skill} → ${join(target, skill)}`)
-  }
+const installSkills = (dirArguments: readonly string[]): void => {
+  step('Установка через dist/qwen-skills/install-skills.sh (пересборка = переустановка)')
+  const output = run('sh', [join(distDir, 'install-skills.sh'), ...dirArguments], distDir)
+  console.log(output.trimEnd())
 }
 
 const main = async (): Promise<void> => {
@@ -209,16 +206,21 @@ const main = async (): Promise<void> => {
   }
 
   const skipInstall = process.argv.includes('--no-install')
+  const dirFlag = process.argv.indexOf('--dir')
+  const dirValue = dirFlag === -1 ? null : (process.argv[dirFlag + 1] ?? null)
+  if (dirFlag !== -1 && dirValue === null) {
+    throw new Error('--dir требует значение, например: --dir .my-fork')
+  }
   if (!skipInstall) {
-    installSkills()
+    installSkills(dirValue === null ? [] : ['--dir', dirValue])
   }
 
   const size = Math.round(readFileSync(join(auditDir, 'scripts', 'ds.mjs')).byteLength / 1024 / 1024)
   console.log(`\n✓ dist/qwen-skills готов · ds.mjs ≈ ${String(size)} МБ · дымовой тест пройден целиком`)
   console.log(
     skipInstall
-      ? '  Установка на этой машине пропущена (--no-install); для другой машины: dist/qwen-skills/install-skills.sh'
-      : '  Скиллы установлены в ~/.qwen/skills — перезапустите Qwen Code и наберите /ds-audit',
+      ? '  Установка на этой машине пропущена (--no-install); для другой машины: dist/qwen-skills/install-skills.sh [--dir .my-fork]'
+      : '  Скиллы установлены (пути выше) — перезапустите Qwen Code (или форк) и наберите /ds-audit',
   )
 }
 
