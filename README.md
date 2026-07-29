@@ -187,8 +187,8 @@ npm run analyze -- /path/to/your-project
 
 ```bash
 git clone git@github.com:ru-code-dev/hackathon2026.git
-cd hackathon2026/skills
-./install-skills.sh                  # форк Qwen со своим каталогом: ./install-skills.sh --dir .my-fork
+cd hackathon2026
+./install.sh                         # форк Qwen со своим каталогом: ./install.sh --dir .my-fork
 # перезапустить Qwen Code → /ds-audit
 ```
 
