@@ -37,7 +37,8 @@ node "$HOME/.qwen/skills/ds-audit/scripts/ds.mjs" deep-pack "<PROJECT_DIR>" --to
 ## Шаг 3 — сводка пользователю
 
 Покажи таблицу по-русски: Компонент · Вердикт · Уверенность · Первый шаг плана.
-Под таблицей: «Полные вердикты: `<PROJECT_DIR>/ui-analyzer/deep/verdicts.md`».
+Под таблицей — кликабельная markdown-ссылка:
+`[Полные вердикты](file://<PROJECT_DIR>/ui-analyzer/deep/verdicts.md)`.
 
 Затем задай вопрос `ask_user_question` (один вариант):
 

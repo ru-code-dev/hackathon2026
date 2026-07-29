@@ -1,5 +1,15 @@
 import { execFileSync } from 'node:child_process'
-import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs'
+import {
+  chmodSync,
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  statSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -81,6 +91,18 @@ const copyAssets = (): void => {
   const template = join(analyzerRoot, 'dashboard', 'dist', 'index.html')
   if (!existsSync(template)) {
     throw new Error('Нет dashboard/dist/index.html — сначала соберите дашборд (npm run dashboard:build).')
+  }
+  // A stale template ships silently otherwise: the bundle would carry yesterday's UI while
+  // the sources say something else. Newer source mtime than the built file = hard stop.
+  const templateMtime = statSync(template).mtimeMs
+  const newerSource = readdirSync(join(analyzerRoot, 'dashboard', 'src'), { recursive: true, encoding: 'utf8' })
+    .map((file) => join(analyzerRoot, 'dashboard', 'src', file))
+    .filter((file) => statSync(file).isFile())
+    .find((file) => statSync(file).mtimeMs > templateMtime)
+  if (newerSource !== undefined) {
+    throw new Error(
+      `Дашборд устарел: ${newerSource} новее dist/index.html. Соберите его: cd dashboard && npm run build.`,
+    )
   }
   cpSync(template, join(auditDir, 'assets', 'dashboard.html'))
 

@@ -112,8 +112,11 @@ node "$HOME/.qwen/skills/ds-audit/scripts/ds.mjs" brief "<PROJECT_DIR>"
 - Покрытие токенами: `tokenCoveragePercent`%
 - Топ проблем: первые 5 из `topProblems` — «правило: actual → expected (occurrences×)»
 - Готово к автофиксу: `recommendedFixes.decisions` решений в `recommendedFixes.files` файлах
-- Дашборд: file://-ссылка на `artifacts.dashboard`
-- Артефакты: `artifacts.findings`, `artifacts.usage`, `artifacts.summary`, `artifacts.patches`
+- Дашборд — ОБЯЗАТЕЛЬНО кликабельной markdown-ссылкой, путь подставь из brief:
+  `[Открыть дашборд](file://<значение artifacts.dashboard>)`
+- Артефакты — тоже markdown-ссылками, по одной на строку:
+  `[findings.json](file://<artifacts.findings>)` · `[usage.json](file://<artifacts.usage>)` ·
+  `[summary.json](file://<artifacts.summary>)` · `[patches.json](file://<artifacts.patches>)`
 
 ## Фаза 4 — что дальше
 
