@@ -7,9 +7,10 @@ import { fileURLToPath } from 'node:url'
 import { build } from 'esbuild'
 
 /**
- * `npm run build:skills` — bakes the distributable Qwen-skill folder.
+ * `npm run build:skills` — bakes the distributable Qwen-skill folder into `<repo-root>/skills/`.
  *
- * Output: `dist/qwen-skills/` with three skills; `ds-audit` carries the whole runtime —
+ * The folder IS COMMITTED: a user clones the repository and runs `skills/install-skills.sh` —
+ * no npm, no build. Output: three skills; `ds-audit` carries the whole runtime —
  * a single self-contained ESM bundle (`scripts/ds.mjs`) plus the kit knowledge and the
  * dashboard template as plain files. Zero dependencies at the user's end: Node ≥ 20, git,
  * nothing else.
@@ -22,7 +23,7 @@ import { build } from 'esbuild'
  */
 
 const analyzerRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const distDir = join(analyzerRoot, 'dist', 'qwen-skills')
+const distDir = join(analyzerRoot, '..', 'skills')
 const auditDir = join(distDir, 'ds-audit')
 
 const step = (title: string): void => {
@@ -188,7 +189,7 @@ const smokeTest = ({ workDir, projectDir }: Smoke): void => {
  * flag; there is no second install implementation to drift.
  */
 const installSkills = (dirArguments: readonly string[]): void => {
-  step('Установка через dist/qwen-skills/install-skills.sh (пересборка = переустановка)')
+  step('Установка через skills/install-skills.sh (пересборка = переустановка)')
   const output = run('sh', [join(distDir, 'install-skills.sh'), ...dirArguments], distDir)
   console.log(output.trimEnd())
 }
@@ -216,10 +217,10 @@ const main = async (): Promise<void> => {
   }
 
   const size = Math.round(readFileSync(join(auditDir, 'scripts', 'ds.mjs')).byteLength / 1024 / 1024)
-  console.log(`\n✓ dist/qwen-skills готов · ds.mjs ≈ ${String(size)} МБ · дымовой тест пройден целиком`)
+  console.log(`\n✓ skills/ (корень репозитория) готов · ds.mjs ≈ ${String(size)} МБ · дымовой тест пройден целиком`)
   console.log(
     skipInstall
-      ? '  Установка на этой машине пропущена (--no-install); для другой машины: dist/qwen-skills/install-skills.sh [--dir .my-fork]'
+      ? '  Установка на этой машине пропущена (--no-install); установка: skills/install-skills.sh [--dir .my-fork]'
       : '  Скиллы установлены (пути выше) — перезапустите Qwen Code (или форк) и наберите /ds-audit',
   )
 }

@@ -9,6 +9,9 @@ coverage/
 build/
 ds-analyzer/dist/
 
+# Демо-проект — локальный оракул для тестов и дымовой сборки; в репозиторий не входит.
+demo-app/
+
 # The built dashboard template IS committed: `npm run analyze` substitutes a payload into
 # it, and requiring a front-end build on the machine being audited would defeat the point.
 # Rebuild with `npm run dashboard:build` after changing anything under dashboard/src.

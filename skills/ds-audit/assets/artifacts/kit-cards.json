@@ -1,0 +1,4258 @@
+{
+  "$schema": "ds-analyzer/kit-cards@1",
+  "meta": {
+    "counts": {
+      "components": 57,
+      "examples": 529
+    }
+  },
+  "cards": [
+    {
+      "name": "Accordion",
+      "t0": "Accordion — компонент кита · пропы: arrowPosition, size",
+      "t1": {
+        "import": "import { Accordion } from '@sds-eng/base'",
+        "props": [
+          {
+            "name": "size",
+            "type": "'sm' | 'md' | 'lg' | 'h6' | 'h4' | 'h2'",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "arrowPosition",
+            "type": "'left' | 'right'",
+            "values": [],
+            "doc": null
+          }
+        ],
+        "variants": {},
+        "slots": [],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base"
+        ],
+        "examples": [
+          "AccordionDefaultExpanded",
+          "Base",
+          "Behavior",
+          "CustomIcon",
+          "Structure",
+          "UncontrolledAccordion",
+          "WithComboBox"
+        ]
+      }
+    },
+    {
+      "name": "Autocomplete",
+      "t0": "Autocomplete — компонент кита · пропы: classes, delimiter, disableVisibleSelectedValue, isBorderless, isCreatableDivided, limitTags, size, withTags",
+      "t1": {
+        "import": "import { Autocomplete } from '@sds-eng/base'",
+        "props": [
+          {
+            "name": "size",
+            "type": "Size",
+            "values": [],
+            "doc": "Размер компонента."
+          },
+          {
+            "name": "classes",
+            "type": "AutocompleteClasses",
+            "values": [],
+            "doc": "CSS-классы компонента."
+          },
+          {
+            "name": "isBorderless",
+            "type": "boolean",
+            "values": [],
+            "doc": "isBorderless - флаг для переключения на текстовый вид компонента."
+          },
+          {
+            "name": "disableVisibleSelectedValue",
+            "type": "boolean",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "delimiter",
+            "type": "string",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "isCreatableDivided",
+            "type": "boolean",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "withTags",
+            "type": "boolean",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "limitTags",
+            "type": "boolean",
+            "values": [],
+            "doc": null
+          }
+        ],
+        "variants": {},
+        "slots": [
+          "borderless",
+          "withPrefix",
+          "withSuffix"
+        ],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base",
+          "@v-uik/combo-box"
+        ],
+        "examples": [
+          "AsyncAutocomplete",
+          "AutocompleteDefaultValue",
+          "BasicAutocomplete",
+          "Borderless",
+          "EnterKeyPressAutocomplete",
+          "PrefixSuffixAutocomplete",
+          "SearchAutocomplete",
+          "Sizes",
+          "Types",
+          "UncontrolledAutocomplete"
+        ]
+      }
+    },
+    {
+      "name": "Avatar",
+      "t0": "Avatar — компонент кита · AvatarContentType: textDescription|descriptionText|text · AvatarGroupSize: xxs|xs|sm|md|lg|xl|xxl · AvatarSize: xxs|xxl · пропы: classes, contentType, description, descriptionProps, items, kind, size, text",
+      "t1": {
+        "import": "import { Avatar } from '@sds-eng/base'",
+        "props": [
+          {
+            "name": "items",
+            "type": "AvatarProps[]",
+            "values": [],
+            "doc": "Свойства для аватаров в группе"
+          },
+          {
+            "name": "kind",
+            "type": "AvatarKindType",
+            "values": [],
+            "doc": "Тип скругления аватара"
+          },
+          {
+            "name": "size",
+            "type": "AvatarGroupSizeType",
+            "values": [],
+            "doc": "Размер аватаров в группе"
+          },
+          {
+            "name": "size",
+            "type": "AvatarSizeType | number",
+            "values": [],
+            "doc": "Размер аватара"
+          },
+          {
+            "name": "kind",
+            "type": "AvatarKindType",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "contentType",
+            "type": "AvatarContentTypeType",
+            "values": [],
+            "doc": "Тип расположения текста"
+          },
+          {
+            "name": "text",
+            "type": "React.ReactNode",
+            "values": [],
+            "doc": "Текст аватара"
+          },
+          {
+            "name": "description",
+            "type": "React.ReactNode",
+            "values": [],
+            "doc": "Описание аватара"
+          },
+          {
+            "name": "textProps",
+            "type": "TextProps",
+            "values": [],
+            "doc": "Свойства текста подписи аватара."
+          },
+          {
+            "name": "descriptionProps",
+            "type": "TextProps",
+            "values": [],
+            "doc": "Свойства текста описания аватара."
+          },
+          {
+            "name": "classes",
+            "type": "AvatarClasses",
+            "values": [],
+            "doc": "CSS классы компонента."
+          }
+        ],
+        "variants": {
+          "AvatarContentType": [
+            "textDescription",
+            "descriptionText",
+            "text"
+          ],
+          "AvatarGroupSize": [
+            "xxs",
+            "xs",
+            "sm",
+            "md",
+            "lg",
+            "xl",
+            "xxl"
+          ],
+          "AvatarSize": [
+            "xxs",
+            "xxl"
+          ]
+        },
+        "slots": [
+          "extraExtraLarge",
+          "extraExtraSmall",
+          "textDescriptionAvatar",
+          "textDescriptionContent",
+          "textDescriptionContentDescription",
+          "textDescriptionContentDescriptionExtraSmall",
+          "textDescriptionContentDescriptionLarge",
+          "textDescriptionContentDescriptionMedium",
+          "textDescriptionContentDescriptionSmall",
+          "textDescriptionContentText",
+          "textDescriptionContentTextExtraSmall",
+          "textDescriptionContentTextLarge",
+          "textDescriptionContentTextMedium",
+          "textDescriptionContentTextSmall",
+          "textDescriptionRoot"
+        ],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base"
+        ],
+        "examples": [
+          "AvatarActionSelect",
+          "AvatarBorderAndShadow",
+          "AvatarDisabled",
+          "AvatarGroupBorderAndShadow",
+          "AvatarGroupColoring",
+          "AvatarGroupCustomColoring",
+          "AvatarGroupGap",
+          "AvatarGroupKind",
+          "AvatarGroupTooltip",
+          "AvatarIcon",
+          "AvatarSrcSet",
+          "AvatarTooltip",
+          "AvatarUnion",
+          "Base",
+          "BaseAvatarGroup",
+          "Color",
+          "Fallback",
+          "GroupExtra",
+          "GroupMax",
+          "GroupSize",
+          "GroupSizeCustom",
+          "GroupWithDropdown",
+          "Size",
+          "SizeCustom",
+          "TextAndDescription",
+          "TextAvatar",
+          "UploadableAvatar"
+        ]
+      }
+    },
+    {
+      "name": "BackLink",
+      "t0": "BackLink — компонент кита · пропы: as, classes",
+      "t1": {
+        "import": "import { BackLink } from '@sds-eng/base'",
+        "props": [
+          {
+            "name": "as",
+            "type": "LinkProps['as'] | 'button'",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "classes",
+            "type": "Partial< Omit<NonNullable<LinkProps['classes']>, 'underline'> & { /** * @deprecated свойство не поддерживается. */ underline?: 'string' } >",
+            "values": [],
+            "doc": null
+          }
+        ],
+        "variants": {},
+        "slots": [],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base"
+        ],
+        "examples": [
+          "Base"
+        ]
+      }
+    },
+    {
+      "name": "Badge",
+      "t0": "Badge — компонент кита · пропы: classes, color, disabled, status, stroke",
+      "t1": {
+        "import": "import { Badge } from '@sds-eng/base'",
+        "props": [
+          {
+            "name": "color",
+            "type": "TCustomColor extends true ? BadgeColor | string : never",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "stroke",
+            "type": "boolean",
+            "values": [],
+            "doc": "Рамка вокруг элемента."
+          },
+          {
+            "name": "classes",
+            "type": "Classes",
+            "values": [],
+            "doc": "JSS-классы для стилизации."
+          },
+          {
+            "name": "status",
+            "type": "PvBadgeProps['status']",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "disabled",
+            "type": "boolean",
+            "values": [],
+            "doc": null
+          }
+        ],
+        "variants": {},
+        "slots": [],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base"
+        ],
+        "examples": [
+          "Accessibility",
+          "Base",
+          "Buttons",
+          "Color",
+          "Dot",
+          "MaxValue",
+          "Positions",
+          "ShowZero",
+          "Visible"
+        ]
+      }
+    },
+    {
+      "name": "Bar",
+      "t0": "Bar — компонент кита · BarSize: xs|sm|md · KeyboardKeys: Up|Down|Enter|Escape|Tab|Space · пропы: classes, collapsed, components, content, dropdownMenuProps, ellipsis, expanded, isOpen",
+      "t1": {
+        "import": "import { Bar } from '@sds-eng/base'",
+        "props": [
+          {
+            "name": "size",
+            "type": "BarSizeType",
+            "values": [],
+            "doc": "Размер компонента."
+          },
+          {
+            "name": "isOpen",
+            "type": "boolean",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "size",
+            "type": "number",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "items",
+            "type": "ReactNode",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "classes",
+            "type": "BarDropdownItemClasses",
+            "values": [],
+            "doc": "CSS-классы для стилизации."
+          },
+          {
+            "name": "size",
+            "type": "BarSizeType",
+            "values": [],
+            "doc": "Размер компонента."
+          },
+          {
+            "name": "size",
+            "type": "BarSizeType",
+            "values": [],
+            "doc": "Размер компонента."
+          },
+          {
+            "name": "classes",
+            "type": "BarDropdownClasses",
+            "values": [],
+            "doc": "CSS-классы компонента."
+          },
+          {
+            "name": "expanded",
+            "type": "boolean",
+            "values": [],
+            "doc": "Флаг, указывающий на скрытие/раскрытие меню."
+          },
+          {
+            "name": "ellipsis",
+            "type": "Omit<EllipsisConfig, 'tooltip'>",
+            "values": [],
+            "doc": "Свойство для передачи конфигурации `ellipsis`."
+          },
+          {
+            "name": "tooltipProps",
+            "type": "ComponentPropsWithAttributes<Omit<TooltipProps, 'children'>>",
+            "values": [],
+            "doc": "Свойство для передачи конфигурации `Tooltip`.\nКонфигурация применяется к `Tooltip` при свернутом `Sidebar` и `Tooltip` в `ellipsis`."
+          },
+          {
+            "name": "classes",
+            "type": "BarIconButtonClasses",
+            "values": [],
+            "doc": "CSS-классы компонента."
+          },
+          {
+            "name": "logo",
+            "type": "ReactNode",
+            "values": [],
+            "doc": "Иконка логотипа."
+          },
+          {
+            "name": "size",
+            "type": "BarSizeType",
+            "values": [],
+            "doc": "Размер компонента."
+          },
+          {
+            "name": "logoContainerProps",
+            "type": "ComponentPropsWithRefFix<'div'>",
+            "values": [],
+            "doc": "Нативные свойства элемента-обертки вокруг иконки логотипа."
+          },
+          {
+            "name": "ellipsis",
+            "type": "Omit<EllipsisConfig, 'tooltip'>",
+            "values": [],
+            "doc": "Свойство для передачи конфигурации `ellipsis`."
+          },
+          {
+            "name": "tooltipProps",
+            "type": "ComponentPropsWithAttributes<Omit<TooltipProps, 'children'>>",
+            "values": [],
+            "doc": "Свойство для передачи конфигурации `Tooltip`.\nКонфигурация применяется к `Tooltip` при свернутом `Sidebar` и `Tooltip` в `ellipsis`."
+          },
+          {
+            "name": "size",
+            "type": "BarSizeType",
+            "values": [],
+            "doc": "Размер компонента."
+          },
+          {
+            "name": "classes",
+            "type": "BarMenuItemClasses",
+            "values": [],
+            "doc": "CSS-классы компонента."
+          },
+          {
+            "name": "size",
+            "type": "BarSizeType",
+            "values": [],
+            "doc": "Размер компонента."
+          },
+          {
+            "name": "ellipsis",
+            "type": "EllipsisConfig",
+            "values": [],
+            "doc": "Свойство для передачи конфигурации `ellipsis`."
+          },
+          {
+            "name": "size",
+            "type": "BarSizeType",
+            "values": [],
+            "doc": "Размер компонента."
+          },
+          {
+            "name": "content",
+            "type": "React.ReactNode",
+            "values": [],
+            "doc": "Содержимое меню."
+          },
+          {
+            "name": "collapsed",
+            "type": "boolean",
+            "values": [],
+            "doc": "Флаг, указывающий на скрытие/раскрытие меню."
+          },
+          {
+            "name": "classes",
+            "type": "Partial<Classes>",
+            "values": [],
+            "doc": "JSS-классы для стилизации."
+          },
+          {
+            "name": "dropdownMenuProps",
+            "type": "Omit<DropdownMenuProps<'ul'>, 'content' | 'children'>",
+            "values": [],
+            "doc": "Набор свойств для `DropdownMenu`."
+          },
+          {
+            "name": "components",
+            "type": "BarSubmenuComponentsConfig",
+            "values": [],
+            "doc": "Свойство для переопределения элементов AccordionItem."
+          },
+          {
+            "name": "ellipsis",
+            "type": "Omit<EllipsisConfig, 'tooltip'>",
+            "values": [],
+            "doc": "Свойство для передачи конфигурации `ellipsis`."
+          },
+          {
+            "name": "tooltipProps",
+            "type": "ComponentPropsWithAttributes<Omit<TooltipProps, 'children'>>",
+            "values": [],
+            "doc": "Свойство для передачи конфигурации `Tooltip`.\nКонфигурация применяется к `Tooltip` при свернутом `Sidebar` и `Tooltip` в `ellipsis`."
+          },
+          {
+            "name": "size",
+            "type": "BarSizeType",
+            "values": [],
+            "doc": "Размер компонента."
+          },
+          {
+            "name": "viewType",
+            "type": "'static' | 'relative'",
+            "values": [],
+            "doc": "Вид отображения кнопки раскрытия."
+          },
+          {
+            "name": "classes",
+            "type": "BarSwitcherClasses",
+            "values": [],
+            "doc": "JSS-классы для стилизации. Данное свойство работает только вместе с `viewType` в значении `static`."
+          },
+          {
+            "name": "kind",
+            "type": "'dark' | 'light'",
+            "values": [],
+            "doc": "Тема компонента."
+          },
+          {
+            "name": "size",
+            "type": "BarSizeType",
+            "values": [],
+            "doc": "Размер компонента."
+          }
+        ],
+        "variants": {
+          "BarSize": [
+            "xs",
+            "sm",
+            "md"
+          ],
+          "KeyboardKeys": [
+            "Up",
+            "Down",
+            "Enter",
+            "Escape",
+            "Tab",
+            "Space"
+          ]
+        },
+        "slots": [
+          "accordionItemHeader",
+          "arrowIcon",
+          "barDropdownHeaderText",
+          "barDropdownHeaderTextDark",
+          "barDropdownHeaderTextLight",
+          "colorDark",
+          "colorLight",
+          "content",
+          "dark",
+          "expanded",
+          "extraSmall",
+          "headerContainer",
+          "headerIcon",
+          "headerText",
+          "hoverDark",
+          "hoverLight",
+          "icon",
+          "iconExtraSmall",
+          "iconMedium",
+          "iconSmall",
+          "light",
+          "md",
+          "medium",
+          "root",
+          "sm",
+          "small",
+          "text",
+          "xs"
+        ],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base"
+        ],
+        "examples": [
+          "BarClasses.dummy",
+          "BarFooterExample",
+          "BarGroupTitleExample",
+          "BarSubmenuExample",
+          "BarSubmenuItemExample",
+          "BarSubmenuWithBarDropdown",
+          "BarSwitcherExample",
+          "SideBarDefault",
+          "SideBarSizes",
+          "SidebarStoryWithOffset"
+        ]
+      }
+    },
+    {
+      "name": "Box",
+      "t0": "Box — компонент кита",
+      "t1": {
+        "import": "import { Box } from '@sds-eng/base'",
+        "props": [],
+        "variants": {},
+        "slots": [],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/box"
+        ],
+        "examples": [
+          "AsHeadingStory",
+          "AsHeadingWithRef",
+          "Base",
+          "Canvas"
+        ]
+      }
+    },
+    {
+      "name": "Breadcrumbs",
+      "t0": "Breadcrumbs — компонент кита",
+      "t1": {
+        "import": "import { Breadcrumbs } from '@sds-eng/base'",
+        "props": [],
+        "variants": {},
+        "slots": [],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base"
+        ],
+        "examples": [
+          "Accessibility",
+          "Base",
+          "HideElementsInLongList",
+          "Icon"
+        ]
+      }
+    },
+    {
+      "name": "BrowserTabs",
+      "t0": "BrowserTabs — компонент кита · createIconSizes: [sizes.xs]|[sizes.sm]|[sizes.md] · sizes: xs|sm|md · пропы: allowCreate, allowDelete, classes, components, createButtonProps, deleteButtonProps, direction, disabled",
+      "t1": {
+        "import": "import { BrowserTabs } from '@sds-eng/base'",
+        "props": [
+          {
+            "name": "classes",
+            "type": "Partial<BrowserTabClasses>",
+            "values": [],
+            "doc": "Дополнительные CSS-классы для стилизации внутренних элементов `BrowserTab`."
+          },
+          {
+            "name": "icon",
+            "type": "React.ReactNode",
+            "values": [],
+            "doc": "Иконка, отображаемая рядом с заголовком вкладки."
+          },
+          {
+            "name": "disabled",
+            "type": "boolean | undefined",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "allowCreate",
+            "type": "boolean",
+            "values": [],
+            "doc": "Флаг, указывающий на то, можно ли создавать вкладки."
+          },
+          {
+            "name": "allowDelete",
+            "type": "boolean",
+            "values": [],
+            "doc": "Флаг, указывающий на то, можно ли удалять вкладки."
+          },
+          {
+            "name": "classes",
+            "type": "Partial<BrowserTabsClasses>",
+            "values": [],
+            "doc": "Дополнительные CSS-классы для стилизации внутренних элементов `BrowserTabs`."
+          },
+          {
+            "name": "size",
+            "type": "Size",
+            "values": [],
+            "doc": "Размер компонента."
+          },
+          {
+            "name": "components",
+            "type": "{ /** * Иконка, используемая для кнопки создания новой вкладки. * * @inner */ CreateIcon?: React.ElementType /** * Иконка, используемая для кнопки удаления вкладки. * * @inner */ DeleteIcon?: React.ElementType }",
+            "values": [],
+            "doc": "Кастомные компоненты, используемые внутри `BrowserTabs`."
+          },
+          {
+            "name": "onCreate",
+            "type": "() => void",
+            "values": [],
+            "doc": "Обработчик события создания новой вкладки."
+          },
+          {
+            "name": "onDelete",
+            "type": "(value: string | number) => void",
+            "values": [],
+            "doc": "Обработчик события удаления вкладки."
+          },
+          {
+            "name": "createButtonProps",
+            "type": "Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'color'>",
+            "values": [],
+            "doc": "Свойства для кнопки создания новой вкладки."
+          },
+          {
+            "name": "deleteButtonProps",
+            "type": "Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'color'>",
+            "values": [],
+            "doc": "Свойства для кнопки удаления вкладки."
+          },
+          {
+            "name": "kind",
+            "type": "'default' | 'filled'",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "direction",
+            "type": "'horizontal' | 'vertical'",
+            "values": [],
+            "doc": null
+          }
+        ],
+        "variants": {
+          "createIconSizes": [
+            "[sizes.xs]",
+            "[sizes.sm]",
+            "[sizes.md]"
+          ],
+          "sizes": [
+            "xs",
+            "sm",
+            "md"
+          ]
+        },
+        "slots": [
+          "content",
+          "createButton",
+          "deleteButton",
+          "filled",
+          "icon",
+          "iconHeaderWrapper",
+          "root",
+          "selected",
+          "tab",
+          "tabs",
+          "text",
+          "vertical"
+        ],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base",
+          "@v-uik/tabs"
+        ],
+        "examples": [
+          "BrowserTab.dummy",
+          "BrowserTabs.dummy",
+          "Classes.dummy",
+          "CustomTabs",
+          "DefaultView",
+          "ForceRender",
+          "RemainsInDOM",
+          "Sizes",
+          "WithIcons",
+          "WithRemoving"
+        ]
+      }
+    },
+    {
+      "name": "Button",
+      "t0": "Button — компонент кита · ButtonIconSize: xxs|xs|sm|md · SpinnerSize: xs|sm|md · sizes: xs|sm|md · пропы: classes, icon, isLoading, size, view",
+      "t1": {
+        "import": "import { Button } from '@sds-eng/base'",
+        "props": [
+          {
+            "name": "size",
+            "type": "keyof ButtonIconSizeType",
+            "values": [],
+            "doc": "Размер элемента."
+          },
+          {
+            "name": "classes",
+            "type": "ButtonIconClasses",
+            "values": [],
+            "doc": "CSS классы элемента."
+          },
+          {
+            "name": "isLoading",
+            "type": "boolean",
+            "values": [],
+            "doc": "Флаг для отображения компонента в состоянии загрузки."
+          },
+          {
+            "name": "icon",
+            "type": "React.ReactNode",
+            "values": [],
+            "doc": "Элемент иконки."
+          },
+          {
+            "name": "view",
+            "type": "keyof ButtonView",
+            "values": [],
+            "doc": "Вид кнопки. Значение по умолчанию равно `primary`."
+          }
+        ],
+        "variants": {
+          "ButtonIconSize": [
+            "xxs",
+            "xs",
+            "sm",
+            "md"
+          ],
+          "SpinnerSize": [
+            "xs",
+            "sm",
+            "md"
+          ],
+          "sizes": [
+            "xs",
+            "sm",
+            "md"
+          ],
+          "views": [
+            "primary",
+            "secondary",
+            "negative"
+          ]
+        },
+        "slots": [
+          "buttonIcon",
+          "contentContainer",
+          "disabled",
+          "error",
+          "extraSmall",
+          "large",
+          "medium",
+          "onlyIcon",
+          "small",
+          "spinner"
+        ],
+        "subcomponents": [
+          "Icon"
+        ],
+        "wraps": [
+          "@v-uik/base",
+          "@v-uik/button"
+        ],
+        "examples": [
+          "Base",
+          "ButtonWithLink",
+          "DifferentSizeButtons",
+          "FilledButtons",
+          "GhostButtons",
+          "IconBasic",
+          "IconButtons",
+          "IconClasses.dummy",
+          "IconLoader",
+          "IconSizes",
+          "IconViews",
+          "Preloader"
+        ]
+      }
+    },
+    {
+      "name": "Card",
+      "t0": "Card — компонент кита · пропы: accent, classes, draggable, elevation",
+      "t1": {
+        "import": "import { Card } from '@sds-eng/base'",
+        "props": [
+          {
+            "name": "elevation",
+            "type": "boolean",
+            "values": [],
+            "doc": "карточка с тенью"
+          },
+          {
+            "name": "draggable",
+            "type": "boolean",
+            "values": [],
+            "doc": "карточка с перетягиванием"
+          },
+          {
+            "name": "accent",
+            "type": "boolean",
+            "values": [],
+            "doc": "акцентная карточка"
+          },
+          {
+            "name": "classes",
+            "type": "CardClasses",
+            "values": [],
+            "doc": "CSS классы компонента"
+          }
+        ],
+        "variants": {},
+        "slots": [
+          "draggableBody"
+        ],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base"
+        ],
+        "examples": [
+          "Basic",
+          "Color",
+          "E2eExampleCard",
+          "Elevation",
+          "Selectable"
+        ]
+      }
+    },
+    {
+      "name": "Cell",
+      "t0": "Cell — компонент кита · CellSize: lg|md|sm · пропы: children, classes, description, descriptionFirst, nativeDdProps, nativeDtProps, size",
+      "t1": {
+        "import": "import { Cell } from '@sds-eng/base'",
+        "props": [
+          {
+            "name": "description",
+            "type": "React.ReactNode",
+            "values": [],
+            "doc": "Дополнительное описание"
+          },
+          {
+            "name": "descriptionFirst",
+            "type": "boolean",
+            "values": [],
+            "doc": "Флаг, указывающий, что описание отображается перед основным текстом\n\nЗначение по умолчанию равно `false`"
+          },
+          {
+            "name": "size",
+            "type": "CellSizeType",
+            "values": [],
+            "doc": "Размер компонента\n\n Значение по умолчанию равно `md`"
+          },
+          {
+            "name": "classes",
+            "type": "CellClasses",
+            "values": [],
+            "doc": "JSS - классы для стилизации"
+          },
+          {
+            "name": "children",
+            "type": "React.ReactNode",
+            "values": [],
+            "doc": "Основной текст"
+          },
+          {
+            "name": "nativeDdProps",
+            "type": "ComponentPropsWithRefFix<'dd'>",
+            "values": [],
+            "doc": "Нативные свойства для элемента `dd`."
+          },
+          {
+            "name": "nativeDtProps",
+            "type": "ComponentPropsWithRefFix<'dt'>",
+            "values": [],
+            "doc": "Нативные свойства для элемента `dt`."
+          }
+        ],
+        "variants": {
+          "CellSize": [
+            "lg",
+            "md",
+            "sm"
+          ]
+        },
+        "slots": [
+          "description",
+          "large",
+          "medium",
+          "root",
+          "small",
+          "text"
+        ],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base"
+        ],
+        "examples": [
+          "Basic",
+          "Classes.dummy",
+          "Sizes"
+        ]
+      }
+    },
+    {
+      "name": "Checkbox",
+      "t0": "Checkbox — компонент кита",
+      "t1": {
+        "import": "import { Checkbox } from '@sds-eng/base'",
+        "props": [],
+        "variants": {},
+        "slots": [],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base",
+          "@v-uik/checkbox-group"
+        ],
+        "examples": [
+          "Base",
+          "CheckboxDefaultValue",
+          "CheckboxGroupVertical",
+          "Disabled",
+          "Indeterminate",
+          "LabelPosition",
+          "Sizes",
+          "UncontrolledCheckbox",
+          "WithLabel"
+        ]
+      }
+    },
+    {
+      "name": "Chip",
+      "t0": "Chip — компонент кита · ChipKind: secondary|primary · ChipSize: xs|sm|md · TOmitKeysPVTag: size|disabled|components|deleteButtonProps|onDelete|dragged|color|onClick|selected · пропы: classes, count, icon, kind, onClick, selected, size",
+      "t1": {
+        "import": "import { Chip } from '@sds-eng/base'",
+        "props": [
+          {
+            "name": "kind",
+            "type": "TChipKind",
+            "values": [],
+            "doc": "Вид компонента. По умолчанию `primary`."
+          },
+          {
+            "name": "classes",
+            "type": "Omit<TagClasses, TOmitTagClassesKeys>",
+            "values": [],
+            "doc": "JSS-классы для стилизации."
+          },
+          {
+            "name": "size",
+            "type": "keyof typeof ChipSize",
+            "values": [],
+            "doc": "размер `Chip`."
+          },
+          {
+            "name": "count",
+            "type": "number",
+            "values": [],
+            "doc": "Счетчик для отображения количества объектов."
+          },
+          {
+            "name": "icon",
+            "type": "React.ReactNode",
+            "values": [],
+            "doc": "Иконка, отображаемая в левой части компонента."
+          },
+          {
+            "name": "onClick",
+            "type": "(event: React.MouseEvent<HTMLElement>) => void",
+            "values": [],
+            "doc": "Функция обратного вызова, вызываемая при клике на компонент."
+          },
+          {
+            "name": "selected",
+            "type": "boolean",
+            "values": [],
+            "doc": "Флаг выбранного элемента."
+          }
+        ],
+        "variants": {
+          "ChipKind": [
+            "secondary",
+            "primary"
+          ],
+          "ChipSize": [
+            "xs",
+            "sm",
+            "md"
+          ],
+          "TOmitKeysPVTag": [
+            "size",
+            "disabled",
+            "components",
+            "deleteButtonProps",
+            "onDelete",
+            "dragged",
+            "color",
+            "onClick",
+            "selected"
+          ],
+          "TOmitTagClassesKeys": [
+            "large",
+            "lite",
+            "textLarge",
+            "deleteButton",
+            "closeButton",
+            "dragged",
+            "disabled"
+          ]
+        },
+        "slots": [],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base"
+        ],
+        "examples": [
+          "Base",
+          "ChipClasses.dummy",
+          "PrimaryChip",
+          "SecondaryChip",
+          "Sizes",
+          "WithCounter",
+          "WithIcon"
+        ]
+      }
+    },
+    {
+      "name": "ComboBox",
+      "t0": "ComboBox — компонент кита · пропы: classes, components, isBorderless, label, listProps, size",
+      "t1": {
+        "import": "import { ComboBox } from '@sds-eng/base'",
+        "props": [
+          {
+            "name": "size",
+            "type": "Size",
+            "values": [],
+            "doc": "Размер компонента."
+          },
+          {
+            "name": "classes",
+            "type": "ComboBoxClasses",
+            "values": [],
+            "doc": "CSS классы компонента."
+          },
+          {
+            "name": "components",
+            "type": "ComboBoxComponentsConfig<Option, ListElement, ListItem>",
+            "values": [],
+            "doc": "Свойство для переопределения элементов `Combobox`."
+          },
+          {
+            "name": "isBorderless",
+            "type": "boolean",
+            "values": [],
+            "doc": "isBorderless - флаг для переключения на текстовый вид компонента."
+          },
+          {
+            "name": "listProps",
+            "type": "BaseComboBoxProps<Option, ListItem>['listProps'] & { /** @deprecated свойство не поддерживается. */ stripe?: boolean }",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "size",
+            "type": "Size",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "isBorderless",
+            "type": "boolean",
+            "values": [],
+            "doc": "isBorderless - флаг для переключения на текстовый вид компонента."
+          },
+          {
+            "name": "size",
+            "type": "Size",
+            "values": [],
+            "doc": "Размер `Spinner`."
+          },
+          {
+            "name": "classes",
+            "type": "{ /** * Стиль, применяемый к обертке `label` загрузки. * * @inner */ loadingLabelWrapper?: string /** * Стиль, применяемый к `label` загрузки. * * @inner */ loadingLabel?: string }",
+            "values": [],
+            "doc": "JSS-классы для стилизации."
+          },
+          {
+            "name": "label",
+            "type": "React.ReactNode",
+            "values": [],
+            "doc": "Показывается в процессе загрузки."
+          }
+        ],
+        "variants": {},
+        "slots": [],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base",
+          "@v-uik/combo-box",
+          "@v-uik/hooks",
+          "@v-uik/theme"
+        ],
+        "examples": [
+          "AdvancedSearch",
+          "Base",
+          "Borderless",
+          "Collapsible",
+          "CompactTags",
+          "Counter",
+          "CreatableBase",
+          "CreatableBorderless",
+          "CreatableDefaultValue",
+          "CreatableSizes",
+          "CreatableWithUpdatedOptions",
+          "DefaultValue",
+          "DisableCloseOnSelect",
+          "DropdownSubscribe",
+          "Error",
+          "Grouping",
+          "MultipleCreatable",
+          "MultipleSelect",
+          "OptionFormatExample",
+          "OptionsCustomContentExample",
+          "OptionsWithIcon",
+          "OutsideTags",
+          "OverflowingOption",
+          "OverflowingOptionWithTooltip",
+          "Reasons",
+          "ReplaceDelimiter",
+          "ReplaceLabel",
+          "Searchable",
+          "SingleCreatable",
+          "SingleSearchable",
+          "SingleSelect",
+          "Sizes",
+          "Stretchable",
+          "TermDisabled",
+          "Uncontrolled",
+          "UncontrolledCreatable",
+          "Virtualized",
+          "WithCustomTagsExample",
+          "WithTags"
+        ]
+      }
+    },
+    {
+      "name": "DatePicker",
+      "t0": "DatePicker — компонент кита · пропы: calendarViewClasses, calendarViewExternalProps, classes, endInputProps, getIsDateHighlighted, inputEditable, inputProps, isBorderless",
+      "t1": {
+        "import": "import { DatePicker } from '@sds-eng/base'",
+        "props": [
+          {
+            "name": "inputEditable",
+            "type": "boolean",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "size",
+            "type": "Size",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "inputProps",
+            "type": "TMask extends string ? ComponentPropsWithAttributes<Partial<MaskedInputBaseProps<TCanClear>>> : ComponentPropsWithAttributes<InputBaseProps<TCanClear>>",
+            "values": [],
+            "doc": "Свойства компонента `InputBase` или `MaskedInputBase`"
+          },
+          {
+            "name": "isBorderless",
+            "type": "boolean",
+            "values": [],
+            "doc": "Флаг для отображения компонента без рамки."
+          },
+          {
+            "name": "classes",
+            "type": "DatePickerClasses<TDate, TMask, TCanClear>",
+            "values": [],
+            "doc": "CSS классы компонента."
+          },
+          {
+            "name": "calendarViewExternalProps",
+            "type": "{ dayViewProps?: { classes?: { dayButtonHighlighted?: string } } }",
+            "values": [],
+            "doc": "Свойства подкомпонентов календаря."
+          },
+          {
+            "name": "getIsDateHighlighted",
+            "type": "(date: TDate) => boolean",
+            "values": [],
+            "doc": "Функция обратного вызова, определяющая, подсвечивать ли день в календаре."
+          },
+          {
+            "name": "inputEditable",
+            "type": "boolean",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "size",
+            "type": "Size",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "inputProps",
+            "type": "TMask extends string ? ComponentPropsWithAttributes<Partial<MaskedInputBaseProps<TCanClear>>> : ComponentPropsWithAttributes<InputBaseProps<TCanClear>>",
+            "values": [],
+            "doc": "Свойства компонента `InputBase` или `MaskedInputBase`"
+          },
+          {
+            "name": "isBorderless",
+            "type": "boolean",
+            "values": [],
+            "doc": "Флаг для отображения компонента без рамки."
+          },
+          {
+            "name": "classes",
+            "type": "DateTimePickerClasses<TDate, TMask, TCanClear>",
+            "values": [],
+            "doc": "CSS классы компонента."
+          },
+          {
+            "name": "calendarViewExternalProps",
+            "type": "{ dayViewProps?: { classes?: { dayButtonHighlighted?: string } } }",
+            "values": [],
+            "doc": "Свойства подкомпонентов календаря."
+          },
+          {
+            "name": "getIsDateHighlighted",
+            "type": "(date: TDate) => boolean",
+            "values": [],
+            "doc": "Функция обратного вызова, определяющая, подсвечивать ли день в календаре."
+          },
+          {
+            "name": "inputEditable",
+            "type": "boolean",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "size",
+            "type": "Size",
+            "values": [],
+            "doc": "Размер поля\n\nЗначение по умолчанию `Size.md`"
+          },
+          {
+            "name": "renderInput",
+            "type": "( startProps: TMask extends string ? ComponentPropsWithAttributes<Partial<MaskedInputBaseProps<TCanClear>>> : ComponentPropsWithAttributes<InputBaseProps<TCanClear>>, endProps: TMask extends string ? ComponentPropsWithAttributes<Partial<MaskedInputBaseProps<TCanClear>>> : ComponentPropsWithAttributes<InputBaseProps<TCanClear>>, ) => React.ReactNode",
+            "values": [],
+            "doc": "Функция для отображения поля ввода."
+          },
+          {
+            "name": "startInputProps",
+            "type": "TMask extends string ? ComponentPropsWithAttributes<Partial<MaskedInputBaseProps<TCanClear>>> : ComponentPropsWithAttributes<InputBaseProps<TCanClear>>",
+            "values": [],
+            "doc": "Свойства компонента InputBase или MaskedInputBase начала диапазона"
+          },
+          {
+            "name": "endInputProps",
+            "type": "TMask extends string ? ComponentPropsWithAttributes<Partial<MaskedInputBaseProps<TCanClear>>> : ComponentPropsWithAttributes<InputBaseProps<TCanClear>>",
+            "values": [],
+            "doc": "Свойства компонента InputBase или MaskedInputBase конца диапазона"
+          },
+          {
+            "name": "isBorderless",
+            "type": "boolean",
+            "values": [],
+            "doc": "Флаг для отображения компонента без рамки."
+          },
+          {
+            "name": "classes",
+            "type": "RangePickerClasses<TDate, TMask, TCanClear>",
+            "values": [],
+            "doc": "CSS классы компонента."
+          },
+          {
+            "name": "calendarViewClasses",
+            "type": "{ dayButtonHighlighted?: string }",
+            "values": [],
+            "doc": "CSS классы, применяемые к календарю."
+          },
+          {
+            "name": "getIsDateHighlighted",
+            "type": "(date: TDate) => boolean",
+            "values": [],
+            "doc": "Функция обратного вызова, определяющая, подсвечивать ли день в календаре."
+          }
+        ],
+        "variants": {},
+        "slots": [],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base",
+          "@v-uik/date-picker"
+        ],
+        "examples": [
+          "DatePickerClasses.dummy",
+          "DatePickerTypes.dummy"
+        ]
+      }
+    },
+    {
+      "name": "Divider",
+      "t0": "Divider — компонент кита",
+      "t1": {
+        "import": "import { Divider } from '@sds-eng/base'",
+        "props": [],
+        "variants": {},
+        "slots": [],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base"
+        ],
+        "examples": [
+          "BasicDivider",
+          "DividerWithContent",
+          "TokensCustom",
+          "Vertical",
+          "VerticalWithText"
+        ]
+      }
+    },
+    {
+      "name": "Drawer",
+      "t0": "Drawer — компонент кита",
+      "t1": {
+        "import": "import { Drawer } from '@sds-eng/base'",
+        "props": [],
+        "variants": {},
+        "slots": [],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base",
+          "@v-uik/drawer"
+        ],
+        "examples": [
+          "BasicDrawer",
+          "ContainerExample",
+          "ContainerOverflowExample",
+          "DrawerClasses.dummy",
+          "KeepMountedExample",
+          "MultiLevelExample",
+          "NonModalExample",
+          "OnAfterOpenChange",
+          "PositionsExample",
+          "WithSubtitle"
+        ]
+      }
+    },
+    {
+      "name": "DropdownMenu",
+      "t0": "DropdownMenu — компонент кита",
+      "t1": {
+        "import": "import { DropdownMenu } from '@sds-eng/base'",
+        "props": [],
+        "variants": {},
+        "slots": [],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base"
+        ],
+        "examples": [
+          "Adaptivity",
+          "Cascading",
+          "DropDownMenuClasses.dummy"
+        ]
+      }
+    },
+    {
+      "name": "EmptyState",
+      "t0": "EmptyState — компонент кита · EmptyStateImagePositionType: top|left · пропы: actionsContainerProps, classes, contentProps, description, descriptionProps, heading, headingProps, htmlImageProps",
+      "t1": {
+        "import": "import { EmptyState } from '@sds-eng/base'",
+        "props": [
+          {
+            "name": "image",
+            "type": "React.ReactNode",
+            "values": [],
+            "doc": "Изображение.\n\nЕсли значение является типом `string`, то оно будет интерпретировано как URL\nи отрисовано внутри элемента `img`.\n\nЕсли значение является JSX, то компонент по умолчанию отрисует это значение.\n\nЕсли значение не передано, используется базовая иллюстрация из дизайн-системы."
+          },
+          {
+            "name": "imageProps",
+            "type": "React.HTMLAttributes<HTMLDivElement>",
+            "values": [],
+            "doc": "Свойства для контейнера с изображением, если свойство `image` передано как `JSX`."
+          },
+          {
+            "name": "htmlImageProps",
+            "type": "React.ImgHTMLAttributes<HTMLImageElement>",
+            "values": [],
+            "doc": "Свойства для элемента `img`, если свойство `image` передано как `string`."
+          },
+          {
+            "name": "imageContainerProps",
+            "type": "React.HTMLAttributes<HTMLDivElement>",
+            "values": [],
+            "doc": "Свойства для контейнера с изображением."
+          },
+          {
+            "name": "contentProps",
+            "type": "React.HTMLAttributes<HTMLDivElement>",
+            "values": [],
+            "doc": "Свойства для контейнера компонента с заголовком, описанием и пользовательским содержимым."
+          },
+          {
+            "name": "actionsContainerProps",
+            "type": "React.HTMLAttributes<HTMLDivElement>",
+            "values": [],
+            "doc": "Свойства для контейнера с пользовательским изображением."
+          },
+          {
+            "name": "imagePosition",
+            "type": "EmptyStateImagePositionType",
+            "values": [],
+            "doc": "Позиция изображения относительно текста."
+          },
+          {
+            "name": "heading",
+            "type": "React.ReactNode",
+            "values": [],
+            "doc": "Текст заголовка.\nЕсли используется `headingProps.children`, оно имеет больший приоритет."
+          },
+          {
+            "name": "headingProps",
+            "type": "TextProps",
+            "values": [],
+            "doc": "Свойства заголовка."
+          },
+          {
+            "name": "description",
+            "type": "React.ReactNode",
+            "values": [],
+            "doc": "Текст описания.\nЕсли используется `descriptionProps.children`, оно имеет больший приоритет."
+          },
+          {
+            "name": "descriptionProps",
+            "type": "TextProps",
+            "values": [],
+            "doc": "Свойства для описания."
+          },
+          {
+            "name": "classes",
+            "type": "EmptyStateClasses",
+            "values": [],
+            "doc": "CSS-классы для стилизации"
+          }
+        ],
+        "variants": {
+          "EmptyStateImagePositionType": [
+            "top",
+            "left"
+          ]
+        },
+        "slots": [
+          "actionsContainer",
+          "content",
+          "description",
+          "heading",
+          "image",
+          "imageContainer",
+          "root"
+        ],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base"
+        ],
+        "examples": [
+          "ActionLink",
+          "Base",
+          "EmptyStateClasses.dummy",
+          "ImageAsIllustration",
+          "ImageLeft",
+          "WithHeading"
+        ]
+      }
+    },
+    {
+      "name": "FileUploader",
+      "t0": "FileUploader — компонент кита · FILE_PROGRESS_TYPE: circular|linear · FILE_SIZE: md|sm|xs · FILE_STATUS: info|success|error|loading · пропы: classes, components, contentProps, description, descriptionProps, errorText, fileItems, filesProps",
+      "t1": {
+        "import": "import { FileUploader } from '@sds-eng/base'",
+        "props": [
+          {
+            "name": "onUpload",
+            "type": "(files: UploaderFile[], e: React.ChangeEvent<HTMLInputElement>) => void",
+            "values": [],
+            "doc": "Функция выбора файла."
+          },
+          {
+            "name": "components",
+            "type": "{ Icon: React.ComponentType<FileItemIconProps> | null }",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "valueLabel",
+            "type": "React.ReactNode",
+            "values": [],
+            "doc": "Текст справа от LinearProgress."
+          },
+          {
+            "name": "fileItems",
+            "type": "Array<FileItemProps>",
+            "values": [],
+            "doc": "Список файлов для отображения."
+          },
+          {
+            "name": "size",
+            "type": "FileItemSizeType",
+            "values": [],
+            "doc": "Размер компонента."
+          },
+          {
+            "name": "classes",
+            "type": "FileListClasses",
+            "values": [],
+            "doc": "CSS-классы для стилизации."
+          },
+          {
+            "name": "filesProps",
+            "type": "ComponentPropsWithRefFix<'div'>",
+            "values": [],
+            "doc": "Нативные свойства для контейнера с файлами."
+          },
+          {
+            "name": "contentProps",
+            "type": "ComponentPropsWithRefFix<'div'>",
+            "values": [],
+            "doc": "Нативные свойства для контейнера с `children`."
+          },
+          {
+            "name": "size",
+            "type": "FileSizeType",
+            "values": [],
+            "doc": "Размер компонента."
+          },
+          {
+            "name": "suffix",
+            "type": "React.ReactNode",
+            "values": [],
+            "doc": "Контент, располагающийся в правой части компонента File."
+          },
+          {
+            "name": "icon",
+            "type": "React.ReactNode",
+            "values": [],
+            "doc": "Иконка для превью загруженного файла."
+          },
+          {
+            "name": "label",
+            "type": "React.ReactNode",
+            "values": [],
+            "doc": "Название файла."
+          },
+          {
+            "name": "labelProps",
+            "type": "TextProps",
+            "values": [],
+            "doc": "Свойства label."
+          },
+          {
+            "name": "description",
+            "type": "React.ReactNode",
+            "values": [],
+            "doc": "Дополнительная информация о файле."
+          },
+          {
+            "name": "descriptionProps",
+            "type": "TextProps",
+            "values": [],
+            "doc": "Свойства description."
+          },
+          {
+            "name": "progressType",
+            "type": "FileProgressTypeType",
+            "values": [],
+            "doc": "Тип отображаемого прогресса загрузки."
+          },
+          {
+            "name": "linearProgressProps",
+            "type": "FileLinearProgressProps",
+            "values": [],
+            "doc": "Свойства LinearProgress при progressType=\"linear\"."
+          },
+          {
+            "name": "spinnerProps",
+            "type": "SpinnerProps",
+            "values": [],
+            "doc": "Свойства Spinner при progressType=\"circular\"."
+          },
+          {
+            "name": "status",
+            "type": "FileStatusType",
+            "values": [],
+            "doc": "Статус загрузки."
+          },
+          {
+            "name": "statusProps",
+            "type": "TextProps",
+            "values": [],
+            "doc": "Свойства компонента Text со статусом загрузки."
+          },
+          {
+            "name": "infoText",
+            "type": "string",
+            "values": [],
+            "doc": "Текст статуса info."
+          },
+          {
+            "name": "successText",
+            "type": "string",
+            "values": [],
+            "doc": "Текст статуса success."
+          },
+          {
+            "name": "errorText",
+            "type": "string",
+            "values": [],
+            "doc": "Текст статуса error."
+          },
+          {
+            "name": "loadingText",
+            "type": "string",
+            "values": [],
+            "doc": "Текст статуса loading."
+          },
+          {
+            "name": "classes",
+            "type": "FileClasses",
+            "values": [],
+            "doc": "Классы компонента."
+          }
+        ],
+        "variants": {
+          "FILE_PROGRESS_TYPE": [
+            "circular",
+            "linear"
+          ],
+          "FILE_SIZE": [
+            "md",
+            "sm",
+            "xs"
+          ],
+          "FILE_STATUS": [
+            "info",
+            "success",
+            "error",
+            "loading"
+          ],
+          "FileItemSize": [
+            "md",
+            "sm",
+            "xs"
+          ],
+          "FileSizeMap": [
+            "md",
+            "sm",
+            "xs"
+          ]
+        },
+        "slots": [
+          "content",
+          "description",
+          "empty",
+          "emptyExtraSmall",
+          "emptyMedium",
+          "emptySmall",
+          "extraSmall",
+          "files",
+          "iconContainer",
+          "label",
+          "linearProgress",
+          "linearProgressContainer",
+          "medium",
+          "root",
+          "small",
+          "spinner",
+          "status",
+          "statusContainer",
+          "suffix",
+          "text",
+          "textContent",
+          "textContentMd",
+          "textContentSm",
+          "textContentXs",
+          "valueLabel"
+        ],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base",
+          "@v-uik/file-uploader"
+        ],
+        "examples": [
+          "ButtonUploaderPreviews",
+          "ButtonUploaderSize",
+          "DropzoneOneLine",
+          "DropzoneUploadFile",
+          "FileItemExample",
+          "FileItemExetendedButtonsExample",
+          "FileItemSize",
+          "FileListSize"
+        ]
+      }
+    },
+    {
+      "name": "Illustration",
+      "t0": "Illustration — компонент кита · пропы: classes",
+      "t1": {
+        "import": "import { Illustration } from '@sds-eng/base'",
+        "props": [
+          {
+            "name": "classes",
+            "type": "IllustrationClasses",
+            "values": [],
+            "doc": "Список классов"
+          }
+        ],
+        "variants": {},
+        "slots": [
+          "accent",
+          "base",
+          "extraPrimary",
+          "extraSecondary",
+          "root",
+          "rootSvg"
+        ],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base"
+        ],
+        "examples": [
+          "Base",
+          "Custom",
+          "ShowCase",
+          "Sizes",
+          "matchingClassesAndColors"
+        ]
+      }
+    },
+    {
+      "name": "InputNumber",
+      "t0": "InputNumber — компонент кита · пропы: fullWidth, isBorderless, size",
+      "t1": {
+        "import": "import { InputNumber } from '@sds-eng/base'",
+        "props": [
+          {
+            "name": "fullWidth",
+            "type": "boolean",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "size",
+            "type": "Size",
+            "values": [],
+            "doc": "Размер поля"
+          },
+          {
+            "name": "isBorderless",
+            "type": "boolean",
+            "values": [],
+            "doc": "isBorderless - флаг для переключения на текстовый вид компонента.\n\nЗначение по умолчанию `false`."
+          }
+        ],
+        "variants": {},
+        "slots": [],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base"
+        ],
+        "examples": [
+          "BigNumberExample",
+          "Borderless",
+          "Canvas",
+          "Example",
+          "InputNumberDefaultValue",
+          "MinAndMaxExample",
+          "UncontrolledInputNumber"
+        ]
+      }
+    },
+    {
+      "name": "InputPassword",
+      "t0": "InputPassword — компонент кита · пропы: fullWidth, isBorderless, size",
+      "t1": {
+        "import": "import { InputPassword } from '@sds-eng/base'",
+        "props": [
+          {
+            "name": "fullWidth",
+            "type": "boolean",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "size",
+            "type": "Size",
+            "values": [],
+            "doc": "Размер поля"
+          },
+          {
+            "name": "isBorderless",
+            "type": "boolean",
+            "values": [],
+            "doc": "isBorderless - флаг для переключения на текстовый вид компонента.\n\nЗначение по умолчанию `false`."
+          }
+        ],
+        "variants": {},
+        "slots": [],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base"
+        ],
+        "examples": [
+          "BasicInputPassword",
+          "Borderless",
+          "Canvas",
+          "CustomIcon",
+          "DefaultValue",
+          "LeftIconExample",
+          "Uncontrolled"
+        ]
+      }
+    },
+    {
+      "name": "LabelControl",
+      "t0": "LabelControl — компонент кита · пропы: size",
+      "t1": {
+        "import": "import { LabelControl } from '@sds-eng/base'",
+        "props": [
+          {
+            "name": "size",
+            "type": "Size",
+            "values": [],
+            "doc": null
+          }
+        ],
+        "variants": {},
+        "slots": [],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base"
+        ],
+        "examples": [
+          "CloneElement",
+          "WithCheckbox",
+          "index"
+        ]
+      }
+    },
+    {
+      "name": "Link",
+      "t0": "Link — компонент кита · пропы: disableVisited, pseudo",
+      "t1": {
+        "import": "import { Link } from '@sds-eng/base'",
+        "props": [
+          {
+            "name": "pseudo",
+            "type": "boolean",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "disableVisited",
+            "type": "boolean",
+            "values": [],
+            "doc": "Не подсвечивать посещенные ссылки"
+          }
+        ],
+        "variants": {},
+        "slots": [],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base"
+        ],
+        "examples": [
+          "Ancor",
+          "Disabled",
+          "Multiline",
+          "Pseudo",
+          "SimpleExample",
+          "UnderlineExample"
+        ]
+      }
+    },
+    {
+      "name": "List",
+      "t0": "List — компонент кита",
+      "t1": {
+        "import": "import { List } from '@sds-eng/base'",
+        "props": [],
+        "variants": {},
+        "slots": [],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base",
+          "@v-uik/list"
+        ],
+        "examples": [
+          "Base",
+          "Classes.dummy",
+          "Grouping",
+          "Interactive",
+          "InteractiveGrouping",
+          "MultilineDisplay",
+          "Sizes"
+        ]
+      }
+    },
+    {
+      "name": "Marker",
+      "t0": "Marker — компонент кита",
+      "t1": {
+        "import": "import { Marker } from '@sds-eng/base'",
+        "props": [],
+        "variants": {},
+        "slots": [
+          "arctic",
+          "error",
+          "indicator",
+          "indicatorArctic",
+          "indicatorError",
+          "indicatorInfo",
+          "indicatorOrange",
+          "indicatorSuccess",
+          "indicatorViolet",
+          "indicatorWarning",
+          "info",
+          "orange",
+          "root",
+          "success",
+          "violet",
+          "warning"
+        ],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base"
+        ],
+        "examples": [
+          "Default",
+          "MarkerColors",
+          "MarkerColorsWithIndicator",
+          "MarkerComponents"
+        ]
+      }
+    },
+    {
+      "name": "MaskedInput",
+      "t0": "MaskedInput — компонент кита · пропы: errorIconTooltipProps, fullWidth, isBorderless, showErrorIcon, size",
+      "t1": {
+        "import": "import { MaskedInput } from '@sds-eng/base'",
+        "props": [
+          {
+            "name": "fullWidth",
+            "type": "boolean",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "size",
+            "type": "Size",
+            "values": [],
+            "doc": "Размер поля"
+          },
+          {
+            "name": "isBorderless",
+            "type": "boolean",
+            "values": [],
+            "doc": "isBorderless - флаг для переключения на текстовый вид компонента.\n\nЗначение по умолчанию `false`."
+          },
+          {
+            "name": "errorIconTooltipProps",
+            "type": "ComponentPropsWithAttributes<Omit<TooltipProps, 'children'>>",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "showErrorIcon",
+            "type": "boolean",
+            "values": [],
+            "doc": null
+          }
+        ],
+        "variants": {},
+        "slots": [],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base"
+        ],
+        "examples": [
+          "Borderless",
+          "DefaultValue",
+          "Example",
+          "Uncontrolled"
+        ]
+      }
+    },
+    {
+      "name": "Mentions",
+      "t0": "Mentions — компонент кита · пропы: classes, components, mentionAtTrigger, onSelect, optionRows, options, textareaRows, triggers",
+      "t1": {
+        "import": "import { Mentions } from '@sds-eng/base'",
+        "props": [
+          {
+            "name": "value",
+            "type": "string",
+            "values": [],
+            "doc": "Значение поля."
+          },
+          {
+            "name": "classes",
+            "type": "MentionsClasses",
+            "values": [],
+            "doc": "CSS классы компонента."
+          },
+          {
+            "name": "options",
+            "type": "MenuOptions<Option>",
+            "values": [],
+            "doc": "Список опций."
+          },
+          {
+            "name": "triggers",
+            "type": "string | string[]",
+            "values": [],
+            "doc": "Массив триггерных символов для начала упоминания.\n\nЗначение по умолчанию: `@`"
+          },
+          {
+            "name": "onSelect",
+            "type": "(option: Option) => void",
+            "values": [],
+            "doc": "Функция обратного вызова, срабатывающая при выборе упоминания."
+          },
+          {
+            "name": "components",
+            "type": "MentionsDropdownComponentsConfig<Option, ListElement, ListItemElement>",
+            "values": [],
+            "doc": "Свойство для переопределения элементов `Mentions`."
+          },
+          {
+            "name": "textareaRows",
+            "type": "number",
+            "values": [],
+            "doc": "Количество строк в `Textarea`."
+          },
+          {
+            "name": "optionRows",
+            "type": "number",
+            "values": [],
+            "doc": "Количество отображаемых строк за раз внутри `Dropdown`."
+          },
+          {
+            "name": "mentionAtTrigger",
+            "type": "boolean",
+            "values": [],
+            "doc": "Свойство для позиционирования `Dropdown` в компоненте.\n\nЗначение по умолчанию: `false`"
+          }
+        ],
+        "variants": {},
+        "slots": [],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base"
+        ],
+        "examples": [
+          "Base",
+          "Classes.Dummy",
+          "MentionAtTrigger",
+          "MentionsAutosize",
+          "MentionsComponents",
+          "MentionsDefaultValue",
+          "MentionsDisabled",
+          "MentionsDisabledOptions",
+          "MentionsFullWidth",
+          "MentionsGrouping",
+          "MentionsOptionFormat",
+          "MentionsPrefixAndSuffix",
+          "MentionsUncontrolled",
+          "MentionsUserResize",
+          "MentionsWithCustomTrigger",
+          "MentionsWithError",
+          "MentionsWithMaxLength",
+          "ReplaceLabel"
+        ]
+      }
+    },
+    {
+      "name": "Modal",
+      "t0": "Modal — компонент кита",
+      "t1": {
+        "import": "import { Modal } from '@sds-eng/base'",
+        "props": [],
+        "variants": {},
+        "slots": [],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base"
+        ],
+        "examples": [
+          "Basic",
+          "BodyOverflow",
+          "Canvas",
+          "CustomWidth",
+          "DisabledHandle",
+          "KeepMounted",
+          "Methods",
+          "ModalClasses.dummy",
+          "ModalSizeSm",
+          "ModalSizeXs",
+          "OnAfterOpenChange"
+        ]
+      }
+    },
+    {
+      "name": "Notification",
+      "t0": "Notification — компонент кита · пропы: customContent, description, primaryButtonProps, secondaryButtonProps, status, title",
+      "t1": {
+        "import": "import { Notification } from '@sds-eng/base'",
+        "props": [
+          {
+            "name": "customContent",
+            "type": "ReactNode",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "description",
+            "type": "string",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "title",
+            "type": "string",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "status",
+            "type": "NotificationOptions['status']",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "primaryButtonProps",
+            "type": "Omit<ButtonProps, 'children'>",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "secondaryButtonProps",
+            "type": "Omit<ButtonProps, 'children'>",
+            "values": [],
+            "doc": null
+          }
+        ],
+        "variants": {},
+        "slots": [
+          "indicator",
+          "showIndicator"
+        ],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base"
+        ],
+        "examples": [
+          "Base",
+          "Notification.dummy",
+          "NotificationE2eTest",
+          "Playground",
+          "Status"
+        ]
+      }
+    },
+    {
+      "name": "Pagination",
+      "t0": "Pagination — компонент кита · пропы: classes, components, handleChangeCurrentPage, handleFirstClick, handleLastClick, items, onPageSizeChange, showAlwaysNavigationNext",
+      "t1": {
+        "import": "import { Pagination } from '@sds-eng/base'",
+        "props": [
+          {
+            "name": "showAlwaysNavigationNext",
+            "type": "boolean",
+            "values": [],
+            "doc": "Флаг для постоянного отображения кнопки следующей страницы."
+          },
+          {
+            "name": "components",
+            "type": "PaginationComponents",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "classes",
+            "type": "PaginationClasses",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "onPageSizeChange",
+            "type": "(pageSize: number) => void",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "showAlwaysNavigationNext",
+            "type": "boolean",
+            "values": [],
+            "doc": "Флаг для постоянного отображения кнопки следующей страницы."
+          },
+          {
+            "name": "items",
+            "type": "PaginationItem[]",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "handleChangeCurrentPage",
+            "type": "(pageNumber?: PaginationItemValue, pageOffset?: number) => void",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "handleFirstClick",
+            "type": "(pageNumber?: PaginationItemValue) => void",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "handleLastClick",
+            "type": "(pageNumber?: PaginationItemValue) => void",
+            "values": [],
+            "doc": null
+          }
+        ],
+        "variants": {},
+        "slots": [],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base"
+        ],
+        "examples": [
+          "PaginationBase",
+          "PaginationBoundaryPagesCount",
+          "PaginationComponents",
+          "PaginationDisabled",
+          "PaginationDropdown",
+          "PaginationGap",
+          "PaginationHideNavigationButtonNext",
+          "PaginationNearPagesCount",
+          "PaginationOnPageChange",
+          "PaginationWithCustomText",
+          "PaginationWithShowAlwaysNavigationNext",
+          "UsePagination"
+        ]
+      }
+    },
+    {
+      "name": "Popover",
+      "t0": "Popover — компонент кита · пропы: className, classes, contentWrapperProps, description, disableAutoClose, disabledArrow, dropdownProps, placement",
+      "t1": {
+        "import": "import { Popover } from '@sds-eng/base'",
+        "props": [
+          {
+            "name": "primaryButtonProps",
+            "type": "Omit<ButtonProps, 'children'>",
+            "values": [],
+            "doc": "Свойства для основной кнопки."
+          },
+          {
+            "name": "secondaryButtonProps",
+            "type": "Omit<ButtonProps, 'children'>",
+            "values": [],
+            "doc": "Свойства для второстепенной кнопки."
+          },
+          {
+            "name": "disableAutoClose",
+            "type": "boolean",
+            "values": [],
+            "doc": "Флаг отключения автоматического закрытия Popover по нажатию на кнопки."
+          },
+          {
+            "name": "className",
+            "type": "string",
+            "values": [],
+            "doc": "Классы для стилизации контейнера кнопок."
+          },
+          {
+            "name": "title",
+            "type": "string",
+            "values": [],
+            "doc": "Заголовок для Popover"
+          },
+          {
+            "name": "description",
+            "type": "React.ReactNode",
+            "values": [],
+            "doc": "Описание для Popover"
+          },
+          {
+            "name": "placement",
+            "type": "DropdownProps['placement']",
+            "values": [],
+            "doc": "Расположение контента Popover относительно элемента"
+          },
+          {
+            "name": "disabledArrow",
+            "type": "boolean",
+            "values": [],
+            "doc": "Флаг для скрытия или показа стрелки у открывающегося контента Popover"
+          },
+          {
+            "name": "dropdownProps",
+            "type": "Omit<DropdownProps, 'children'>",
+            "values": [],
+            "doc": "Свойства внутреннего компонента Dropdown"
+          },
+          {
+            "name": "classes",
+            "type": "Partial<PopoverClasses>",
+            "values": [],
+            "doc": "CSS-классы для стилизации."
+          },
+          {
+            "name": "contentWrapperProps",
+            "type": "React.HTMLAttributes<HTMLDivElement>",
+            "values": [],
+            "doc": "Свойства для обёртки контента Popover."
+          }
+        ],
+        "variants": {},
+        "slots": [
+          "buttonsContainer",
+          "contentWrapper",
+          "description",
+          "title"
+        ],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base"
+        ],
+        "examples": [
+          "Action",
+          "Base",
+          "ButtonsWithCallbacks",
+          "Content",
+          "Delay",
+          "Offset",
+          "Placement"
+        ]
+      }
+    },
+    {
+      "name": "Radio",
+      "t0": "Radio — компонент кита",
+      "t1": {
+        "import": "import { Radio } from '@sds-eng/base'",
+        "props": [],
+        "variants": {},
+        "slots": [],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base",
+          "@v-uik/radio",
+          "@v-uik/radio-group"
+        ],
+        "examples": [
+          "Basic",
+          "DisabledRadio",
+          "Horizontal",
+          "RadioDefaultValue",
+          "RadioDummy",
+          "RadioGroupDefaultValue",
+          "RadioGroupDummy",
+          "Size",
+          "UncontrolledRadio",
+          "UncontrolledRadioGroup",
+          "Vertical"
+        ]
+      }
+    },
+    {
+      "name": "Rating",
+      "t0": "Rating — компонент кита · RatingSize: sm|md · RatingSizeMap: sm|md · пропы: disableAnimation, size",
+      "t1": {
+        "import": "import { Rating } from '@sds-eng/base'",
+        "props": [
+          {
+            "name": "size",
+            "type": "RatingSizeType",
+            "values": [],
+            "doc": "Размер элемента."
+          },
+          {
+            "name": "disableAnimation",
+            "type": "boolean",
+            "values": [],
+            "doc": null
+          }
+        ],
+        "variants": {
+          "RatingSize": [
+            "sm",
+            "md"
+          ],
+          "RatingSizeMap": [
+            "sm",
+            "md"
+          ]
+        },
+        "slots": [],
+        "subcomponents": [
+          "Like",
+          "Stars"
+        ],
+        "wraps": [
+          "@v-uik/base",
+          "@v-uik/rating"
+        ],
+        "examples": [
+          "AllowClear",
+          "Base",
+          "CustomIconSize",
+          "CustomIcons",
+          "Disabled",
+          "IsHighlightSelectedOnly",
+          "Like",
+          "MaxValue",
+          "RatingClasses.Dummy",
+          "ReadOnly",
+          "Sizes",
+          "Uncontrolled",
+          "WithLabel"
+        ]
+      }
+    },
+    {
+      "name": "Scope",
+      "t0": "Scope — компонент кита · пропы: classes, counter, defaultValue, forceRender, header, keyboardAutoSelect, onChange, onClick",
+      "t1": {
+        "import": "import { Scope } from '@sds-eng/base'",
+        "props": [
+          {
+            "name": "classes",
+            "type": "Partial<ScopeItemClasses>",
+            "values": [],
+            "doc": "Список классов"
+          },
+          {
+            "name": "value",
+            "type": "string | number",
+            "values": [],
+            "doc": "Значение вкладки"
+          },
+          {
+            "name": "selected",
+            "type": "boolean",
+            "values": [],
+            "doc": "Активно ли значение или нет"
+          },
+          {
+            "name": "header",
+            "type": "React.ReactNode",
+            "values": [],
+            "doc": "Заголовок вкладки"
+          },
+          {
+            "name": "forceRender",
+            "type": "boolean",
+            "values": [],
+            "doc": "Принудительный рендеринг контента во вкладках, а не ленивый рендеринг после нажатия на вкладки. Срабатывает только в том случае если находится внутри scope"
+          },
+          {
+            "name": "onClick",
+            "type": "(value: string | number, event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void",
+            "values": [],
+            "doc": "Обработчик изменения текущего элемента"
+          },
+          {
+            "name": "counter",
+            "type": "number | string",
+            "values": [],
+            "doc": "значение каунтера"
+          },
+          {
+            "name": "size",
+            "type": "Size",
+            "values": [],
+            "doc": "Размер"
+          },
+          {
+            "name": "classes",
+            "type": "Partial<ScopeClasses>",
+            "values": [],
+            "doc": "Список классов"
+          },
+          {
+            "name": "value",
+            "type": "string | number",
+            "values": [],
+            "doc": "Значение выбранного таба"
+          },
+          {
+            "name": "onChange",
+            "type": "(value: string | number) => void",
+            "values": [],
+            "doc": "Обработчик изменения выбранного элемента"
+          },
+          {
+            "name": "defaultValue",
+            "type": "string | number",
+            "values": [],
+            "doc": "Значение по умолчанию"
+          },
+          {
+            "name": "keyboardAutoSelect",
+            "type": "boolean",
+            "values": [],
+            "doc": "Флаг, указывающий выбор таба с помощью кнопок навигации (стрелик)"
+          },
+          {
+            "name": "size",
+            "type": "Size",
+            "values": [],
+            "doc": "Размер"
+          }
+        ],
+        "variants": {},
+        "slots": [
+          "content",
+          "counter",
+          "md",
+          "root",
+          "scopeItem",
+          "scopeList",
+          "selected",
+          "sm",
+          "text",
+          "xs"
+        ],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base",
+          "@v-uik/common",
+          "@v-uik/hooks",
+          "@v-uik/theme",
+          "@v-uik/utils"
+        ],
+        "examples": [
+          "Example",
+          "ScopeClasses.dummy"
+        ]
+      }
+    },
+    {
+      "name": "Segment",
+      "t0": "Segment — компонент кита · пропы: children, classes, counter, icon, name, onChange, size, value",
+      "t1": {
+        "import": "import { Segment } from '@sds-eng/base'",
+        "props": [
+          {
+            "name": "classes",
+            "type": "SegmentGroupClasses",
+            "values": [],
+            "doc": "JSS-классы для стилизации"
+          },
+          {
+            "name": "size",
+            "type": "Size",
+            "values": [],
+            "doc": "Размер элемента"
+          },
+          {
+            "name": "name",
+            "type": "string",
+            "values": [],
+            "doc": "Атрибут name элемента input"
+          },
+          {
+            "name": "value",
+            "type": "T",
+            "values": [],
+            "doc": "Значение поля"
+          },
+          {
+            "name": "onChange",
+            "type": "(value: T, event: React.ChangeEvent<HTMLInputElement>) => void",
+            "values": [],
+            "doc": "Обработчик изменения поля"
+          },
+          {
+            "name": "children",
+            "type": "React.ReactNode",
+            "values": [],
+            "doc": "Дочерние элементы"
+          },
+          {
+            "name": "classes",
+            "type": "SegmentClasses",
+            "values": [],
+            "doc": "JSS-классы для стилизации"
+          },
+          {
+            "name": "counter",
+            "type": "number | string",
+            "values": [],
+            "doc": "параметр счетчика"
+          },
+          {
+            "name": "value",
+            "type": "T",
+            "values": [],
+            "doc": "Значение поля input"
+          },
+          {
+            "name": "icon",
+            "type": "React.ReactNode",
+            "values": [],
+            "doc": "иконка"
+          },
+          {
+            "name": "children",
+            "type": "React.ReactNode",
+            "values": [],
+            "doc": "Выводимое значение"
+          }
+        ],
+        "variants": {},
+        "slots": [
+          "counter",
+          "icon",
+          "medium",
+          "root",
+          "segment",
+          "selected",
+          "small",
+          "text",
+          "xsmall"
+        ],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base"
+        ],
+        "examples": [
+          "Base",
+          "Basic",
+          "Behavior",
+          "Classes.dummy",
+          "Sizes",
+          "SizesExample",
+          "index"
+        ]
+      }
+    },
+    {
+      "name": "Select",
+      "t0": "Select — компонент кита · пропы: classes, component, delimiter, disableVisibleSelectedValue, errorIconTooltipProps, formatOptionDescription, getMultipleSelectedTextContent, getOptionDescription",
+      "t1": {
+        "import": "import { Select } from '@sds-eng/base'",
+        "props": [
+          {
+            "name": "classes",
+            "type": "Classes<'search' | 'dropdown' | 'clear'>",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "isSearchable",
+            "type": "boolean",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "component",
+            "type": "React.ComponentType<OptionListProps<Option, ListElement, ListItem>>",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "inputProps",
+            "type": "BaseComboBoxProps<Option, ListElement>['inputProps']",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "classes",
+            "type": "ComboBoxClasses",
+            "values": [],
+            "doc": "CSS-классы компонента."
+          },
+          {
+            "name": "getMultipleSelectedTextContent",
+            "type": "(selectedOptions: (Option | undefined)[], options: Option[]) => string",
+            "values": [],
+            "doc": "Функция для определения текстового содержимого в результате множественного выбора\nПо умолчанию выводит:\n\nесли выбрана 1 опция - label опции\n\nесли выбрано 2 и более опции - \"Выбрано ${количество выбранных опций}\"\n\nесли выбранны все опции через опцию \"выбрать все\" (параметр \"selectAll\" у опции) - label опции с параметром \"selectAll\""
+          },
+          {
+            "name": "isCreatable",
+            "type": "IsCreatable",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "isMultiple",
+            "type": "IsMulti",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "size",
+            "type": "Size",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "isBorderless",
+            "type": "IsBorderless",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "onChange",
+            "type": "IsCreatable extends true ? PvCreatableProps<Option, ListElement, IsMulti, ListItem>['onChange'] : PvComboboxProps<Option, ListElement, ListItem>['onChange']",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "value",
+            "type": "IsCreatable extends true ? PvCreatableProps<Option, ListElement, IsMulti, ListItem>['value'] : PvComboboxProps<Option, ListElement, ListItem>['value']",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "getOptionDescription",
+            "type": "(option: Option) => string",
+            "values": [],
+            "doc": "Функция переопределения описания опции."
+          },
+          {
+            "name": "formatOptionDescription",
+            "type": "(description: string, inputValue?: string) => React.ReactNode",
+            "values": [],
+            "doc": "Функция задает, как отображать description внутри списка."
+          },
+          {
+            "name": "getMultipleSelectedTextContent",
+            "type": "(selectedOptions: (Option | undefined)[], options: Option[]) => string",
+            "values": [],
+            "doc": "Функция для определения текстового содержимого в результате множественного выбора\nПо умолчанию выводит:\n\nесли выбрана 1 опция - label опции\n\nесли выбрано 2 и более опции - \"Выбрано ${количество выбранных опций}\"\n\nесли выбранны все опции через опцию \"выбрать все\" (параметр \"selectAll\" у опции) - label опции с параметром \"selectAll\""
+          },
+          {
+            "name": "withTags",
+            "type": "BaseCreatableProps<Option, ListElement, IsMulti, ListItemElement>['withTags']",
+            "values": [],
+            "doc": "`@deprecated`"
+          },
+          {
+            "name": "limitTags",
+            "type": "BaseCreatableProps<Option, ListElement, IsMulti, ListItemElement>['limitTags']",
+            "values": [],
+            "doc": "`@deprecated`"
+          },
+          {
+            "name": "size",
+            "type": "Size",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "getOptionDescription",
+            "type": "(option: Option) => string",
+            "values": [],
+            "doc": "Функция переопределения описания опции"
+          },
+          {
+            "name": "formatOptionDescription",
+            "type": "(description: string, inputValue?: string) => React.ReactNode",
+            "values": [],
+            "doc": "Функция задает, как отображать description внутри списка"
+          },
+          {
+            "name": "isBorderless",
+            "type": "boolean",
+            "values": [],
+            "doc": "isBorderless - флаг для переключения на текстовый вид компонента."
+          },
+          {
+            "name": "disableVisibleSelectedValue",
+            "type": "boolean | undefined",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "showErrorIcon",
+            "type": "boolean",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "errorIconTooltipProps",
+            "type": "ComponentPropsWithAttributes<Omit<TooltipProps, 'children'>>",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "delimiter",
+            "type": "string",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "getMultipleSelectedTextContent",
+            "type": "(selectedOptions: (Option | undefined)[], options: Option[]) => string",
+            "values": [],
+            "doc": "Функция для определения текстового содержимого в результате множественного выбора\nПо умолчанию выводит:\n\nесли выбрана 1 опция - label опции\n\nесли выбрано 2 и более опции - \"Выбрано ${количество выбранных опций}\"\n\nесли выбранны все опции через опцию \"выбрать все\" (параметр \"selectAll\" у опции) - label опции с параметром \"selectAll\""
+          },
+          {
+            "name": "withTags",
+            "type": "ComboboxProps<Option, ListElement, ListItem>['withTags']",
+            "values": [],
+            "doc": "Выбранные опции отображаются в виде тегов. Неактуален для одиночного выбора\n`@deprecated`"
+          },
+          {
+            "name": "limitTags",
+            "type": "ComboboxProps<Option, ListElement, ListItem>['limitTags']",
+            "values": [],
+            "doc": "Настраивает количество отображаемых тегов, если включена опция `withTags`\nдля отображения тегов в поле ввода.\n\nЕсли опций будет больше указанного лимита, они будут скрыты и появится тег\nс указанием скрытых опций, формата `+n`.\n`@deprecated`"
+          },
+          {
+            "name": "getOptionDescription",
+            "type": "(option: Option) => string",
+            "values": [],
+            "doc": "Функция переопределения описания опции"
+          },
+          {
+            "name": "formatOptionDescription",
+            "type": "(description: string, inputValue?: string) => React.ReactNode",
+            "values": [],
+            "doc": "Функция задает, как отображать description внутри списка"
+          },
+          {
+            "name": "size",
+            "type": "Size",
+            "values": [],
+            "doc": null
+          }
+        ],
+        "variants": {},
+        "slots": [],
+        "subcomponents": [
+          "Creatable"
+        ],
+        "wraps": [
+          "@v-uik/base",
+          "@v-uik/theme"
+        ],
+        "examples": [
+          "AdditionalDescriptionExample",
+          "BorderlessExample",
+          "CustomContentInOptionsExample",
+          "CustomIconExample",
+          "DefaultValueExample",
+          "DisableCloseOnSelect",
+          "LoadingWithOptions",
+          "MultiSelectExample",
+          "MultiSelectSearchableExample",
+          "MultiSelectWithOutsideTagsExample",
+          "OptionFormatExample",
+          "PlaceholderExample",
+          "SearchableExample",
+          "SelectDummy",
+          "SizesExample",
+          "StatesExample",
+          "UsageExample",
+          "VirtualizedExample"
+        ]
+      }
+    },
+    {
+      "name": "Skeleton",
+      "t0": "Skeleton — компонент кита · пропы: classes, shape",
+      "t1": {
+        "import": "import { Skeleton } from '@sds-eng/base'",
+        "props": [
+          {
+            "name": "shape",
+            "type": "SkeletonShapeType | number",
+            "values": [],
+            "doc": "Тип скругления компонента. Свойство принимает значение `rectangular`, `rounded-4`, `rounded-8`, `circular` или числовое значение в пикселях.\nПо умолчанию свойству установлено значение `rounded-4`."
+          },
+          {
+            "name": "classes",
+            "type": "SkeletonClasses",
+            "values": [],
+            "doc": "CSS классы компонента."
+          }
+        ],
+        "variants": {},
+        "slots": [
+          "shapeCircular",
+          "shapeRectangular",
+          "shapeRounded4",
+          "shapeRounded8"
+        ],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base"
+        ],
+        "examples": [
+          "Accessibility",
+          "Animation",
+          "As",
+          "Autosize",
+          "Base",
+          "Canvas",
+          "Classes.dummy",
+          "Content",
+          "Shape",
+          "ShapeCustom",
+          "Size"
+        ]
+      }
+    },
+    {
+      "name": "Slider",
+      "t0": "Slider — компонент кита",
+      "t1": {
+        "import": "import { Slider } from '@sds-eng/base'",
+        "props": [],
+        "variants": {},
+        "slots": [],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base"
+        ],
+        "examples": [
+          "Basic",
+          "Disabled"
+        ]
+      }
+    },
+    {
+      "name": "Spinner",
+      "t0": "Spinner — компонент кита · пропы: backdropOverlayProps, backdropOverlayWrapperProps, className, classes, color, container, disableBackdropClickHandler, disableEscapePressHandler",
+      "t1": {
+        "import": "import { Spinner } from '@sds-eng/base'",
+        "props": [
+          {
+            "name": "withBlur",
+            "type": "boolean",
+            "values": [],
+            "doc": "Флаг отображения в режиме оверлея с эффектом размытия при `isLoading=\"true\"` и непустом `children`."
+          },
+          {
+            "name": "container",
+            "type": "PortalProps['container']",
+            "values": [],
+            "doc": "HTML-элемент или функция, возвращающая HTML-элемент, в который будет отрисован\nкомпонент в полноэкранном режиме при `isFullScreen=\"true\"."
+          },
+          {
+            "name": "disableEscapePressHandler",
+            "type": "boolean",
+            "values": [],
+            "doc": "Отключить срабатывание обработчика `onClose` во время нажатия клавиши `Esc` в полноэкранном режиме при `isFullScreen=\"true\"`."
+          },
+          {
+            "name": "onClose",
+            "type": "(event: React.MouseEvent<HTMLDivElement> | React.KeyboardEvent<HTMLDivElement>) => void",
+            "values": [],
+            "doc": "Обработчик закрытия компонента в полноэкранном режиме при `isFullScreen=\"true\"`."
+          },
+          {
+            "name": "backdropOverlayProps",
+            "type": "ComponentPropsWithAttributes< ComponentPropsWithRefFix<'div'> & { /** * Объект `React.Ref` для получения ссылки на элемент. */ ref?: React.Ref<HTMLDivElement> } >",
+            "values": [],
+            "doc": "HTML-атрибуты элемента подложки при `isFullScreen=\"true\"` или для оверлея при `isLoading=\"true\"` и непустом `children`."
+          },
+          {
+            "name": "disableBackdropClickHandler",
+            "type": "boolean",
+            "values": [],
+            "doc": "Отключить срабатывание обработчика `onClose` во время клика за пределами подложки в полноэкранном режиме при `isFullScreen=\"true\"`."
+          },
+          {
+            "name": "backdropOverlayWrapperProps",
+            "type": "ComponentPropsWithAttributes< ComponentPropsWithRefFix<'div'> & { /** * Объект `React.Ref` для получения ссылки на элемент. */ ref?: React.Ref<HTMLDivElement> } >",
+            "values": [],
+            "doc": "HTML-атрибуты элемента-обертки для подложки при `isFullScreen=\"true\"` или для оверлея при `isLoading=\"true\"` и непустом `children`."
+          },
+          {
+            "name": "overlayWrapperProps",
+            "type": "ComponentPropsWithAttributes< ComponentPropsWithRefFix<'div'> & { ref?: React.Ref<HTMLDivElement> } >",
+            "values": [],
+            "doc": "HTML-атрибуты обертки контейнера с `children` в режиме оверлея при `isLoading=\"true\"` и наличии `children`."
+          },
+          {
+            "name": "overlayContentProps",
+            "type": "ComponentPropsWithAttributes< ComponentPropsWithRefFix<'div'> & { /** * Объект `React.Ref` для получения ссылки на элемент. */ ref?: React.Ref<HTMLDivElement> } >",
+            "values": [],
+            "doc": "HTML-атрибуты контейнера с `children` в режиме оверлея при `isLoading=\"true\"` и наличии `children`."
+          },
+          {
+            "name": "classes",
+            "type": "Partial<SpinnerClasses>",
+            "values": [],
+            "doc": "CSS-классы компонента `Spinner`."
+          },
+          {
+            "name": "size",
+            "type": "ProgressSizeProps | number",
+            "values": [],
+            "doc": "Размер компонента."
+          },
+          {
+            "name": "sizesConfig",
+            "type": "Record<ProgressSizeProps, number>",
+            "values": [],
+            "doc": "Настройка размеров компонента."
+          },
+          {
+            "name": "color",
+            "type": "React.CSSProperties['color']",
+            "values": [],
+            "doc": "Цвет окружности."
+          },
+          {
+            "name": "gradientColorStart",
+            "type": "React.CSSProperties['color'] | null",
+            "values": [],
+            "doc": "Стартовый цвет градиента окружности."
+          },
+          {
+            "name": "gradientColorEnd",
+            "type": "React.CSSProperties['color'] | null",
+            "values": [],
+            "doc": "Конечный цвет градиента окружности."
+          },
+          {
+            "name": "iconContainerNativeProps",
+            "type": "ComponentPropsWithRefFix<'span'>",
+            "values": [],
+            "doc": "Свойства, применяемые к html-элементу контейнера у элемента `Spinner`."
+          },
+          {
+            "name": "className",
+            "type": "string",
+            "values": [],
+            "doc": "CSS-класс компонента."
+          },
+          {
+            "name": "isFullScreen",
+            "type": "boolean",
+            "values": [],
+            "doc": "Флаг отображения компонента в полноэкранном режиме."
+          },
+          {
+            "name": "isLoading",
+            "type": "boolean",
+            "values": [],
+            "doc": "Флаг отображения компонента. Свойство по умолчанию принимает значение `true`."
+          }
+        ],
+        "variants": {},
+        "slots": [
+          "backdrop",
+          "backdropProgress",
+          "gradient",
+          "icon",
+          "iconContainer",
+          "overlay",
+          "overlayContent",
+          "overlayContentBlurry",
+          "overlayProgress"
+        ],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base",
+          "@v-uik/common",
+          "@v-uik/portal",
+          "@v-uik/progress",
+          "@v-uik/theme",
+          "@v-uik/utils"
+        ],
+        "examples": [
+          "AccessibleLinearProgress",
+          "BasicProgress",
+          "BasicSpinner",
+          "ControlledProgress",
+          "DifferentLineColor",
+          "IndeterminateProgress",
+          "SpinnerCustomSize",
+          "SpinnerFullscreen",
+          "SpinnerIsLoading",
+          "SpinnerOverlay",
+          "SpinnerSizes",
+          "SpinnerWithBlur"
+        ]
+      }
+    },
+    {
+      "name": "Splitter",
+      "t0": "Splitter — компонент кита",
+      "t1": {
+        "import": "import { Splitter } from '@sds-eng/base'",
+        "props": [],
+        "variants": {},
+        "slots": [],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base",
+          "@v-uik/splitter"
+        ],
+        "examples": [
+          "Controlled",
+          "Default",
+          "DefaultSizes",
+          "Lazy",
+          "Storage",
+          "Types.dummy",
+          "Vertical"
+        ]
+      }
+    },
+    {
+      "name": "StatusCard",
+      "t0": "StatusCard — компонент кита · StatusCardStatus: error|warning|success|info · пропы: classes, status, title",
+      "t1": {
+        "import": "import { StatusCard } from '@sds-eng/base'",
+        "props": [
+          {
+            "name": "status",
+            "type": "StatusCardType",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "classes",
+            "type": "StatusCardClasses",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "title",
+            "type": "React.ReactNode",
+            "values": [],
+            "doc": null
+          }
+        ],
+        "variants": {
+          "StatusCardStatus": [
+            "error",
+            "warning",
+            "success",
+            "info"
+          ]
+        },
+        "slots": [
+          "actions",
+          "body",
+          "bodyWrapper",
+          "content",
+          "textContainer",
+          "title"
+        ],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base"
+        ],
+        "examples": [
+          "StatusCardClasses.dummy",
+          "Usage",
+          "WithInteractiveElements",
+          "WithoutInteractiveElements"
+        ]
+      }
+    },
+    {
+      "name": "Stepper",
+      "t0": "Stepper — компонент кита · пропы: showIcon",
+      "t1": {
+        "import": "import { Stepper } from '@sds-eng/base'",
+        "props": [
+          {
+            "name": "showIcon",
+            "type": "boolean",
+            "values": [],
+            "doc": "показывать ли иконку напротив completed step"
+          }
+        ],
+        "variants": {},
+        "slots": [],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base"
+        ],
+        "examples": [
+          "Basic",
+          "CustomIconsExample",
+          "StepperClasses.dummy"
+        ]
+      }
+    },
+    {
+      "name": "Switch",
+      "t0": "Switch — компонент кита · пропы: size, text",
+      "t1": {
+        "import": "import { Switch } from '@sds-eng/base'",
+        "props": [
+          {
+            "name": "text",
+            "type": "string",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "size",
+            "type": "LabelControlProps['size']",
+            "values": [],
+            "doc": null
+          }
+        ],
+        "variants": {},
+        "slots": [],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base"
+        ],
+        "examples": [
+          "Disabled",
+          "Examples",
+          "SwitchClasses.dummy"
+        ]
+      }
+    },
+    {
+      "name": "Table",
+      "t0": "Table — компонент кита · SortOrderProp: asc|desc|none · TableAlignmentType: left|center|right · TableBordered: none|rows|rows-columns · пропы: bordered, children, classes, colSpan, column, columns, components, dataSource",
+      "t1": {
+        "import": "import { Table } from '@sds-eng/base'",
+        "props": [
+          {
+            "name": "children",
+            "type": "Array<ColumnProps<DataSource>>",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "column",
+            "type": "ColumnProps<DataSource>",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "colSpan",
+            "type": "number",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "rowSpan",
+            "type": "number",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "isLastColumn",
+            "type": "boolean",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "key",
+            "type": "Key",
+            "values": [],
+            "doc": "Уникальный идентификатор для каждой ячейки внутри строки тела таблицы."
+          },
+          {
+            "name": "children",
+            "type": "Array<DataSource & ReservedDataSourceProps<DataSource>>",
+            "values": [],
+            "doc": "Массив потомков элемента дерева"
+          },
+          {
+            "name": "classes",
+            "type": "Classes",
+            "values": [],
+            "doc": "JSS-классы для стилизации"
+          },
+          {
+            "name": "dataSource",
+            "type": "RecordDataSource<DataSource>[]",
+            "values": [],
+            "doc": "Массив данных, который будет использоваться для отрисовки таблицы."
+          },
+          {
+            "name": "columns",
+            "type": "ColumnProps<DataSource>[]",
+            "values": [],
+            "doc": "Описывает структуру столбца таблицы — заголовок, ключи, события."
+          },
+          {
+            "name": "tableLayout",
+            "type": "React.CSSProperties['tableLayout']",
+            "values": [],
+            "doc": "Устанавливает алгоритм, используемый для размещения ячеек, строк и столбцов таблицы.\nВ случае, когда есть фиксированные колонки, всегда будет 'fixed'."
+          },
+          {
+            "name": "width",
+            "type": "number | string",
+            "values": [],
+            "doc": "Ширина таблицы"
+          },
+          {
+            "name": "height",
+            "type": "number | string",
+            "values": [],
+            "doc": "Высота таблицы"
+          },
+          {
+            "name": "size",
+            "type": "TableSizeProp",
+            "values": [],
+            "doc": "Определяет размер таблицы."
+          },
+          {
+            "name": "emptyData",
+            "type": "React.ReactNode",
+            "values": [],
+            "doc": "Превью, которое отображается когда данных нет."
+          },
+          {
+            "name": "hoverable",
+            "type": "boolean",
+            "values": [],
+            "doc": "Свойство включения hover-эффекта для строк."
+          },
+          {
+            "name": "bordered",
+            "type": "TableBorderedProp",
+            "values": [],
+            "doc": "Добавление границ ячейкам"
+          },
+          {
+            "name": "stripe",
+            "type": "boolean",
+            "values": [],
+            "doc": "Полосатая таблица, где выделяется каждая четная строка."
+          },
+          {
+            "name": "components",
+            "type": "TableComponents",
+            "values": [],
+            "doc": "Свойство для переопределения элементов таблицы"
+          },
+          {
+            "name": "fixedHeader",
+            "type": "boolean",
+            "values": [],
+            "doc": "Зафиксировать шапку таблицы при скролле"
+          },
+          {
+            "name": "rowKey",
+            "type": "string | RowKeyFunction<DataSource>",
+            "values": [],
+            "doc": "Уникальный ключ строки может быть строкой или функцией, которая возвращает React.Key."
+          }
+        ],
+        "variants": {
+          "SortOrderProp": [
+            "asc",
+            "desc",
+            "none"
+          ],
+          "TableAlignmentType": [
+            "left",
+            "center",
+            "right"
+          ],
+          "TableBordered": [
+            "none",
+            "rows",
+            "rows-columns"
+          ],
+          "TablePaginationDirection": [
+            "start",
+            "end"
+          ],
+          "TablePaginationDivider": [
+            "top",
+            "bottom"
+          ],
+          "TablePaginationType": [
+            "simple",
+            "advanced"
+          ],
+          "TableSize": [
+            "sm",
+            "md",
+            "lg"
+          ]
+        },
+        "slots": [
+          "body",
+          "bodyCell",
+          "bodyRow",
+          "button",
+          "buttonsWrapper",
+          "customSelectButton",
+          "disabled",
+          "disabledArrow",
+          "dividerBottom",
+          "dividerTop",
+          "head",
+          "headCell",
+          "headRow",
+          "itemsWrapper",
+          "pages",
+          "pagesRange",
+          "root",
+          "select",
+          "selectItems",
+          "selectSubtitle",
+          "selectTitle",
+          "selectWrapper",
+          "table",
+          "wrapper"
+        ],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base",
+          "@v-uik/table"
+        ],
+        "examples": [
+          "AlignmentSortableStory",
+          "AlignmentStory",
+          "Basic",
+          "BorderedStory",
+          "Classes.dummy",
+          "ColSpanAndRowSpanStory",
+          "ColumnProps.dummy",
+          "CustomPaginateTable",
+          "CustomizeTableComponents",
+          "CustomizedTableCell",
+          "EmptyDataStory",
+          "Events",
+          "ExpandableStory",
+          "FilteredTable",
+          "FixedColumnsStory",
+          "FixedHeaderStory",
+          "HoverableStory",
+          "MultiRowHeader",
+          "PaginateTable",
+          "RowKeyStory",
+          "SelectionStory",
+          "SizeStory",
+          "SortableStory",
+          "StripeStory",
+          "TableLayoutStory",
+          "TreeExpandableStory"
+        ]
+      }
+    },
+    {
+      "name": "Tabs",
+      "t0": "Tabs — компонент кита · пропы: classes, counter, scrollStep, size",
+      "t1": {
+        "import": "import { Tabs } from '@sds-eng/base'",
+        "props": [
+          {
+            "name": "classes",
+            "type": "TabClasses",
+            "values": [],
+            "doc": "CSS-классы для стилизации."
+          },
+          {
+            "name": "counter",
+            "type": "number",
+            "values": [],
+            "doc": "Счётчик вкладки."
+          },
+          {
+            "name": "classes",
+            "type": "TabsClasses",
+            "values": [],
+            "doc": "CSS-классы компонента."
+          },
+          {
+            "name": "size",
+            "type": "Size",
+            "values": [],
+            "doc": "Размер табов."
+          },
+          {
+            "name": "scrollStep",
+            "type": "number",
+            "values": [],
+            "doc": "Шаг прокрутки в px."
+          },
+          {
+            "name": "counter",
+            "type": "number",
+            "values": [],
+            "doc": null
+          }
+        ],
+        "variants": {},
+        "slots": [
+          "container",
+          "filled",
+          "prefixExtraSmall",
+          "scrollable",
+          "suffixExtraSmall",
+          "tabExtraSmall",
+          "textExtraSmall"
+        ],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base",
+          "@v-uik/tabs"
+        ],
+        "examples": [
+          "Classes.dummy",
+          "CustomTabs",
+          "DefaultView",
+          "Disabled",
+          "ForceRender",
+          "NestedTabs",
+          "RemainsInDOM",
+          "Sizes",
+          "Tab.dummy",
+          "Tabs.dummy",
+          "Vertical",
+          "WithIcons",
+          "WithRemoving"
+        ]
+      }
+    },
+    {
+      "name": "Tag",
+      "t0": "Tag — компонент кита · TagElementSize: xxs|xs|sm|md · TagInputElementSize: xs|sm|md|lg · TagInputIconSize: xs|sm|md|lg · пропы: classes, components, size",
+      "t1": {
+        "import": "import { Tag } from '@sds-eng/base'",
+        "props": [
+          {
+            "name": "size",
+            "type": "number",
+            "values": [],
+            "doc": "Размер иконки."
+          },
+          {
+            "name": "size",
+            "type": "TagInputElementSizeType",
+            "values": [],
+            "doc": "Размер поля."
+          },
+          {
+            "name": "classes",
+            "type": "Omit<PvTagInputClasses, 'textLarge' | 'inputLg' | 'large'> & { /** * @deprecated Стиль не поддерживается. */ textLarge?: string /** * @deprecated Стиль не поддерживается. */ inputLg?: string /** * @deprecated Стиль не поддерживается. */ large?: string }",
+            "values": [],
+            "doc": "CSS классы компонента."
+          },
+          {
+            "name": "components",
+            "type": "TagInputComponentsConfig",
+            "values": [],
+            "doc": "Свойство для переопределения элементов `TagInput`."
+          }
+        ],
+        "variants": {
+          "TagElementSize": [
+            "xxs",
+            "xs",
+            "sm",
+            "md"
+          ],
+          "TagInputElementSize": [
+            "xs",
+            "sm",
+            "md",
+            "lg"
+          ],
+          "TagInputIconSize": [
+            "xs",
+            "sm",
+            "md",
+            "lg"
+          ]
+        },
+        "slots": [],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base",
+          "@v-uik/tag"
+        ],
+        "examples": [
+          "Base",
+          "DifferentSizeExample",
+          "Interactive",
+          "TagClasses.dummy",
+          "TagInputBase",
+          "TagInputDisabled",
+          "TagInputSizes",
+          "TagWithLink"
+        ]
+      }
+    },
+    {
+      "name": "Text",
+      "t0": "Text — компонент кита · TextKinds: displaySb|h1b|h2b|h3b|h4b|h5b|h6n|bodyL|bodyM|bodyS|bodyXS|bodyXXS|bodyLightL|bodyLightM|bodyLightS|bodyLightXS|bodyLightXXS|textLb|textMb|textSb|textXSb|textLn|textMn|textSn|textXSn · iconTextSizeMap: displaySb|h1b|h2b|h3b|h4b|h5b|h6n|bodyL|bodyM|bodyS|bodyXS|bodyXXS|bodyLightL|bodyLightM|bodyLightS|bodyLightXS|bodyLightXXS|textLb|textMb|textSb|textXSb|textLn|textMn|textSn|textXSn · пропы: as, classes, components, copiedDuration, copiedTooltipText, copyIconWrapperProps, copyTooltipProps, copyTooltipText",
+      "t1": {
+        "import": "import { Text } from '@sds-eng/base'",
+        "props": [
+          {
+            "name": "classes",
+            "type": "Classes",
+            "values": [],
+            "doc": "JSS-классы для стилизации."
+          },
+          {
+            "name": "kind",
+            "type": "TTextKindsKeys",
+            "values": [],
+            "doc": "Стиль текста"
+          },
+          {
+            "name": "as",
+            "type": "keyof React.ReactHTML",
+            "values": [],
+            "doc": "HTML тэг, который будет отрисован вместо заданных по-умолчанию"
+          },
+          {
+            "name": "components",
+            "type": "TextComponentsConfig",
+            "values": [],
+            "doc": "Свойство для переопределения элементов Text"
+          },
+          {
+            "name": "ellipsis",
+            "type": "boolean | EllipsisConfig",
+            "values": [],
+            "doc": "Обрезать текст в одну строку с многоточием в конце.\nОбратите внимание, что при использовании свойства `dangerouslySetInnerHTML` конфигурация `ellipsis` с помощью объекта работать не будет."
+          },
+          {
+            "name": "gutterBottom",
+            "type": "boolean",
+            "values": [],
+            "doc": "Добавить отступ под текстом"
+          },
+          {
+            "name": "dangerouslySetInnerHTML",
+            "type": "React.DOMAttributes<HTMLElement>['dangerouslySetInnerHTML']",
+            "values": [],
+            "doc": "Функция для передачи контента в виде необработанной HTML-строки."
+          },
+          {
+            "name": "withCopy",
+            "type": "TCanCopy | boolean",
+            "values": [],
+            "doc": "Добавляет возможность копирования текста по нажатию."
+          },
+          {
+            "name": "copiedDuration",
+            "type": "TCanCopy extends true ? number : never",
+            "values": [],
+            "doc": "Продолжительность показа состояния \"скопировано\" в миллисекундах."
+          },
+          {
+            "name": "onCopy",
+            "type": "TCanCopy extends true ? (text: string) => void : never",
+            "values": [],
+            "doc": "Функция обратного вызова, срабатывающая в момент копирования текста."
+          },
+          {
+            "name": "onBeforeCopy",
+            "type": "TCanCopy extends true ? (text: string) => void : never",
+            "values": [],
+            "doc": "Функция обратного вызова, срабатывающая перед копированием текста."
+          },
+          {
+            "name": "getCopyText",
+            "type": "TCanCopy extends true ? (text: string) => string : never",
+            "values": [],
+            "doc": "Функция обратного вызова, позволяющая изменить текст, копируемый в буфер обмена."
+          },
+          {
+            "name": "onCopyError",
+            "type": "TCanCopy extends true ? (error: Error) => void : never",
+            "values": [],
+            "doc": "Функция обратного вызова, отвечающая за обработку ошибки при копировании текста."
+          },
+          {
+            "name": "copyIconWrapperProps",
+            "type": "TCanCopy extends true ? React.ComponentProps<'span'> : never",
+            "values": [],
+            "doc": "Свойства компонента иконки копирования текста."
+          },
+          {
+            "name": "copyTooltipText",
+            "type": "TCanCopy extends true ? string : never",
+            "values": [],
+            "doc": "Текст всплывающей подсказки при наведении на текст перед копированием."
+          },
+          {
+            "name": "copiedTooltipText",
+            "type": "TCanCopy extends true ? string : never",
+            "values": [],
+            "doc": "Текст всплывающей подсказки при наведении на текст после копирования."
+          },
+          {
+            "name": "copyTooltipProps",
+            "type": "TCanCopy extends true ? Omit<TooltipProps, 'children'> : never",
+            "values": [],
+            "doc": "Свойства элемента всплывающей подсказки."
+          }
+        ],
+        "variants": {
+          "TextKinds": [
+            "displaySb",
+            "h1b",
+            "h2b",
+            "h3b",
+            "h4b",
+            "h5b",
+            "h6n",
+            "bodyL",
+            "bodyM",
+            "bodyS",
+            "bodyXS",
+            "bodyXXS",
+            "bodyLightL",
+            "bodyLightM",
+            "bodyLightS",
+            "bodyLightXS",
+            "bodyLightXXS",
+            "textLb",
+            "textMb",
+            "textSb",
+            "textXSb",
+            "textLn",
+            "textMn",
+            "textSn",
+            "textXSn"
+          ],
+          "iconTextSizeMap": [
+            "displaySb",
+            "h1b",
+            "h2b",
+            "h3b",
+            "h4b",
+            "h5b",
+            "h6n",
+            "bodyL",
+            "bodyM",
+            "bodyS",
+            "bodyXS",
+            "bodyXXS",
+            "bodyLightL",
+            "bodyLightM",
+            "bodyLightS",
+            "bodyLightXS",
+            "bodyLightXXS",
+            "textLb",
+            "textMb",
+            "textSb",
+            "textXSb",
+            "textLn",
+            "textMn",
+            "textSn",
+            "textXSn"
+          ]
+        },
+        "slots": [],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base",
+          "@v-uik/theme",
+          "@v-uik/typography"
+        ],
+        "examples": [
+          "Body",
+          "CopyableBasicExample",
+          "CopyableCallbacksExample",
+          "CopyableCustomIconsExample",
+          "CopyableDurationExample",
+          "CopyableGetCopyTextExample",
+          "CopyableTooltipExample",
+          "Display",
+          "Ellipsis",
+          "EllipsisExampleDummy",
+          "Example",
+          "ExpandButton",
+          "Header",
+          "TextStyle",
+          "WrappedText"
+        ]
+      }
+    },
+    {
+      "name": "TextField",
+      "t0": "TextField — компонент кита · пропы: description, errorIconTooltipProps, fullWidth, isBorderless, showErrorIcon, size",
+      "t1": {
+        "import": "import { TextField } from '@sds-eng/base'",
+        "props": [
+          {
+            "name": "fullWidth",
+            "type": "boolean",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "showErrorIcon",
+            "type": "boolean",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "errorIconTooltipProps",
+            "type": "ComponentPropsWithAttributes<Omit<TooltipProps, 'children'>>",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "size",
+            "type": "Size",
+            "values": [],
+            "doc": "Размер поля"
+          },
+          {
+            "name": "description",
+            "type": "string",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "isBorderless",
+            "type": "boolean",
+            "values": [],
+            "doc": "isBorderless - флаг для переключения на текстовый вид компонента.\n\nЗначение по умолчанию `false`."
+          }
+        ],
+        "variants": {},
+        "slots": [],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base"
+        ],
+        "examples": [
+          "TextFieldClasses.dummy"
+        ]
+      }
+    },
+    {
+      "name": "Textarea",
+      "t0": "Textarea — компонент кита · пропы: isBorderless, size",
+      "t1": {
+        "import": "import { Textarea } from '@sds-eng/base'",
+        "props": [
+          {
+            "name": "size",
+            "type": "Size",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "isBorderless",
+            "type": "boolean",
+            "values": [],
+            "doc": "isBorderless - флаг для переключения на текстовый вид компонента.\n\nЗначение по умолчанию `false`."
+          }
+        ],
+        "variants": {},
+        "slots": [],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base"
+        ],
+        "examples": [
+          "Basic",
+          "Borderless",
+          "Disabled",
+          "FullWidth",
+          "TextareaAutosize",
+          "TextareaDefaultValue",
+          "TextareaUncontrolled",
+          "TextareaUserResize",
+          "WithError",
+          "WithMaxLength",
+          "WithRows",
+          "index"
+        ]
+      }
+    },
+    {
+      "name": "TimePicker",
+      "t0": "TimePicker — компонент кита · пропы: classes, inputEditable, isBorderless, size",
+      "t1": {
+        "import": "import { TimePicker } from '@sds-eng/base'",
+        "props": [
+          {
+            "name": "inputEditable",
+            "type": "boolean",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "size",
+            "type": "Size",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "isBorderless",
+            "type": "boolean",
+            "values": [],
+            "doc": "Флаг для отображения компонента без рамки."
+          },
+          {
+            "name": "classes",
+            "type": "TimePickerClasses<TDate>",
+            "values": [],
+            "doc": "CSS классы компонента."
+          },
+          {
+            "name": "inputEditable",
+            "type": "boolean",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "size",
+            "type": "Size",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "isBorderless",
+            "type": "boolean",
+            "values": [],
+            "doc": "Флаг для отображения компонента без рамки."
+          },
+          {
+            "name": "classes",
+            "type": "TimeRangePickerClasses<TDate>",
+            "values": [],
+            "doc": "CSS классы компонента."
+          }
+        ],
+        "variants": {},
+        "slots": [],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base",
+          "@v-uik/date-picker"
+        ],
+        "examples": [
+          "Borderless",
+          "ChangeModeManual",
+          "Components",
+          "RawBorderless",
+          "RawChangeModeManual",
+          "RawComponents",
+          "RawTimeRangePickerBorderless",
+          "RawTimeRangePickerChangeModeManual",
+          "TimeRangePickerBorderless",
+          "TimeRangePickerChangeModeManual"
+        ]
+      }
+    },
+    {
+      "name": "Tooltip",
+      "t0": "Tooltip — компонент кита · пропы: disabledArrow",
+      "t1": {
+        "import": "import { Tooltip } from '@sds-eng/base'",
+        "props": [
+          {
+            "name": "disabledArrow",
+            "type": "boolean",
+            "values": [],
+            "doc": "Флаг, указывающий на скрытие/раскрытие указателя у `Tooltip`."
+          }
+        ],
+        "variants": {},
+        "slots": [],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base"
+        ],
+        "examples": [
+          "Accessible",
+          "Action",
+          "Base",
+          "CloneElement",
+          "Delay",
+          "DisablePortal",
+          "DisablePortalPlacement",
+          "DisablePortalShadowDOM",
+          "DisabledArrow",
+          "Offset",
+          "Placement",
+          "PointAtCenterDoc",
+          "Positioning"
+        ]
+      }
+    },
+    {
+      "name": "Tree",
+      "t0": "Tree — компонент кита · пропы: classes",
+      "t1": {
+        "import": "import { Tree } from '@sds-eng/base'",
+        "props": [
+          {
+            "name": "classes",
+            "type": "TreeClasses",
+            "values": [],
+            "doc": "CSS классы компонента."
+          }
+        ],
+        "variants": {},
+        "slots": [],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base",
+          "@v-uik/tree"
+        ],
+        "examples": [
+          "TreeAdditionalControls",
+          "TreeBase",
+          "TreeBaseNoExpand",
+          "TreeCheckable",
+          "TreeCheckableControlled",
+          "TreeCheckableDefaultChecked",
+          "TreeCheckableDisabled",
+          "TreeCheckableStrict",
+          "TreeCustomCheckDisabled",
+          "TreeCustomClick",
+          "TreeCustomComponents",
+          "TreeCustomData",
+          "TreeCustomKeyboard",
+          "TreeDefaultExpanded",
+          "TreeDefaultSelected",
+          "TreeDisableFocusEffectOnCheckboxClick",
+          "TreeDisableFocusEffectOnClick",
+          "TreeDisableFocusEffectOnExpanderClick",
+          "TreeDisableFocusOnClick",
+          "TreeDisabledFull",
+          "TreeDisabledPartial",
+          "TreeEdit",
+          "TreeExpandControlled",
+          "TreeExpandNoExpander",
+          "TreeFocusModeSelect",
+          "TreeGapAll",
+          "TreeGapGroup",
+          "TreeHook",
+          "TreeIcons",
+          "TreeLevelSpacer",
+          "TreeLoading",
+          "TreeLoadingError",
+          "TreeMaxContentLines",
+          "TreeRef",
+          "TreeRightElements",
+          "TreeScroll",
+          "TreeSelectable",
+          "TreeSelectableControlled",
+          "TreeSelectableDirectory",
+          "TreeSelectableDisabled",
+          "TreeSelectableMultiple",
+          "TreeSizes",
+          "TreeThemed",
+          "TreeTrails",
+          "TreeTypes.dummy",
+          "TreeWithHalfLevelSpacer",
+          "TreeWithVirtualization"
+        ]
+      }
+    },
+    {
+      "name": "Underlay",
+      "t0": "Underlay — компонент кита · UnderlayStatus: error|warning|success|info|neutral · пропы: classes, color, status",
+      "t1": {
+        "import": "import { Underlay } from '@sds-eng/base'",
+        "props": [
+          {
+            "name": "classes",
+            "type": "UnderlayClasses",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "status",
+            "type": "(typeof UnderlayStatus)[keyof typeof UnderlayStatus]",
+            "values": [],
+            "doc": null
+          },
+          {
+            "name": "color",
+            "type": "PvUnderlayProps['color']",
+            "values": [],
+            "doc": null
+          }
+        ],
+        "variants": {
+          "UnderlayStatus": [
+            "error",
+            "warning",
+            "success",
+            "info",
+            "neutral"
+          ]
+        },
+        "slots": [],
+        "subcomponents": [],
+        "wraps": [
+          "@v-uik/base"
+        ],
+        "examples": [
+          "CustomColor",
+          "Statuses",
+          "UnderlayClasses.dummy",
+          "Usage"
+        ]
+      }
+    },
+    {
+      "name": "_DNU_ST_",
+      "t0": "_DNU_ST_ — компонент кита",
+      "t1": {
+        "import": "import { _DNU_ST_ } from '@sds-eng/base'",
+        "props": [],
+        "variants": {},
+        "slots": [],
+        "subcomponents": [],
+        "wraps": [],
+        "examples": []
+      }
+    }
+  ]
+}
