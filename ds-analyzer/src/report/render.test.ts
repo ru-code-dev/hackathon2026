@@ -62,6 +62,25 @@ describe.skipIf(!templateBuilt)('renderDashboard', () => {
     expect(findings.every((finding) => typeof finding.why === 'string' && finding.why.length > 0)).toBe(true)
   })
 
+  it('survives $-sequences in project code — String.replace pattern injection', async () => {
+    // `$'` / `$&` / `$1` are special in a string replacement: with the old string-form
+    // substitution they spliced template chunks into the middle of the payload JSON and
+    // the dashboard died with «Нет данных анализа». Real trigger: any analyzed project
+    // whose snippet carries such sequences (regex replacements, shell strings).
+    const hostile = 'const s = `sum: $` + n; re.replace(x, "$\' and $& and $1")'
+    const first = analysis.findings[0]
+    if (first === undefined) throw new Error('demo-app must produce findings')
+
+    const poisoned = {
+      ...analysis,
+      findings: [{ ...first, snippet: { ...first.snippet, before: hostile } }, ...analysis.findings.slice(1)],
+    }
+    const rendered = await renderDashboard({ profile, analysis: poisoned, generatedAt: '2026-07-28' })
+
+    const findings = extractPayload(rendered)['findings'] as Finding[]
+    expect(findings[0]?.snippet.before).toBe(hostile)
+  })
+
   it('pre-renders syntax highlighting so the browser does none', () => {
     const findings = extractPayload(html)['findings'] as (Finding & { snippet: { beforeHtml: string } })[]
 

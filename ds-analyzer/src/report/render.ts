@@ -167,7 +167,10 @@ export const renderDashboard = async (input: RenderInput): Promise<string> => {
     },
   }
 
+  // Function form only: string replacements interpret `$`-sequences, and the payload
+  // contains arbitrary project code — a snippet with `$'` splices the rest of the page
+  // into the JSON and kills the whole dashboard.
   return template
-    .replace(PLACEHOLDER, `$1${embed(payload)}$2`)
-    .replace('</head>', `<style id="ds-syntax">${highlighted.stylesheet}</style></head>`)
+    .replace(PLACEHOLDER, (_match, open: string, close: string) => `${open}${embed(payload)}${close}`)
+    .replace('</head>', () => `<style id="ds-syntax">${highlighted.stylesheet}</style></head>`)
 }
